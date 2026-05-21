@@ -54,6 +54,7 @@ constexpr float PresentClipPadding = 2.0f;
 constexpr float PresentOverlayAlpha = 0.35f;
 constexpr bool PresentDebugOverlay = false;
 constexpr bool PresentDebugMirrorBottom = false;
+constexpr bool DekoHotTrace = false;
 
 constexpr std::array<DkVtxAttribState, 3> PresentVertexAttribState{{
     {0, 0, static_cast<u32>(offsetof(PresentVertex, position)), DkVtxAttribSize_4x32,
@@ -70,7 +71,7 @@ constexpr std::array<DkVtxBufferState, 1> PresentVertexBufferState{{
 
 #ifdef __SWITCH__
 bool ShouldTraceDekoFrame(u32 frame) {
-    return frame < 8 || frame == 16 || frame == 32 || (frame % 60) == 0;
+    return DekoHotTrace && (frame < 8 || frame == 16 || frame == 32 || (frame % 60) == 0);
 }
 #endif
 
@@ -756,12 +757,13 @@ struct RendererDeko3D::Context {
         const bool has_vertices = !vertices.empty();
         const bool is_pica_target_pass = std::strcmp(pass_name, "pica-target") == 0;
         const bool should_log_present =
-            is_pica_target_pass
-                ? (present_draw_log_count < 8 || (present_draw_log_count % 2048) == 0)
-                : (present_draw_log_count < 16 || present_draw_log_count == 32 ||
-                   (present_draw_log_count % 60) == 0 ||
-                   (has_vertices && (present_nonempty_log_count < 32 ||
-                                     (present_nonempty_log_count % 60) == 0)));
+            DekoHotTrace &&
+            (is_pica_target_pass
+                 ? (present_draw_log_count < 8 || (present_draw_log_count % 2048) == 0)
+                 : (present_draw_log_count < 16 || present_draw_log_count == 32 ||
+                    (present_draw_log_count % 60) == 0 ||
+                    (has_vertices && (present_nonempty_log_count < 32 ||
+                                      (present_nonempty_log_count % 60) == 0))));
         if (should_log_present) {
             u32 visible_vertices = 0;
             float min_x = std::numeric_limits<float>::max();
@@ -904,8 +906,9 @@ struct RendererDeko3D::Context {
         command_buffer.barrier(DkBarrier_Tiles, DkInvalidateFlags_Image);
 
 #ifdef __SWITCH__
-        if (changed || target_render_log_count < 16 || ShouldTraceDekoFrame(frame_count) ||
-            (target_render_log_count % 60) == 0) {
+        if (DekoHotTrace &&
+            (changed || target_render_log_count < 16 || ShouldTraceDekoFrame(frame_count) ||
+             (target_render_log_count % 60) == 0)) {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.target-render frame=%u changed=%u pica=%08X "
@@ -1185,7 +1188,7 @@ void RasterizerDeko3D::DrawTriangles() {
     }
 
 #ifdef __SWITCH__
-    if (!present_batches.empty() && present_batches.back().texture.enabled &&
+    if (DekoHotTrace && !present_batches.empty() && present_batches.back().texture.enabled &&
         (texture_sample_log_count < 16 || (texture_sample_log_count % 2048) == 0)) {
         const auto& texture0 = present_batches.back().texture;
         Azahar::Switch::AppendLogFormat(
@@ -1200,8 +1203,9 @@ void RasterizerDeko3D::DrawTriangles() {
         ++texture_sample_log_count;
     }
 
-    if (render_target_log_count < 32 || render_target_log_count == 60 ||
-        (render_target_log_count % 120) == 0) {
+    if (DekoHotTrace &&
+        (render_target_log_count < 32 || render_target_log_count == 60 ||
+         (render_target_log_count % 120) == 0)) {
         const auto& framebuffer = regs.framebuffer.framebuffer;
         const auto textures = regs.texturing.GetTextures();
         const auto& texture0 = textures[0];
@@ -1229,8 +1233,9 @@ void RasterizerDeko3D::DrawTriangles() {
     }
     ++render_target_log_count;
 
-    if (fallback_draw_log_count < 8 || fallback_draw_log_count == 16 ||
-        fallback_draw_log_count == 32 || (fallback_draw_log_count % 60) == 0) {
+    if (DekoHotTrace &&
+        (fallback_draw_log_count < 8 || fallback_draw_log_count == 16 ||
+         fallback_draw_log_count == 32 || (fallback_draw_log_count % 60) == 0)) {
         Azahar::Switch::AppendLogFormat(
             nullptr,
             "android-flow stage=deko3d-rasterizer.cpu-vs-batch count=%u vertices=%u queued=%u "
@@ -1294,8 +1299,9 @@ bool RasterizerDeko3D::AccelerateDisplayTransfer(const Pica::DisplayTransferConf
     display_transfers.push_back(record);
 
 #ifdef __SWITCH__
-    if (display_transfer_log_count < 12 || display_transfer_log_count == 16 ||
-        display_transfer_log_count == 32 || (display_transfer_log_count % 60) == 0) {
+    if (DekoHotTrace &&
+        (display_transfer_log_count < 12 || display_transfer_log_count == 16 ||
+         display_transfer_log_count == 32 || (display_transfer_log_count % 60) == 0)) {
         Azahar::Switch::AppendLogFormat(
             nullptr,
             "android-flow stage=deko3d.display-transfer count=%u in=%08X out=%08X "

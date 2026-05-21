@@ -71,9 +71,9 @@ struct HostState {
 HostState g_host;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
-constexpr const char* LibretroBuildMarker = "switch-libretro-deko-graphics-range-v47";
+constexpr const char* LibretroBuildMarker = "switch-libretro-deko-trace-off-v48";
 #else
-constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v47";
+constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v48";
 #endif
 
 #ifdef AZAHAR_SWITCH_OPENGL_SPIKE
