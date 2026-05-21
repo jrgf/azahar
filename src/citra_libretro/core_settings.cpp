@@ -953,24 +953,35 @@ static void ParseGraphicsOptions(void) {
 
 #ifdef __SWITCH__
 static void ApplySwitchPerformanceOptions() {
+    Settings::values.graphics_api.SetGlobal(true);
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
-    Settings::values.graphics_api = Settings::GraphicsAPI::Deko3D;
+    Settings::values.graphics_api.SetValue(Settings::GraphicsAPI::Deko3D);
 #else
-    Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+    Settings::values.graphics_api.SetValue(Settings::GraphicsAPI::OpenGL);
 #endif
     Settings::values.use_gles = false;
-    Settings::values.use_hw_shader = true;
+    Settings::values.use_hw_shader.SetGlobal(true);
+    Settings::values.use_hw_shader.SetValue(true);
     Settings::values.use_shader_jit = true;
-    Settings::values.shaders_accurate_mul = false;
-    Settings::values.use_disk_shader_cache = true;
-    Settings::values.async_shader_compilation = true;
-    Settings::values.use_vsync = false;
-    Settings::values.frame_limit = 0.0;
-    Settings::values.delay_game_render_thread_us = 0;
-    Settings::values.simulate_3ds_gpu_timings = false;
+    Settings::values.shaders_accurate_mul.SetGlobal(true);
+    Settings::values.shaders_accurate_mul.SetValue(false);
+    Settings::values.use_disk_shader_cache.SetGlobal(true);
+    Settings::values.use_disk_shader_cache.SetValue(true);
+    Settings::values.async_shader_compilation.SetGlobal(true);
+    Settings::values.async_shader_compilation.SetValue(true);
+    Settings::values.use_vsync.SetGlobal(true);
+    Settings::values.use_vsync.SetValue(false);
+    Settings::values.frame_limit.SetGlobal(true);
+    Settings::values.frame_limit.SetValue(0.0);
+    Settings::values.delay_game_render_thread_us.SetGlobal(true);
+    Settings::values.delay_game_render_thread_us.SetValue(0);
+    Settings::values.simulate_3ds_gpu_timings.SetGlobal(true);
+    Settings::values.simulate_3ds_gpu_timings.SetValue(false);
     Settings::values.use_cpu_jit = true;
-    Settings::values.cpu_clock_percentage = 100;
-    Settings::values.is_new_3ds = true;
+    Settings::values.cpu_clock_percentage.SetGlobal(true);
+    Settings::values.cpu_clock_percentage.SetValue(100);
+    Settings::values.is_new_3ds.SetGlobal(true);
+    Settings::values.is_new_3ds.SetValue(true);
 
     Azahar::Switch::AppendLogFormat(
         nullptr,
@@ -980,7 +991,8 @@ static void ApplySwitchPerformanceOptions() {
         "android-flow stage=libretro.switch-settings graphics=opengl hw-shaders=1 "
 #endif
         "shader-jit=1 accurate-mul=0 disk-cache=1 async-shaders=1 vsync=0 frame-limit=0 "
-        "gpu-timings=0 cpu-jit=1 cpu-clock=100 new3ds=1");
+        "gpu-timings=0 cpu-jit=1 cpu-clock=100 new3ds=1 actual-graphics=%u",
+        static_cast<unsigned>(Settings::values.graphics_api.GetValue()));
 }
 #endif
 
