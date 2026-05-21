@@ -681,6 +681,15 @@ bool retro_load_game(const struct retro_game_info* info) {
         if (!emu_instance->game_loaded)
             return false;
         break;
+#ifdef ENABLE_DEKO3D
+    case Settings::GraphicsAPI::Deko3D:
+        LOG_INFO(Frontend, "Using Deko3D renderer");
+        emu_instance->emu_window->CreateContext();
+        emu_instance->game_loaded = do_load_game();
+        if (!emu_instance->game_loaded)
+            return false;
+        break;
+#endif
     }
 
     uint64_t quirks =

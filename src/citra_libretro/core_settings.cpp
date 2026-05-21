@@ -293,6 +293,9 @@ static constexpr retro_core_option_v2_definition option_definitions[] = {
 #ifdef ENABLE_VULKAN
             { "Vulkan", "Vulkan" },
 #endif
+#ifdef ENABLE_DEKO3D
+            { "Deko3D", "Deko3D" },
+#endif
 #ifdef ENABLE_OPENGL
             { "OpenGL", "OpenGL" },
 #endif
@@ -950,7 +953,11 @@ static void ParseGraphicsOptions(void) {
 
 #ifdef __SWITCH__
 static void ApplySwitchPerformanceOptions() {
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+    Settings::values.graphics_api = Settings::GraphicsAPI::Deko3D;
+#else
     Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+#endif
     Settings::values.use_gles = false;
     Settings::values.use_hw_shader = true;
     Settings::values.use_shader_jit = true;
@@ -967,7 +974,11 @@ static void ApplySwitchPerformanceOptions() {
 
     Azahar::Switch::AppendLogFormat(
         nullptr,
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+        "android-flow stage=libretro.switch-settings graphics=deko3d hw-shaders=1 "
+#else
         "android-flow stage=libretro.switch-settings graphics=opengl hw-shaders=1 "
+#endif
         "shader-jit=1 accurate-mul=0 disk-cache=1 async-shaders=1 vsync=0 frame-limit=0 "
         "gpu-timings=0 cpu-jit=1 cpu-clock=100 new3ds=1");
 }
