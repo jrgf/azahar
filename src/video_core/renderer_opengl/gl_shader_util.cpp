@@ -3,6 +3,10 @@
 // Refer to the license.txt file included.
 
 #include <array>
+#ifdef __SWITCH__
+#include <atomic>
+#include <chrono>
+#endif
 #include <string>
 #include <vector>
 #include <glad/glad.h>
@@ -11,7 +15,31 @@
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_vars.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace OpenGL {
+
+#ifdef __SWITCH__
+namespace {
+std::atomic<unsigned> switch_gl_shader_util_logs{};
+constexpr unsigned SwitchGlShaderUtilLogLimit = 5000;
+
+bool SwitchGlShaderUtilReserveLog() {
+    return switch_gl_shader_util_logs.fetch_add(1, std::memory_order_relaxed) <
+           SwitchGlShaderUtilLogLimit;
+}
+
+long long SwitchGlShaderUtilElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+} // namespace
+#endif
 
 GLuint LoadShader(std::string_view source, GLenum type, const std::string& debug_name) {
     std::string preamble;
@@ -58,7 +86,13 @@ GLuint LoadShader(std::string_view source, GLenum type, const std::string& debug
 
     glShaderSource(shader_id, static_cast<GLsizei>(src_arr.size()), src_arr.data(), lengths.data());
     LOG_DEBUG(Render_OpenGL, "Compiling {} shader {}...", debug_type, debug_name);
+#ifdef __SWITCH__
+    const auto switch_compile_start = std::chrono::steady_clock::now();
+#endif
     glCompileShader(shader_id);
+#ifdef __SWITCH__
+    const auto switch_compile_ms = SwitchGlShaderUtilElapsedMs(switch_compile_start);
+#endif
 
     GLint result = GL_FALSE;
     GLint info_log_length;
@@ -80,6 +114,16 @@ GLuint LoadShader(std::string_view source, GLenum type, const std::string& debug
         LOG_ERROR(Render_OpenGL, "Error compiling {} shader {}:\nNo log produced.", debug_type,
                   debug_name);
     }
+#ifdef __SWITCH__
+    if ((switch_compile_ms >= 5 || result == GL_FALSE) && SwitchGlShaderUtilReserveLog()) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.shader.compile type=%u result=%u elapsed-ms=%lld "
+            "source-bytes=%zu handle=%u",
+            static_cast<u32>(type), result == GL_TRUE ? 1U : 0U, switch_compile_ms,
+            source.size(), shader_id);
+    }
+#endif
     return shader_id;
 }
 
@@ -101,7 +145,13 @@ GLuint LoadProgram(bool separable_program, std::span<const GLuint> shaders,
     }
 
     glProgramParameteri(program_id, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+#ifdef __SWITCH__
+    const auto switch_link_start = std::chrono::steady_clock::now();
+#endif
     glLinkProgram(program_id);
+#ifdef __SWITCH__
+    const auto switch_link_ms = SwitchGlShaderUtilElapsedMs(switch_link_start);
+#endif
 
     // Check the program
     GLint result = GL_FALSE;
@@ -128,6 +178,16 @@ GLuint LoadProgram(bool separable_program, std::span<const GLuint> shaders,
         }
     }
 
+#ifdef __SWITCH__
+    if ((switch_link_ms >= 5 || result == GL_FALSE) && SwitchGlShaderUtilReserveLog()) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.program.link separable=%u result=%u elapsed-ms=%lld "
+            "shader-count=%zu handle=%u",
+            separable_program ? 1U : 0U, result == GL_TRUE ? 1U : 0U, switch_link_ms,
+            shaders.size(), program_id);
+    }
+#endif
     return program_id;
 }
 

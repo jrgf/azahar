@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <chrono>
 #include <list>
 #include <numeric>
 #include <vector>
@@ -54,6 +55,12 @@
 #include <streams/file_stream_transforms.h>
 #endif
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 class CitraLibRetro {
 public:
     CitraLibRetro() : log_filter(Common::Log::Level::Debug) {}
@@ -68,10 +75,12 @@ CitraLibRetro* emu_instance;
 
 void retro_init() {
     emu_instance = new CitraLibRetro();
+#ifndef __SWITCH__
     Common::Log::LibRetroStart(LibRetro::GetLoggingBackend());
     Common::Log::SetGlobalFilter(emu_instance->log_filter);
 
     LOG_DEBUG(Frontend, "Initializing core...");
+#endif
 
     // Set up LLE cores
     for (const auto& service_module : Service::service_module_map) {
@@ -89,7 +98,9 @@ void retro_init() {
 }
 
 void retro_deinit() {
+#ifndef __SWITCH__
     LOG_DEBUG(Frontend, "Shutting down core...");
+#endif
     if (Core::System::GetInstance().IsPoweredOn()) {
         Core::System::GetInstance().Shutdown();
     }
@@ -98,7 +109,9 @@ void retro_deinit() {
 
     delete emu_instance;
 
+#ifndef __SWITCH__
     Common::Log::Stop();
+#endif
 }
 
 unsigned retro_api_version() {
@@ -277,8 +290,41 @@ void retro_run() {
     }
 #endif
 
+#ifdef __SWITCH__
+    static unsigned switch_run_sample_count = 0;
+    const bool switch_trace_run = switch_run_sample_count++ < 32;
+    const auto switch_run_start = switch_trace_run ? std::chrono::steady_clock::now()
+                                                   : std::chrono::steady_clock::time_point{};
+    unsigned switch_runloop_count = 0;
+    long long switch_runloop_total_ms = 0;
+    long long switch_runloop_max_ms = 0;
+#endif
+
     while (!emu_instance->emu_window->HasSubmittedFrame()) {
-        auto result = Core::System::GetInstance().RunLoop();
+#ifdef __SWITCH__
+        const auto switch_loop_start = switch_trace_run ? std::chrono::steady_clock::now()
+                                                        : std::chrono::steady_clock::time_point{};
+#endif
+        auto result = Core::System::GetInstance().RunLoop(
+#ifdef __SWITCH__
+            true
+#else
+            false
+#endif
+        );
+#ifdef __SWITCH__
+        const auto switch_loop_ms =
+            switch_trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
+                                   std::chrono::steady_clock::now() - switch_loop_start)
+                                   .count()
+                             : 0;
+        if (switch_trace_run) {
+            ++switch_runloop_count;
+            switch_runloop_total_ms += switch_loop_ms;
+            switch_runloop_max_ms =
+                std::max(switch_runloop_max_ms, static_cast<long long>(switch_loop_ms));
+        }
+#endif
 
         if (result != Core::System::ResultStatus::Success) {
             std::string errorContent = Core::System::GetInstance().GetStatusDetails();
@@ -294,9 +340,33 @@ void retro_run() {
                 break;
             }
 
+#ifdef __SWITCH__
+            Azahar::Switch::AppendLogFormat(
+                nullptr, "android-flow stage=libretro.runloop.error result=%d detail=\"%s\"",
+                static_cast<int>(result), errorContent.c_str());
+#endif
             LibRetro::DisplayMessage(msg.c_str());
         }
     }
+
+#ifdef __SWITCH__
+    static unsigned switch_detail_logs = 0;
+    const auto switch_run_ms =
+        switch_trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
+                               std::chrono::steady_clock::now() - switch_run_start)
+                               .count()
+                         : 0;
+    if (switch_trace_run && switch_run_ms >= 1000 && switch_detail_logs < 32) {
+        ++switch_detail_logs;
+        Azahar::Switch::AppendLogFormat(nullptr,
+                                        "android-flow stage=libretro.runloop-detail "
+                                        "elapsed-ms=%lld loops=%u total-loop-ms=%lld "
+                                        "max-loop-ms=%lld",
+                                        static_cast<long long>(switch_run_ms),
+                                        switch_runloop_count, switch_runloop_total_ms,
+                                        switch_runloop_max_ms);
+    }
+#endif
 }
 
 static void setup_memory_maps() {
@@ -423,7 +493,7 @@ static void context_reset() {
     switch (Settings::values.graphics_api.GetValue()) {
 #ifdef ENABLE_OPENGL
     case Settings::GraphicsAPI::OpenGL:
-#if defined(USING_GLES)
+#if defined(USING_GLES) && !defined(__SWITCH__)
         Settings::values.use_gles = true;
         // Set the global GLES flag immediately to ensure any shader compilation
         // that happens before the Driver is created uses the correct version
@@ -434,9 +504,13 @@ static void context_reset() {
 #endif
         // Check to see if the frontend provides us with OpenGL symbols
         if (emu_instance->hw_render.get_proc_address != nullptr) {
+#if defined(USING_GLES) && !defined(__SWITCH__)
             bool loaded = Settings::values.use_gles
                               ? gladLoadGLES2Loader((GLADloadproc)load_opengl_func)
                               : gladLoadGLLoader((GLADloadproc)load_opengl_func);
+#else
+            bool loaded = gladLoadGLLoader((GLADloadproc)load_opengl_func);
+#endif
 
             if (!loaded) {
                 LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
@@ -556,7 +630,7 @@ bool retro_load_game(const struct retro_game_info* info) {
 #ifdef ENABLE_OPENGL
         LOG_INFO(Frontend, "Using OpenGL hw renderer");
         LibRetro::SetHWSharedContext();
-#if defined(USING_GLES)
+#if defined(USING_GLES) && !defined(__SWITCH__)
         emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES3;
         emu_instance->hw_render.version_major = 3;
         emu_instance->hw_render.version_minor = 2;

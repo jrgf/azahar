@@ -7,6 +7,8 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/ffversion.h>
@@ -109,7 +111,7 @@ typedef int (*av_parser_parse2_func)(AVCodecParserContext*, AVCodecContext*, uin
                                      const uint8_t*, int, int64_t, int64_t, int64_t);
 typedef AVCodecContext* (*avcodec_alloc_context3_func)(const AVCodec*);
 typedef const AVCodecDescriptor* (*avcodec_descriptor_next_func)(const AVCodecDescriptor*);
-typedef AVCodec* (*avcodec_find_decoder_func)(AVCodecID);
+typedef const AVCodec* (*avcodec_find_decoder_func)(AVCodecID);
 typedef const AVCodec* (*avcodec_find_encoder_by_name_func)(const char*);
 typedef void (*avcodec_free_context_func)(AVCodecContext**);
 typedef const AVClass* (*avcodec_get_class_func)();
@@ -207,13 +209,13 @@ extern avio_open_func avio_open;
 
 // swresample
 #if LIBSWRESAMPLE_VERSION_INT >= AV_VERSION_INT(4, 5, 100)
-typedef SwrContext* (*swr_alloc_set_opts2_func)(SwrContext**, AVChannelLayout*, AVSampleFormat, int,
-                                                AVChannelLayout*, AVSampleFormat, int, int, void*);
+typedef int (*swr_alloc_set_opts2_func)(SwrContext**, const AVChannelLayout*, AVSampleFormat, int,
+                                        const AVChannelLayout*, AVSampleFormat, int, int, void*);
 #else
 typedef SwrContext* (*swr_alloc_set_opts_func)(SwrContext*, int64_t, AVSampleFormat, int, int64_t,
                                                AVSampleFormat, int, int, void*);
 #endif
-typedef int (*swr_convert_func)(SwrContext*, uint8_t**, int, const uint8_t**, int);
+typedef int (*swr_convert_func)(SwrContext*, uint8_t* const*, int, const uint8_t* const*, int);
 typedef void (*swr_free_func)(SwrContext**);
 typedef int (*swr_init_func)(SwrContext*);
 typedef unsigned (*swresample_version_func)();

@@ -9,7 +9,6 @@
 #include <vector>
 #include <boost/optional.hpp>
 #include <cryptopp/hex.h>
-#include <cryptopp/osrng.h>
 #include <fmt/ranges.h>
 #include "common/archives.h"
 #include "common/bit_field.h"
@@ -22,6 +21,7 @@
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/ir/extra_hid.h"
 #include "core/hle/service/ir/ir_rst.h"
+#include "core/hw/cryptopp_rng.h"
 #include "core/loader/loader.h"
 #include "core/movie.h"
 
@@ -562,7 +562,7 @@ void Movie::StartRecording(const std::string& movie_file, const std::string& aut
     rerecord_count = 1;
 
     // Generate a random ID
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     rng.GenerateBlock(reinterpret_cast<CryptoPP::byte*>(&id), sizeof(id));
 
     // Get program ID

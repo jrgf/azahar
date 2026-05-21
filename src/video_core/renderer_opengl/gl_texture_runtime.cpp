@@ -22,6 +22,27 @@ using VideoCore::SurfaceFlagBits;
 using VideoCore::SurfaceType;
 using VideoCore::TextureType;
 
+#ifdef __SWITCH__
+using ClearTexSubImageProc =
+    void (*)(GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum,
+             const void*);
+using GetTextureSubImageProcPtr =
+    void (*)(GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, GLsizei,
+             void*);
+
+ClearTexSubImageProc GetClearTexSubImageProc() {
+    static const auto proc =
+        reinterpret_cast<ClearTexSubImageProc>(eglGetProcAddress("glClearTexSubImage"));
+    return proc;
+}
+
+GetTextureSubImageProcPtr GetTextureSubImageProc() {
+    static const auto proc =
+        reinterpret_cast<GetTextureSubImageProcPtr>(eglGetProcAddress("glGetTextureSubImage"));
+    return proc;
+}
+#endif
+
 constexpr GLenum TEMP_UNIT = GL_TEXTURE15;
 
 constexpr FormatTuple DEFAULT_TUPLE = {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
@@ -190,9 +211,17 @@ bool TextureRuntime::Reinterpret(Surface& source, Surface& dest,
 
 bool TextureRuntime::ClearTextureWithoutFbo(Surface& surface,
                                             const VideoCore::TextureClear& clear) {
+#ifdef __SWITCH__
+    const auto clear_tex_sub_image = GetClearTexSubImageProc();
+    if (!driver.HasArbClearTexture() || driver.HasBug(DriverBug::BrokenClearTexture) ||
+        clear_tex_sub_image == nullptr) {
+        return false;
+    }
+#else
     if (!driver.HasArbClearTexture() || driver.HasBug(DriverBug::BrokenClearTexture)) {
         return false;
     }
+#endif
     GLenum format{};
     GLenum type{};
     switch (surface.type) {
@@ -212,9 +241,15 @@ bool TextureRuntime::ClearTextureWithoutFbo(Surface& surface,
     default:
         UNREACHABLE_MSG("Unknown surface type {}", surface.type);
     }
+#ifdef __SWITCH__
+    clear_tex_sub_image(surface.Handle(), clear.texture_level, clear.texture_rect.left,
+                        clear.texture_rect.bottom, 0, clear.texture_rect.GetWidth(),
+                        clear.texture_rect.GetHeight(), 1, format, type, &clear.value);
+#else
     glClearTexSubImage(surface.Handle(), clear.texture_level, clear.texture_rect.left,
                        clear.texture_rect.bottom, 0, clear.texture_rect.GetWidth(),
                        clear.texture_rect.GetHeight(), 1, format, type, &clear.value);
+#endif
     return true;
 }
 
@@ -511,13 +546,26 @@ bool Surface::DownloadWithoutFbo(const VideoCore::BufferTextureCopy& download,
 
     // Prefer glGetTextureSubImage in most cases since it's the fastest and most convenient option
     const bool is_full_download = download.texture_rect == GetRect();
+#ifdef __SWITCH__
+    const auto get_texture_sub_image = GetTextureSubImageProc();
+    const bool has_sub_image =
+        driver->HasArbGetTextureSubImage() && get_texture_sub_image != nullptr;
+#else
     const bool has_sub_image = driver->HasArbGetTextureSubImage();
+#endif
     if (has_sub_image) {
         const GLsizei buf_size = static_cast<GLsizei>(staging.mapped.size());
+#ifdef __SWITCH__
+        get_texture_sub_image(Handle(0), download.texture_level, download.texture_rect.left,
+                              download.texture_rect.bottom, 0, download.texture_rect.GetWidth(),
+                              download.texture_rect.GetHeight(), 1, tuple.format, tuple.type,
+                              buf_size, staging.mapped.data());
+#else
         glGetTextureSubImage(Handle(0), download.texture_level, download.texture_rect.left,
                              download.texture_rect.bottom, 0, download.texture_rect.GetWidth(),
                              download.texture_rect.GetHeight(), 1, tuple.format, tuple.type,
                              buf_size, staging.mapped.data());
+#endif
         return true;
     } else if (is_full_download) {
         // This should only trigger for full texture downloads in oldish intel drivers

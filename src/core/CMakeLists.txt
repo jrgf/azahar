@@ -328,7 +328,6 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     hle/service/hid/hid_spvr.h
     hle/service/hid/hid_user.cpp
     hle/service/hid/hid_user.h
-    hle/service/http/http_c.cpp
     hle/service/http/http_c.h
     hle/service/ir/extra_hid.cpp
     hle/service/ir/extra_hid.h
@@ -448,7 +447,6 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     hle/service/sm/sm.h
     hle/service/sm/srv.cpp
     hle/service/sm/srv.h
-    hle/service/soc/soc_u.cpp
     hle/service/soc/soc_u.h
     hle/service/ssl/ssl_c.cpp
     hle/service/ssl/ssl_c.h
@@ -460,6 +458,8 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     hw/aes/key.h
     hw/ecc.cpp
     hw/ecc.h
+    hw/random.cpp
+    hw/random.h
     hw/rsa/rsa.cpp
     hw/rsa/rsa.h
     hw/unique_data.cpp
@@ -482,7 +482,6 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     memory.h
     movie.cpp
     movie.h
-    nus_download.cpp
     nus_download.h
     perf_stats.cpp
     perf_stats.h
@@ -501,13 +500,37 @@ if (ENABLE_BUILTIN_KEYBLOB)
     target_sources(citra_core PRIVATE hw/default_keys.h)
 endif()
 
+if (NINTENDO_SWITCH)
+    target_sources(citra_core PRIVATE
+        hle/service/http/http_c_switch_stub.cpp
+        hle/service/soc/soc_u_switch_stub.cpp
+        nus_download_switch_stub.cpp
+    )
+else()
+    target_sources(citra_core PRIVATE
+        hle/service/http/http_c.cpp
+        hle/service/soc/soc_u.cpp
+        nus_download.cpp
+    )
+endif()
+
 create_target_directory_groups(citra_core)
 
 target_link_libraries(citra_core PUBLIC citra_common PRIVATE audio_core network video_core)
-target_link_libraries(citra_core PRIVATE Boost::boost Boost::serialization Boost::iostreams httplib)
+target_link_libraries(citra_core PRIVATE Boost::boost Boost::serialization Boost::iostreams)
 target_link_libraries(citra_core PUBLIC dds-ktx PRIVATE cryptopp fmt lodepng open_source_archives)
 
-if (ENABLE_WEB_SERVICE)
+if (NINTENDO_SWITCH)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SWITCH_MBEDTLS REQUIRED IMPORTED_TARGET mbedtls)
+    target_link_libraries(citra_core PRIVATE PkgConfig::SWITCH_MBEDTLS)
+endif()
+
+if (NOT NINTENDO_SWITCH)
+    target_link_libraries(citra_core PRIVATE httplib)
+endif()
+
+if (ENABLE_WEB_SERVICE AND NOT NINTENDO_SWITCH)
     target_link_libraries(citra_core PRIVATE web_service)
 endif()
 

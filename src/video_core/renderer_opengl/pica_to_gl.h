@@ -5,7 +5,11 @@
 #pragma once
 
 #include <array>
+#ifdef __SWITCH__
+#include "video_core/renderer_opengl/gl_switch_compat.h"
+#else
 #include <glad/glad.h>
+#endif
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"

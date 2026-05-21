@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <chrono>
 #include <stdexcept>
 #include <utility>
 #include <boost/serialization/array.hpp>
@@ -55,6 +56,12 @@
 #include "video_core/custom_textures/custom_tex_manager.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_base.h"
+
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
 
 namespace Core {
 
@@ -183,12 +190,34 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         return ResultStatus::ErrorSavestate;
     }
 
+#ifdef __SWITCH__
+    const auto switch_runloop_start = std::chrono::steady_clock::now();
+    auto switch_elapsed_ms = [](const auto& start) -> long long {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::steady_clock::now() - start)
+            .count();
+    };
+    long long switch_sync_prep_ms = 0;
+    long long switch_exec_ms = 0;
+    long long switch_reschedule_ms = 0;
+    long long switch_max_cpu_ms = 0;
+    unsigned switch_max_cpu_id = 0;
+    unsigned switch_cpu_runs = 0;
+    unsigned switch_cpu_idles = 0;
+    const char* switch_branch = "none";
+    s64 switch_trace_max_delay = 0;
+    s64 switch_trace_max_slice = 0;
+#endif
+
     // All cores should have executed the same amount of ticks. If this is not the case an event was
     // scheduled with a cycles_into_future smaller then the current downcount.
     // So we have to get those cores to the same global time first
     u64 global_ticks = timing->GetGlobalTicks();
     s64 max_delay = 0;
     ARM_Interface* current_core_to_execute = nullptr;
+#ifdef __SWITCH__
+    auto switch_phase_start = std::chrono::steady_clock::now();
+#endif
     for (auto& cpu_core : cpu_cores) {
         if (cpu_core->GetTimer().GetTicks() < global_ticks) {
             s64 delay = global_ticks - cpu_core->GetTimer().GetTicks();
@@ -204,12 +233,19 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
             }
         }
     }
+#ifdef __SWITCH__
+    switch_sync_prep_ms += switch_elapsed_ms(switch_phase_start);
+    switch_trace_max_delay = max_delay;
+#endif
 
     // jit sometimes overshoot by a few ticks which might lead to a minimal desync in the cores.
     // This small difference shouldn't make it necessary to sync the cores and would only cost
     // performance. Thus we don't sync delays below min_delay
     static constexpr s64 min_delay = 100;
     if (max_delay > min_delay) {
+#ifdef __SWITCH__
+        switch_branch = "delay";
+#endif
         LOG_TRACE(Core_ARM11, "Core {} running (delayed) for {} ticks",
                   current_core_to_execute->GetID(),
                   current_core_to_execute->GetTimer().GetDowncount());
@@ -217,22 +253,43 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
             running_core = current_core_to_execute;
             kernel->SetRunningCPU(running_core);
         }
+#ifdef __SWITCH__
+        const auto switch_cpu_start = std::chrono::steady_clock::now();
+#endif
         if (kernel->GetCurrentThreadManager().GetCurrentThread() == nullptr) {
             LOG_TRACE(Core_ARM11, "Core {} idling", current_core_to_execute->GetID());
             current_core_to_execute->GetTimer().Idle();
             PrepareReschedule();
+#ifdef __SWITCH__
+            ++switch_cpu_idles;
+#endif
         } else {
             if (tight_loop) {
                 current_core_to_execute->Run();
             } else {
                 current_core_to_execute->Step();
             }
+#ifdef __SWITCH__
+            ++switch_cpu_runs;
+#endif
         }
+#ifdef __SWITCH__
+        const auto switch_cpu_ms = switch_elapsed_ms(switch_cpu_start);
+        switch_exec_ms += switch_cpu_ms;
+        switch_max_cpu_ms = switch_cpu_ms;
+        switch_max_cpu_id = current_core_to_execute->GetID();
+#endif
     } else {
+#ifdef __SWITCH__
+        switch_branch = "all";
+#endif
         // Now all cores are at the same global time. So we will run them one after the other
         // with a max slice that is the minimum of all max slices of all cores
         // TODO: Make special check for idle since we can easily revert the time of idle cores
         s64 max_slice = Timing::MAX_SLICE_LENGTH;
+#ifdef __SWITCH__
+        switch_phase_start = std::chrono::steady_clock::now();
+#endif
         for (const auto& cpu_core : cpu_cores) {
             running_core = cpu_core.get();
             kernel->SetRunningCPU(running_core);
@@ -241,6 +298,10 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
             kernel->GetThreadManager(cpu_core->GetID()).Reschedule();
             max_slice = std::min(max_slice, cpu_core->GetTimer().GetMaxSliceLength());
         }
+#ifdef __SWITCH__
+        switch_sync_prep_ms += switch_elapsed_ms(switch_phase_start);
+        switch_trace_max_slice = max_slice;
+#endif
         for (auto& cpu_core : cpu_cores) {
             cpu_core->GetTimer().SetNextSlice(max_slice);
             auto start_ticks = cpu_core->GetTimer().GetTicks();
@@ -248,12 +309,18 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
                       cpu_core->GetTimer().GetDowncount());
             running_core = cpu_core.get();
             kernel->SetRunningCPU(running_core);
+#ifdef __SWITCH__
+            const auto switch_cpu_start = std::chrono::steady_clock::now();
+#endif
             // If we don't have a currently active thread then don't execute instructions,
             // instead advance to the next event and try to yield to the next thread
             if (kernel->GetCurrentThreadManager().GetCurrentThread() == nullptr) {
                 LOG_TRACE(Core_ARM11, "Core {} idling", cpu_core->GetID());
                 cpu_core->GetTimer().Idle();
                 PrepareReschedule();
+#ifdef __SWITCH__
+                ++switch_cpu_idles;
+#endif
             } else {
                 // In the rare case the break flag is set (due to exception thrown)
                 // there is probably no need to adjust the timer accordingly.
@@ -262,12 +329,43 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
                 } else {
                     cpu_core->Step();
                 }
+#ifdef __SWITCH__
+                ++switch_cpu_runs;
+#endif
             }
+#ifdef __SWITCH__
+            const auto switch_cpu_ms = switch_elapsed_ms(switch_cpu_start);
+            switch_exec_ms += switch_cpu_ms;
+            if (switch_cpu_ms > switch_max_cpu_ms) {
+                switch_max_cpu_ms = switch_cpu_ms;
+                switch_max_cpu_id = cpu_core->GetID();
+            }
+#endif
             max_slice = cpu_core->GetTimer().GetTicks() - start_ticks;
         }
     }
 
+#ifdef __SWITCH__
+    switch_phase_start = std::chrono::steady_clock::now();
+#endif
     Reschedule();
+#ifdef __SWITCH__
+    switch_reschedule_ms = switch_elapsed_ms(switch_phase_start);
+    static unsigned switch_runloop_slow_logs = 0;
+    const auto switch_total_ms = switch_elapsed_ms(switch_runloop_start);
+    if (switch_total_ms >= 500 && switch_runloop_slow_logs < 500) {
+        ++switch_runloop_slow_logs;
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=core.runloop.slow mode=%s branch=%s elapsed-ms=%lld "
+            "prep-ms=%lld exec-ms=%lld resched-ms=%lld max-cpu-ms=%lld max-cpu=%u "
+            "runs=%u idles=%u max-delay=%lld max-slice=%lld status=%d",
+            tight_loop ? "tight" : "step", switch_branch, switch_total_ms, switch_sync_prep_ms,
+            switch_exec_ms, switch_reschedule_ms, switch_max_cpu_ms, switch_max_cpu_id,
+            switch_cpu_runs, switch_cpu_idles, static_cast<long long>(switch_trace_max_delay),
+            static_cast<long long>(switch_trace_max_slice), static_cast<int>(status));
+    }
+#endif
 
     return status;
 }

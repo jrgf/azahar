@@ -15,7 +15,7 @@
 #include <ios>
 #include <limits>
 #include <memory>
-#ifdef HAVE_LIBRETRO
+#if defined(HAVE_LIBRETRO) || defined(__SWITCH__)
 #include <mutex>
 #endif
 #include <optional>
@@ -505,9 +505,9 @@ private:
     CORE_FILE* m_file = nullptr;
     int m_fd = -1;
     bool m_good = true;
-#ifdef HAVE_LIBRETRO_VFS
+#if defined(HAVE_LIBRETRO_VFS) || defined(__SWITCH__)
     // pread() doesn't touch the file position, so it's safe alongside
-    // concurrent fread/fwrite. Libretro VFS has no pread equivalent, so
+    // concurrent fread/fwrite. Libretro VFS and Switch have no pread equivalent, so
     // ReadAtImpl emulates it with seek+read+seek, which would corrupt the
     // file position for concurrent Read/Write operations.
     mutable std::mutex m_file_pos_mutex;

@@ -6,6 +6,13 @@ build-*/
 # NSIS built executables
 src/installer/*.exe
 
+# Nintendo Switch homebrew build outputs
+*.nro
+*.nso
+*.nacp
+*.elf
+*.map
+
 # Generated source files
 src/common/scm_rev.cpp
 .travis.descriptor.json
@@ -19,10 +26,15 @@ src/common/scm_rev.cpp
 .markdown-preview.html
 .idea/
 .vs/
+.codex-backups/
 .vscode/
+.docs/
+.externals/
+.CMakeModules/
 .cache/
 .kdev4/
 .kotlin/
+externals/*
 cmake-build-debug/
 cmake-build-release/
 CMakeLists.txt.user*

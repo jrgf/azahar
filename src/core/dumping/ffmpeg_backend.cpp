@@ -536,9 +536,12 @@ bool FFmpegAudioStream::Init(FFmpegMuxer& muxer) {
     auto num_channels = codec_context->ch_layout.nb_channels;
     audio_frame->ch_layout = codec_context->ch_layout;
     SwrContext* context = nullptr;
-    FFmpeg::swr_alloc_set_opts2(&context, &codec_context->ch_layout, codec_context->sample_fmt,
-                                codec_context->sample_rate, &codec_context->ch_layout,
-                                AV_SAMPLE_FMT_S16P, AudioCore::native_sample_rate, 0, nullptr);
+    if (FFmpeg::swr_alloc_set_opts2(&context, &codec_context->ch_layout, codec_context->sample_fmt,
+                                    codec_context->sample_rate, &codec_context->ch_layout,
+                                    AV_SAMPLE_FMT_S16P, AudioCore::native_sample_rate, 0,
+                                    nullptr) < 0) {
+        context = nullptr;
+    }
 #else
     auto num_channels = codec_context->channels;
     audio_frame->channel_layout = codec_context->channel_layout;
@@ -956,7 +959,12 @@ std::string FormatDefaultValue(const AVOption* option,
     case AV_OPT_TYPE_VIDEO_RATE: {
         return ToStdString(option->default_val.str);
     }
-    case AV_OPT_TYPE_CHANNEL_LAYOUT: {
+#if LIBAVUTIL_VERSION_MAJOR >= 59
+    case AV_OPT_TYPE_CHLAYOUT:
+#else
+    case AV_OPT_TYPE_CHANNEL_LAYOUT:
+#endif
+    {
         return fmt::format("{:#x}", option->default_val.i64);
     }
     default:

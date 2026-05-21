@@ -28,6 +28,14 @@
 #define cpu_set_t cpuset_t
 #endif
 
+#ifdef __SWITCH__
+extern "C" u32 svcSetThreadPriority(u32 handle, u32 priority);
+
+namespace {
+constexpr u32 SwitchCurrentThreadHandle = 0xFFFF8000;
+}
+#endif
+
 namespace Common {
 
 #ifdef _WIN32
@@ -61,6 +69,32 @@ void SetCurrentThreadPriority(ThreadPriority new_priority) {
 #else
 
 void SetCurrentThreadPriority(ThreadPriority new_priority) {
+#ifdef __SWITCH__
+    u32 switch_priority = 0x2C;
+    switch (new_priority) {
+    case ThreadPriority::Low:
+        switch_priority = 0x3B;
+        break;
+    case ThreadPriority::Normal:
+        switch_priority = 0x2C;
+        break;
+    case ThreadPriority::High:
+        switch_priority = 0x28;
+        break;
+    case ThreadPriority::VeryHigh:
+        switch_priority = 0x24;
+        break;
+    case ThreadPriority::Critical:
+        switch_priority = 0x20;
+        break;
+    }
+
+    const auto rc = svcSetThreadPriority(SwitchCurrentThreadHandle, switch_priority);
+    if (rc != 0) {
+        LOG_ERROR(Common, "Failed to set Switch thread priority to {:#x}: {:#x}",
+                  switch_priority, rc);
+    }
+#else
     pthread_t this_thread = pthread_self();
 
     const auto scheduling_type = SCHED_OTHER;
@@ -76,6 +110,7 @@ void SetCurrentThreadPriority(ThreadPriority new_priority) {
     }
 
     pthread_setschedparam(this_thread, scheduling_type, &params);
+#endif
 }
 
 #endif
@@ -106,6 +141,8 @@ void SetCurrentThreadName(const char* name) {
         errno = e;
         LOG_ERROR(Common, "Failed to set thread name to '{}': {}", truncated, GetLastErrorMsg());
     }
+#elif defined(__SWITCH__)
+    // Horizon/libnx does not expose debugger-visible names for existing threads.
 #else
     pthread_setname_np(pthread_self(), name);
 #endif

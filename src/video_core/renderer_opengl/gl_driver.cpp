@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <glad/glad.h>
+#include <string_view>
 #include "common/assert.h"
 #include "common/settings.h"
 #include "video_core/custom_textures/custom_format.h"
@@ -12,6 +13,42 @@
 namespace OpenGL {
 
 DECLARE_ENUM_FLAG_OPERATORS(DriverBug);
+
+#ifdef __SWITCH__
+namespace {
+
+bool HasGLExtension(std::string_view name) {
+    GLint num_extensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    for (GLint index = 0; index < num_extensions; ++index) {
+        const auto* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, index));
+        if (extension != nullptr && name == extension) {
+            return true;
+        }
+    }
+
+    const auto* extension_list = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
+    if (extension_list == nullptr) {
+        return false;
+    }
+
+    std::string_view remaining{extension_list};
+    while (!remaining.empty()) {
+        const auto separator = remaining.find(' ');
+        const auto extension = remaining.substr(0, separator);
+        if (extension == name) {
+            return true;
+        }
+        if (separator == std::string_view::npos) {
+            return false;
+        }
+        remaining.remove_prefix(separator + 1);
+    }
+    return false;
+}
+
+} // namespace
+#endif
 
 inline std::string_view GetSource(GLenum source) {
 #define RET(s)                                                                                     \
@@ -164,6 +201,23 @@ void Driver::DeduceVendor() {
 }
 
 void Driver::CheckExtensionSupport() {
+#ifdef __SWITCH__
+    ext_buffer_storage = HasGLExtension("GL_EXT_buffer_storage");
+    arb_buffer_storage = HasGLExtension("GL_ARB_buffer_storage");
+    arb_clear_texture = HasGLExtension("GL_ARB_clear_texture");
+    arb_get_texture_sub_image = HasGLExtension("GL_ARB_get_texture_sub_image");
+    arb_texture_compression_bptc = HasGLExtension("GL_ARB_texture_compression_bptc");
+    clip_cull_distance = !is_gles || HasGLExtension("GL_EXT_clip_cull_distance");
+    ext_texture_compression_s3tc = HasGLExtension("GL_EXT_texture_compression_s3tc");
+    ext_shader_framebuffer_fetch = HasGLExtension("GL_EXT_shader_framebuffer_fetch");
+    arm_shader_framebuffer_fetch = HasGLExtension("GL_ARM_shader_framebuffer_fetch");
+    arb_fragment_shader_interlock = HasGLExtension("GL_ARB_fragment_shader_interlock");
+    nv_fragment_shader_interlock = HasGLExtension("GL_NV_fragment_shader_interlock");
+    intel_fragment_shader_ordering = HasGLExtension("GL_INTEL_fragment_shader_ordering");
+    blend_minmax_factor =
+        HasGLExtension("GL_AMD_blend_minmax_factor") || HasGLExtension("GL_NV_blend_minmax_factor");
+    is_suitable = GLAD_GL_VERSION_4_3;
+#else
     ext_buffer_storage = GLAD_GL_EXT_buffer_storage;
     arb_buffer_storage = GLAD_GL_ARB_buffer_storage;
     arb_clear_texture = GLAD_GL_ARB_clear_texture;
@@ -178,6 +232,7 @@ void Driver::CheckExtensionSupport() {
     intel_fragment_shader_ordering = GLAD_GL_INTEL_fragment_shader_ordering;
     blend_minmax_factor = GLAD_GL_AMD_blend_minmax_factor || GLAD_GL_NV_blend_minmax_factor;
     is_suitable = GLAD_GL_VERSION_4_3 || GLAD_GL_ES_VERSION_3_2;
+#endif
 }
 
 void Driver::FindBugs() {

@@ -5,7 +5,6 @@
 #include <array>
 #include <chrono>
 #include <boost/crc.hpp>
-#include <cryptopp/osrng.h>
 
 #include "common/file_util.h"
 #include "common/logging/log.h"
@@ -14,6 +13,7 @@
 #include "core/hle/service/nfc/amiibo_crypto.h"
 #include "core/hle/service/nfc/nfc_device.h"
 #include "core/hw/aes/key.h"
+#include "core/hw/cryptopp_rng.h"
 #include "core/loader/loader.h"
 
 SERVICE_CONSTRUCT_IMPL(Service::NFC::NfcDevice)
@@ -627,7 +627,7 @@ Result NfcDevice::DeleteRegisterInfo() {
         return ResultNeedRegister;
     }
 
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     const std::size_t mii_data_size = sizeof(tag.file.owner_mii);
     std::array<CryptoPP::byte, mii_data_size> buffer{};
     rng.GenerateBlock(buffer.data(), mii_data_size);
@@ -817,7 +817,7 @@ Result NfcDevice::SetApplicationArea(std::span<const u8> data) {
     std::memcpy(tag.file.application_area.data(), data.data(), data.size());
 
     // Fill remaining data with random numbers
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     const std::size_t data_size = sizeof(ApplicationArea) - data.size();
     std::vector<CryptoPP::byte> buffer(data_size);
     rng.GenerateBlock(buffer.data(), data_size);
@@ -873,7 +873,7 @@ Result NfcDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
     std::memcpy(tag.file.application_area.data(), data.data(), data.size());
 
     // Fill remaining data with random numbers
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     const std::size_t data_size = sizeof(ApplicationArea) - data.size();
     std::vector<CryptoPP::byte> buffer(data_size);
     rng.GenerateBlock(buffer.data(), data_size);
@@ -920,7 +920,7 @@ Result NfcDevice::DeleteApplicationArea() {
         return ResultNeedCreate;
     }
 
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     constexpr std::size_t data_size = sizeof(ApplicationArea);
     std::array<CryptoPP::byte, data_size> buffer{};
     rng.GenerateBlock(buffer.data(), data_size);

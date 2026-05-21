@@ -18,7 +18,28 @@
 #include "common/zstd_compression.h"
 #include "video_core/renderer_opengl/gl_shader_disk_cache.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace OpenGL {
+
+#ifdef __SWITCH__
+namespace {
+void SwitchShaderDiskCacheLogFile(const char* stage, u64 program_id, bool separable,
+                                  const std::string& path, u64 size, u64 pos) {
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=opengl.shader.cache.%s program=%016llX separable=%u "
+        "size=%llu pos=%llu path=\"%s\"",
+        stage, static_cast<unsigned long long>(program_id), separable ? 1U : 0U,
+        static_cast<unsigned long long>(size), static_cast<unsigned long long>(pos),
+        path.c_str());
+}
+}
+#endif
 
 constexpr std::size_t HASH_LENGTH = 64;
 using ShaderCacheVersionHash = std::array<u8, HASH_LENGTH>;
@@ -114,18 +135,65 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
     const bool has_title_id = GetProgramID() != 0;
     if (!Settings::values.use_hw_shader || !Settings::values.use_disk_shader_cache ||
         !has_title_id) {
+#ifdef __SWITCH__
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.shader.cache.transferable.disabled program=%016llX "
+            "separable=%u hw=%u disk=%u has-title=%u",
+            static_cast<unsigned long long>(GetProgramID()), separable ? 1U : 0U,
+            Settings::values.use_hw_shader ? 1U : 0U,
+            Settings::values.use_disk_shader_cache ? 1U : 0U, has_title_id ? 1U : 0U);
+#endif
         return std::nullopt;
     }
     tried_to_load = true;
 
-    if (transferable_file.GetSize() == 0) {
+    const auto transferable_path{GetTransferablePath()};
+    if (!transferable_file.IsOpen()) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.closed", GetProgramID(), separable,
+                                     transferable_path, 0, 0);
+#endif
+        LOG_ERROR(Render_OpenGL, "Transferable shader cache is not open for title id={}",
+                  GetTitleID());
+        return std::nullopt;
+    }
+
+    const u64 transferable_size = transferable_file.GetSize();
+#ifdef __SWITCH__
+    SwitchShaderDiskCacheLogFile("transferable.load.begin", GetProgramID(), separable,
+                                 transferable_path, transferable_size, transferable_file.Tell());
+#endif
+
+    if (transferable_size == 0) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.empty", GetProgramID(), separable,
+                                     transferable_path, transferable_size,
+                                     transferable_file.Tell());
+#endif
         LOG_INFO(Render_OpenGL, "No transferable shader cache found for game with title id={}",
                  GetTitleID());
         return std::nullopt;
     }
 
+    if (!transferable_file.Seek(0, SEEK_SET)) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.seek-fail", GetProgramID(), separable,
+                                     transferable_path, transferable_size,
+                                     transferable_file.Tell());
+#endif
+        LOG_ERROR(Render_OpenGL, "Failed to seek transferable cache for title id={}",
+                  GetTitleID());
+        return std::nullopt;
+    }
+
     u32 version{};
     if (transferable_file.ReadBytes(&version, sizeof(version)) != sizeof(version)) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.version-read-fail", GetProgramID(), separable,
+                                     transferable_path, transferable_size,
+                                     transferable_file.Tell());
+#endif
         LOG_ERROR(Render_OpenGL,
                   "Failed to get transferable cache version for title id={} - removing",
                   GetTitleID());
@@ -134,11 +202,21 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
     }
 
     if (version < NativeVersion) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.old-version", GetProgramID(), separable,
+                                     transferable_path, transferable_size,
+                                     transferable_file.Tell());
+#endif
         LOG_INFO(Render_OpenGL, "Transferable shader cache is old - removing");
         InvalidateAll();
         return std::nullopt;
     }
     if (version > NativeVersion) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.new-version", GetProgramID(), separable,
+                                     transferable_path, transferable_size,
+                                     transferable_file.Tell());
+#endif
         LOG_WARNING(Render_OpenGL, "Transferable shader cache was generated with a newer version "
                                    "of the emulator - skipping");
         return std::nullopt;
@@ -146,9 +224,14 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
 
     // Version is valid, load the shaders
     std::vector<ShaderDiskCacheRaw> raws;
-    while (transferable_file.Tell() < transferable_file.GetSize()) {
+    while (transferable_file.Tell() < transferable_size) {
         TransferableEntryKind kind{};
         if (transferable_file.ReadBytes(&kind, sizeof(u32)) != sizeof(u32)) {
+#ifdef __SWITCH__
+            SwitchShaderDiskCacheLogFile("transferable.kind-read-fail", GetProgramID(), separable,
+                                         transferable_path, transferable_size,
+                                         transferable_file.Tell());
+#endif
             LOG_ERROR(Render_OpenGL, "Failed to read transferable file - removing");
             InvalidateAll();
             return std::nullopt;
@@ -158,6 +241,11 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
         case TransferableEntryKind::Raw: {
             ShaderDiskCacheRaw entry;
             if (!entry.Load(transferable_file)) {
+#ifdef __SWITCH__
+                SwitchShaderDiskCacheLogFile("transferable.raw-read-fail", GetProgramID(),
+                                             separable, transferable_path, transferable_size,
+                                             transferable_file.Tell());
+#endif
                 LOG_ERROR(Render_OpenGL, "Failed to load transferable raw entry - removing");
                 InvalidateAll();
                 return std::nullopt;
@@ -167,6 +255,11 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
             break;
         }
         default:
+#ifdef __SWITCH__
+            SwitchShaderDiskCacheLogFile("transferable.unknown-kind", GetProgramID(), separable,
+                                         transferable_path, transferable_size,
+                                         transferable_file.Tell());
+#endif
             LOG_ERROR(Render_OpenGL, "Unknown transferable shader cache entry kind={} - removing",
                       kind);
             InvalidateAll();
@@ -174,6 +267,16 @@ std::optional<std::vector<ShaderDiskCacheRaw>> ShaderDiskCache::LoadTransferable
         }
     }
 
+#ifdef __SWITCH__
+    SwitchShaderDiskCacheLogFile("transferable.load.end", GetProgramID(), separable,
+                                 transferable_path, transferable_size, transferable_file.Tell());
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=opengl.shader.cache.transferable.entries program=%016llX "
+        "separable=%u entries=%llu",
+        static_cast<unsigned long long>(GetProgramID()), separable ? 1U : 0U,
+        static_cast<unsigned long long>(raws.size()));
+#endif
     LOG_INFO(Render_OpenGL, "Found a transferable disk cache with {} entries", raws.size());
     return {std::move(raws)};
 }
@@ -203,7 +306,16 @@ ShaderDiskCache::LoadPrecompiled(bool compressed) {
 std::optional<std::pair<std::unordered_map<u64, ShaderDiskCacheDecompiled>, ShaderDumpsMap>>
 ShaderDiskCache::LoadPrecompiledFile(FileUtil::IOFile& file, bool compressed) {
     // Read compressed file from disk and decompress to virtual precompiled cache file
-    std::vector<u8> precompiled_file(file.GetSize());
+    const u64 precompiled_size = file.GetSize();
+    if (!file.Seek(0, SEEK_SET)) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("precompiled.seek-fail", GetProgramID(), separable,
+                                     GetPrecompiledPath(), precompiled_size, file.Tell());
+#endif
+        return std::nullopt;
+    }
+
+    std::vector<u8> precompiled_file(precompiled_size);
     file.ReadBytes(precompiled_file.data(), precompiled_file.size());
     if (compressed) {
         const std::vector<u8> decompressed =
@@ -247,7 +359,7 @@ ShaderDiskCache::LoadPrecompiledFile(FileUtil::IOFile& file, bool compressed) {
             if (!entry) {
                 return std::nullopt;
             }
-            decompiled.insert({unique_identifier, std::move(*entry)});
+            decompiled[unique_identifier] = std::move(*entry);
             break;
         }
         case PrecompiledEntryKind::Dump: {
@@ -271,7 +383,7 @@ ShaderDiskCache::LoadPrecompiledFile(FileUtil::IOFile& file, bool compressed) {
                 return std::nullopt;
             }
 
-            dumps.insert({unique_identifier, dump});
+            dumps[unique_identifier] = std::move(dump);
             break;
         }
         default:
@@ -368,6 +480,16 @@ void ShaderDiskCache::SaveRaw(const ShaderDiskCacheRaw& entry) {
         return;
     }
 
+    if (!transferable_file.Seek(0, SEEK_END)) {
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.save-seek-fail", GetProgramID(), separable,
+                                     GetTransferablePath(), transferable_file.GetSize(),
+                                     transferable_file.Tell());
+#endif
+        LOG_ERROR(Render_OpenGL, "Failed to seek transferable cache for append");
+        return;
+    }
+
     if (transferable_file.WriteObject(TransferableEntryKind::Raw) != 1 ||
         !entry.Save(transferable_file)) {
         LOG_ERROR(Render_OpenGL, "Failed to save raw transferable cache entry - removing");
@@ -376,6 +498,11 @@ void ShaderDiskCache::SaveRaw(const ShaderDiskCacheRaw& entry) {
     }
     transferable.insert({id, entry});
     transferable_file.Flush();
+#ifdef __SWITCH__
+    SwitchShaderDiskCacheLogFile("transferable.save-raw", GetProgramID(), separable,
+                                 GetTransferablePath(), transferable_file.GetSize(),
+                                 transferable_file.Tell());
+#endif
 }
 
 void ShaderDiskCache::SaveDecompiled(u64 unique_identifier, const std::string& code,
@@ -470,14 +597,27 @@ FileUtil::IOFile ShaderDiskCache::AppendTransferableFile() {
         LOG_ERROR(Render_OpenGL, "Failed to open transferable cache in path={}", transferable_path);
         return {};
     }
-    if (!existed || file.GetSize() == 0) {
-        // If the file didn't exist, write its version
+
+    u64 file_size = file.GetSize();
+#ifdef __SWITCH__
+    SwitchShaderDiskCacheLogFile("transferable.open", GetProgramID(), separable,
+                                 transferable_path, file_size, file.Tell());
+#endif
+    if (file_size == 0) {
+        // If the file is empty, write its version.
         if (file.WriteObject(NativeVersion) != 1) {
             LOG_ERROR(Render_OpenGL, "Failed to write transferable cache version in path={}",
                       transferable_path);
             return {};
         }
+        file.Flush();
+        file_size = file.GetSize();
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("transferable.header-write", GetProgramID(), separable,
+                                     transferable_path, file_size, file.Tell());
+#endif
     }
+    file.Seek(0, SEEK_SET);
     return file;
 }
 
@@ -502,15 +642,28 @@ FileUtil::IOFile ShaderDiskCache::AppendPrecompiledFile(bool write_header) {
         return {};
     }
 
-    // If the file didn't exist, write its version
-    if (write_header && (!existed || file.GetSize() == 0)) {
+    u64 file_size = file.GetSize();
+#ifdef __SWITCH__
+    SwitchShaderDiskCacheLogFile("precompiled.open", GetProgramID(), separable, precompiled_path,
+                                 file_size, file.Tell());
+#endif
+
+    // If the file is empty, write its version.
+    if (write_header && file_size == 0) {
         const auto hash{GetShaderCacheVersionHash()};
         if (file.WriteArray(hash.data(), hash.size()) != hash.size()) {
             LOG_ERROR(Render_OpenGL, "Failed to write precompiled cache version in path={}",
                       precompiled_path);
             return {};
         }
+        file.Flush();
+        file_size = file.GetSize();
+#ifdef __SWITCH__
+        SwitchShaderDiskCacheLogFile("precompiled.header-write", GetProgramID(), separable,
+                                     precompiled_path, file_size, file.Tell());
+#endif
     }
+    file.Seek(0, SEEK_SET);
     return file;
 }
 

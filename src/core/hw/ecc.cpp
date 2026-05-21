@@ -11,8 +11,8 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/hw/aes/key.h"
+#include "core/hw/cryptopp_rng.h"
 #include "core/hw/ecc.h"
-#include "cryptopp/osrng.h"
 
 namespace HW::ECC {
 
@@ -25,7 +25,7 @@ CryptoPPInteger PrivateKey::AsCryptoPPInteger() const {
 
 CryptoPPECCPrivateKey PrivateKey::AsCryptoPPPrivateKey() const {
     CryptoPPECCPrivateKey private_key_cpp;
-    CryptoPP::AutoSeededRandomPool prng;
+    HW::CryptoRandomNumberGenerator prng;
 
     private_key_cpp.Initialize(CryptoPP::ASN1::sect233r1(), AsCryptoPPInteger());
     if (!private_key_cpp.Validate(prng, 3)) {
@@ -162,7 +162,7 @@ std::pair<PrivateKey, PublicKey> GenerateKeyPair() {
     CryptoPPECCPrivateKey private_key_cpp;
     PrivateKey private_key;
 
-    CryptoPP::AutoSeededRandomPool prng;
+    HW::CryptoRandomNumberGenerator prng;
 
     private_key_cpp.Initialize(prng, CryptoPP::ASN1::sect233r1());
     private_key_cpp.GetPrivateExponent().Encode(private_key.x.data(), private_key.x.size());
@@ -173,7 +173,7 @@ std::pair<PrivateKey, PublicKey> GenerateKeyPair() {
 Signature Sign(std::span<const u8> data, PrivateKey private_key) {
     CryptoPP::ECDSA<CryptoPP::EC2N, CryptoPP::SHA256>::Signer signer(
         private_key.AsCryptoPPPrivateKey());
-    CryptoPP::AutoSeededRandomPool prng;
+    HW::CryptoRandomNumberGenerator prng;
 
     Signature ret;
 

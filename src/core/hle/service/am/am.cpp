@@ -8,7 +8,6 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
 #include <fmt/format.h>
-#include <openssl/rand.h>
 #include "common/alignment.h"
 #include "common/archives.h"
 #include "common/common_paths.h"
@@ -38,6 +37,7 @@
 #include "core/hle/service/fs/archive.h"
 #include "core/hle/service/fs/fs_user.h"
 #include "core/hw/aes/key.h"
+#include "core/hw/random.h"
 #include "core/hw/rsa/rsa.h"
 #include "core/hw/unique_data.h"
 #include "core/loader/loader.h"
@@ -4947,8 +4947,8 @@ void Module::Interface::ExportTicketWrapped(Kernel::HLERequestContext& ctx) {
     std::vector<u8> key(0x10);
     std::vector<u8> iv(0x10);
 
-    RAND_bytes(key.data(), static_cast<int>(key.size()));
-    RAND_bytes(iv.data(), static_cast<int>(iv.size()));
+    HW::GenerateRandomBytes(key.data(), key.size());
+    HW::GenerateRandomBytes(iv.data(), iv.size());
 
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption e(key.data(), key.size(), iv.data());
     e.ProcessData(ticket_data.data(), ticket_data.data(), ticket_data.size());

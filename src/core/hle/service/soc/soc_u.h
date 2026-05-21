@@ -143,6 +143,9 @@ private:
     void SendToMultiple(Kernel::HLERequestContext& ctx);
     void CloseSockets(Kernel::HLERequestContext& ctx);
     void AddGlobalSocket(Kernel::HLERequestContext& ctx);
+#ifdef __SWITCH__
+    void StubNetworkUnavailable(Kernel::HLERequestContext& ctx);
+#endif
 
     // Some platforms seem to have GetAddrInfo and GetNameInfo defined as macros,
     // so we have to use a different name here.

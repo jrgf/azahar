@@ -17,7 +17,9 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/weak_ptr.hpp>
+#ifndef __SWITCH__
 #include <httplib.h>
+#endif
 #include "common/thread.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/shared_memory.h"
@@ -238,6 +240,7 @@ public:
         std::string value;
         bool is_binary = false;
 
+#ifndef __SWITCH__
         httplib::MultipartFormData ToMultipartForm() const {
             httplib::MultipartFormData form;
             form.name = name;
@@ -250,6 +253,7 @@ public:
 
             return form;
         }
+#endif
 
     private:
         template <class Archive>
@@ -290,9 +294,12 @@ public:
     std::atomic<u64> total_download_size_bytes;
     std::size_t current_copied_data;
     bool uses_default_client_cert{};
+#ifndef __SWITCH__
     httplib::Response response;
+#endif
     Common::Event finish_post_data;
 
+#ifndef __SWITCH__
     void ParseAsciiPostData();
     std::string ParseMultipartFormData();
     void MakeRequest();
@@ -304,6 +311,7 @@ public:
     bool ChunkedContentProvider(size_t offset, httplib::DataSink& sink);
     std::size_t HandleHeaderWrite(std::vector<Context::RequestHeader>& pending_headers,
                                   httplib::Stream& strm, httplib::Headers& httplib_headers);
+#endif
 };
 
 struct SessionData : public Kernel::SessionRequestHandler::SessionDataBase {
@@ -861,8 +869,12 @@ private:
      * HTTP_C::Finalize service function
      *  Outputs:
      *      1 : Result of function, 0 on success, otherwise error code
-     */
+    */
     void Finalize(Kernel::HLERequestContext& ctx);
+
+#ifdef __SWITCH__
+    void StubNetworkUnavailable(Kernel::HLERequestContext& ctx);
+#endif
 
     [[nodiscard]] SessionData* EnsureSessionInitialized(Kernel::HLERequestContext& ctx,
                                                         IPC::RequestParser rp);

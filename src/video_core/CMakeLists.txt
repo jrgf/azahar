@@ -203,6 +203,34 @@ if (ENABLE_VULKAN)
         shader/generator/spv_fs_shader_gen.h
     )
     target_link_libraries(video_core PRIVATE vulkan-headers vma sirit SPIRV glslang)
+    if (NINTENDO_SWITCH)
+        target_compile_definitions(video_core PRIVATE VULKAN_HPP_ENABLE_DYNAMIC_LOADER_TOOL=0)
+    endif()
+endif()
+
+if (ENABLE_DEKO3D)
+    if (NOT NINTENDO_SWITCH)
+        message(FATAL_ERROR "ENABLE_DEKO3D requires the devkitPro Switch CMake toolchain")
+    endif()
+    target_sources(video_core PRIVATE
+        renderer_deko3d/renderer_deko3d.cpp
+        renderer_deko3d/renderer_deko3d.h
+    )
+    nx_add_shader_program(video_core_deko_present_vsh
+        renderer_deko3d/shaders/present_vsh.glsl
+        vert
+        OUTPUT deko_present_vsh.dksh
+    )
+    nx_add_shader_program(video_core_deko_present_fsh
+        renderer_deko3d/shaders/present_fsh.glsl
+        frag
+        OUTPUT deko_present_fsh.dksh
+    )
+    dkp_add_embedded_binary_library(video_core_deko_present_shaders
+        video_core_deko_present_vsh
+        video_core_deko_present_fsh
+    )
+    target_link_libraries(video_core PRIVATE deko3d video_core_deko_present_shaders)
 endif()
 
 if(ENABLE_SDL2)
@@ -210,12 +238,41 @@ if(ENABLE_SDL2)
 endif()
 
 add_dependencies(video_core host_shaders)
-target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
+target_include_directories(video_core PRIVATE
+    ${HOST_SHADERS_INCLUDE}
+    $<TARGET_PROPERTY:citra_common,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:Boost::boost,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:dds-ktx,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:json-headers,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:nihstro-headers,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:tsl::robin_map,INTERFACE_INCLUDE_DIRECTORIES>
+)
+if (TARGET libretro)
+    target_include_directories(video_core PRIVATE
+        $<TARGET_PROPERTY:libretro,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
+if (TARGET oaknut)
+    target_include_directories(video_core PRIVATE
+        $<TARGET_PROPERTY:oaknut,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
+if (TARGET xbyak)
+    target_include_directories(video_core PRIVATE
+        $<TARGET_PROPERTY:xbyak,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
+if (TARGET video_core_deko_present_shaders)
+    target_include_directories(video_core PRIVATE
+        $<TARGET_PROPERTY:video_core_deko_present_shaders,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
 
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC citra_common citra_core)
-target_link_libraries(video_core PRIVATE Boost::serialization dds-ktx json-headers nihstro-headers tsl::robin_map)
+target_link_libraries(video_core PRIVATE Boost::serialization dds-ktx fmt json-headers nihstro-headers tsl::robin_map)
 
 if ("x86_64" IN_LIST ARCHITECTURE)
     target_link_libraries(video_core PUBLIC xbyak)

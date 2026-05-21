@@ -3,6 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <fmt/format.h>
 #include "common/assert.h"
 #include "common/hacks/hack_manager.h"
@@ -57,7 +59,31 @@
 #include "core/hle/service/ssl/ssl_c.h"
 #include "core/loader/loader.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace Service {
+
+#ifdef __SWITCH__
+namespace {
+std::atomic<unsigned> switch_service_trace_logs{};
+constexpr unsigned SwitchServiceTraceLogLimit = 32;
+
+bool SwitchServiceReserveTrace() {
+    return switch_service_trace_logs.fetch_add(1, std::memory_order_relaxed) <
+           SwitchServiceTraceLogLimit;
+}
+
+long long SwitchServiceElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+} // namespace
+#endif
 
 const std::array<ServiceModuleInfo, 41> service_module_map{
     {{"FS", 0x00040130'00001102, FS::InstallInterfaces, false},
@@ -178,6 +204,15 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(u32* cmd_buf, const Funct
 void ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& context) {
     auto itr = handlers.find(context.CommandHeader().command_id.Value());
     const FunctionInfoBase* info = itr == handlers.end() ? nullptr : &itr->second;
+#ifdef __SWITCH__
+    const bool switch_trace = SwitchServiceReserveTrace();
+    const auto switch_trace_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+    const auto switch_command = context.CommandHeader().command_id.Value();
+    const auto switch_header = context.CommandBuffer()[0];
+    const char* switch_name = info == nullptr ? "<unknown>" : info->name;
+#endif
     if (info == nullptr || !info->implemented) {
         context.ReportUnimplemented();
         return ReportUnimplementedFunction(context.CommandBuffer(), info);
@@ -186,6 +221,18 @@ void ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& context)
     LOG_TRACE(Service, "{}",
               MakeFunctionString(info->name, GetServiceName(), context.CommandBuffer()));
     handler_invoker(this, info->handler_callback, context);
+#ifdef __SWITCH__
+    const auto switch_elapsed_ms = switch_trace ? SwitchServiceElapsedMs(switch_trace_start) : 0;
+    if (switch_trace && (switch_elapsed_ms >= 10 || switch_command == 0xFFFF)) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=service.ipc service=%s cmd=%04X header=%08X name=%s "
+            "elapsed-ms=%lld status=%u",
+            GetServiceName().c_str(), static_cast<unsigned>(switch_command),
+            static_cast<unsigned>(switch_header), switch_name, switch_elapsed_ms,
+            static_cast<unsigned>(context.ClientThread()->status));
+    }
+#endif
 }
 
 std::string ServiceFrameworkBase::GetFunctionName(IPC::Header header) const {

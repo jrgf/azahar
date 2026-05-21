@@ -2,6 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#ifdef __SWITCH__
+#include <atomic>
+#include <chrono>
+#endif
+
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/settings.h"
@@ -20,6 +25,12 @@
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_interlaced_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
+
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
 
 namespace OpenGL {
 
@@ -41,6 +52,41 @@ struct ScreenRectVertex {
     std::array<GLfloat, 2> position{};
     std::array<GLfloat, 2> tex_coord{};
 };
+
+void UpdatePresentVertexBuffer(const std::array<ScreenRectVertex, 4>& vertices) {
+#ifdef __SWITCH__
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STREAM_DRAW);
+#else
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices.data());
+#endif
+}
+
+#ifdef __SWITCH__
+std::atomic<unsigned> switch_present_trace_samples{};
+constexpr unsigned SwitchPresentTraceSampleLimit = 16;
+
+bool SwitchPresentReserveSample() {
+    return switch_present_trace_samples.fetch_add(1, std::memory_order_relaxed) <
+           SwitchPresentTraceSampleLimit;
+}
+
+long long SwitchPresentElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+
+void SwitchLogPresentDraw(const char* mode, long long update_ms, long long draw_ms) {
+    const long long total_ms = update_ms + draw_ms;
+    if (total_ms >= 5) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.present.draw mode=%s elapsed-ms=%lld update-ms=%lld "
+            "draw-ms=%lld",
+            mode, total_ms, update_ms, draw_ms);
+    }
+}
+#endif
 
 /**
  * Defines a 1:1 pixel ortographic projection matrix with (0,0) on the top-left
@@ -89,18 +135,61 @@ RendererOpenGL::RendererOpenGL(Core::System& system, Pica::PicaCore& pica_,
 RendererOpenGL::~RendererOpenGL() = default;
 
 void RendererOpenGL::SwapBuffers() {
+#ifdef __SWITCH__
+    const bool switch_trace_present = SwitchPresentReserveSample();
+    const auto switch_present_start =
+        switch_trace_present ? std::chrono::steady_clock::now()
+                             : std::chrono::steady_clock::time_point{};
+    auto switch_elapsed_ms = [](const auto& start) -> long long {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::steady_clock::now() - start)
+            .count();
+    };
+    long long switch_setup_fb_ms = 0;
+    long long switch_prepare_ms = 0;
+    long long switch_screenshot_ms = 0;
+    long long switch_draw_screens_ms = 0;
+    long long switch_window_swap_ms = 0;
+#endif
     system.perf_stats->StartSwap();
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
 
+#ifdef __SWITCH__
+    auto switch_phase_start = switch_trace_present ? std::chrono::steady_clock::now()
+                                                   : std::chrono::steady_clock::time_point{};
+#endif
     render_window.SetupFramebuffer();
+#ifdef __SWITCH__
+    switch_setup_fb_ms = switch_trace_present ? switch_elapsed_ms(switch_phase_start) : 0;
+    switch_phase_start = switch_trace_present ? std::chrono::steady_clock::now()
+                                              : std::chrono::steady_clock::time_point{};
+#endif
 
     PrepareRendertarget();
+#ifdef __SWITCH__
+    switch_prepare_ms = switch_trace_present ? switch_elapsed_ms(switch_phase_start) : 0;
+    switch_phase_start = switch_trace_present ? std::chrono::steady_clock::now()
+                                              : std::chrono::steady_clock::time_point{};
+#endif
     RenderScreenshot();
+#ifdef __SWITCH__
+    switch_screenshot_ms = switch_trace_present ? switch_elapsed_ms(switch_phase_start) : 0;
+    switch_phase_start = switch_trace_present ? std::chrono::steady_clock::now()
+                                              : std::chrono::steady_clock::time_point{};
+#endif
 #ifdef HAVE_LIBRETRO
     DrawScreens(render_window.GetFramebufferLayout(), false);
+#ifdef __SWITCH__
+    switch_draw_screens_ms = switch_trace_present ? switch_elapsed_ms(switch_phase_start) : 0;
+    switch_phase_start = switch_trace_present ? std::chrono::steady_clock::now()
+                                              : std::chrono::steady_clock::time_point{};
+#endif
     render_window.SwapBuffers();
+#ifdef __SWITCH__
+    switch_window_swap_ms = switch_trace_present ? switch_elapsed_ms(switch_phase_start) : 0;
+#endif
 #else
     const auto& main_layout = render_window.GetFramebufferLayout();
     RenderToMailbox(main_layout, render_window.mailbox, false);
@@ -135,6 +224,18 @@ void RendererOpenGL::SwapBuffers() {
     EndFrame();
     prev_state.Apply();
     rasterizer.TickFrame();
+#ifdef __SWITCH__
+    const auto switch_total_ms =
+        switch_trace_present ? switch_elapsed_ms(switch_present_start) : 0;
+    if (switch_trace_present && switch_total_ms >= 20) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.present elapsed-ms=%lld setup-fb-ms=%lld "
+            "prepare-ms=%lld screenshot-ms=%lld draw-screens-ms=%lld window-swap-ms=%lld",
+            switch_total_ms, switch_setup_fb_ms, switch_prepare_ms, switch_screenshot_ms,
+            switch_draw_screens_ms, switch_window_swap_ms);
+    }
+#endif
 }
 
 void RendererOpenGL::RenderScreenshot() {
@@ -565,8 +666,28 @@ void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, fl
     state.texture_units[0].sampler = sampler;
     state.Apply();
 
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices.data());
+#ifdef __SWITCH__
+    const bool switch_trace_present_draw = SwitchPresentReserveSample();
+    const auto switch_update_start =
+        switch_trace_present_draw ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
+    UpdatePresentVertexBuffer(vertices);
+#ifdef __SWITCH__
+    const auto switch_update_ms =
+        switch_trace_present_draw ? SwitchPresentElapsedMs(switch_update_start) : 0;
+    const auto switch_draw_start =
+        switch_trace_present_draw ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#ifdef __SWITCH__
+    const auto switch_draw_ms =
+        switch_trace_present_draw ? SwitchPresentElapsedMs(switch_draw_start) : 0;
+    if (switch_trace_present_draw) {
+        SwitchLogPresentDraw("single", switch_update_ms, switch_draw_ms);
+    }
+#endif
 
     state.texture_units[0].texture_2d = 0;
     state.texture_units[0].sampler = 0;
@@ -638,8 +759,28 @@ void RendererOpenGL::DrawSingleScreenStereo(const ScreenInfo& screen_info_l,
     state.texture_units[1].sampler = sampler;
     state.Apply();
 
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices.data());
+#ifdef __SWITCH__
+    const bool switch_trace_present_draw = SwitchPresentReserveSample();
+    const auto switch_update_start =
+        switch_trace_present_draw ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
+    UpdatePresentVertexBuffer(vertices);
+#ifdef __SWITCH__
+    const auto switch_update_ms =
+        switch_trace_present_draw ? SwitchPresentElapsedMs(switch_update_start) : 0;
+    const auto switch_draw_start =
+        switch_trace_present_draw ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#ifdef __SWITCH__
+    const auto switch_draw_ms =
+        switch_trace_present_draw ? SwitchPresentElapsedMs(switch_draw_start) : 0;
+    if (switch_trace_present_draw) {
+        SwitchLogPresentDraw("stereo", switch_update_ms, switch_draw_ms);
+    }
+#endif
 
     state.texture_units[0].texture_2d = 0;
     state.texture_units[1].texture_2d = 0;

@@ -3,6 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <csignal>
+#include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <dynarmic/interface/A32/a32.h>
 #include <dynarmic/interface/optimization_flags.h>
@@ -19,6 +21,63 @@
 #endif
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
+
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+
+extern "C" void DynarmicSwitchGetJitStats(std::uint64_t* out, std::size_t len);
+
+namespace {
+enum SwitchCallbackStat : std::size_t {
+    ReadCount,
+    WriteCount,
+    ExclusiveCount,
+    SvcCount,
+    SvcTotalMs,
+    SvcMaxMs,
+    SvcLast,
+    ExceptionCount,
+    AddTicksCount,
+    AddTicksTotal,
+    TicksRemainingCount,
+    TicksForCodeCount,
+    CodeReadCount,
+    Count,
+};
+
+std::atomic<std::uint64_t> switch_callback_stats[SwitchCallbackStat::Count]{};
+
+std::uint64_t SwitchDynarmicElapsedMs(std::chrono::steady_clock::time_point start) {
+    return static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                              start)
+            .count());
+}
+
+void SwitchCallbackStatAdd(SwitchCallbackStat stat, std::uint64_t value = 1) {
+    switch_callback_stats[stat].fetch_add(value, std::memory_order_relaxed);
+}
+
+void SwitchCallbackStatMax(SwitchCallbackStat stat, std::uint64_t candidate) {
+    auto current = switch_callback_stats[stat].load(std::memory_order_relaxed);
+    while (current < candidate &&
+           !switch_callback_stats[stat].compare_exchange_weak(current, candidate,
+                                                              std::memory_order_relaxed)) {
+    }
+}
+
+void SwitchCallbackStatsSnapshot(std::uint64_t* out, std::size_t len) {
+    if (out == nullptr) {
+        return;
+    }
+    for (std::size_t i = 0; i < len && i < SwitchCallbackStat::Count; ++i) {
+        out[i] = switch_callback_stats[i].load(std::memory_order_relaxed);
+    }
+}
+} // namespace
+#endif
 
 #ifndef SIGILL
 constexpr u32 SIGILL = 4;
@@ -37,45 +96,84 @@ public:
     ~DynarmicUserCallbacks() = default;
 
     std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(CodeReadCount);
+#endif
         return memory.Read32OrNullopt(vaddr);
     }
 
     std::uint8_t MemoryRead8(VAddr vaddr) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ReadCount);
+#endif
         return memory.Read8(vaddr);
     }
     std::uint16_t MemoryRead16(VAddr vaddr) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ReadCount);
+#endif
         return memory.Read16(vaddr);
     }
     std::uint32_t MemoryRead32(VAddr vaddr) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ReadCount);
+#endif
         return memory.Read32(vaddr);
     }
     std::uint64_t MemoryRead64(VAddr vaddr) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ReadCount);
+#endif
         return memory.Read64(vaddr);
     }
 
     void MemoryWrite8(VAddr vaddr, std::uint8_t value) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(WriteCount);
+#endif
         memory.Write8(vaddr, value);
     }
     void MemoryWrite16(VAddr vaddr, std::uint16_t value) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(WriteCount);
+#endif
         memory.Write16(vaddr, value);
     }
     void MemoryWrite32(VAddr vaddr, std::uint32_t value) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(WriteCount);
+#endif
         memory.Write32(vaddr, value);
     }
     void MemoryWrite64(VAddr vaddr, std::uint64_t value) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(WriteCount);
+#endif
         memory.Write64(vaddr, value);
     }
 
     bool MemoryWriteExclusive8(u32 vaddr, u8 value, u8 expected) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ExclusiveCount);
+#endif
         return memory.WriteExclusive8(vaddr, value, expected);
     }
     bool MemoryWriteExclusive16(u32 vaddr, u16 value, u16 expected) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ExclusiveCount);
+#endif
         return memory.WriteExclusive16(vaddr, value, expected);
     }
     bool MemoryWriteExclusive32(u32 vaddr, u32 value, u32 expected) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ExclusiveCount);
+#endif
         return memory.WriteExclusive32(vaddr, value, expected);
     }
     bool MemoryWriteExclusive64(u32 vaddr, u64 value, u64 expected) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ExclusiveCount);
+#endif
         return memory.WriteExclusive64(vaddr, value, expected);
     }
 
@@ -86,10 +184,23 @@ public:
     }
 
     void CallSVC(std::uint32_t swi) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(SvcCount);
+        switch_callback_stats[SvcLast].store(swi, std::memory_order_relaxed);
+        const auto switch_svc_start = std::chrono::steady_clock::now();
+#endif
         svc_context.CallSVC(swi);
+#ifdef __SWITCH__
+        const auto switch_svc_ms = SwitchDynarmicElapsedMs(switch_svc_start);
+        SwitchCallbackStatAdd(SvcTotalMs, switch_svc_ms);
+        SwitchCallbackStatMax(SvcMaxMs, switch_svc_ms);
+#endif
     }
 
     void ExceptionRaised(VAddr pc, Dynarmic::A32::Exception exception) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(ExceptionCount);
+#endif
         switch (exception) {
         case Dynarmic::A32::Exception::UndefinedInstruction:
         case Dynarmic::A32::Exception::UnpredictableInstruction:
@@ -152,13 +263,23 @@ public:
     }
 
     void AddTicks(std::uint64_t ticks) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(AddTicksCount);
+        SwitchCallbackStatAdd(AddTicksTotal, ticks);
+#endif
         parent.GetTimer().AddTicks(ticks);
     }
     std::uint64_t GetTicksRemaining() override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(TicksRemainingCount);
+#endif
         s64 ticks = parent.GetTimer().GetDowncount();
         return static_cast<u64>(ticks <= 0 ? 0 : ticks);
     }
     std::uint64_t GetTicksForCode(bool is_thumb, VAddr, std::uint32_t instruction) override {
+#ifdef __SWITCH__
+        SwitchCallbackStatAdd(TicksForCodeCount);
+#endif
         return Core::TicksForInstruction(is_thumb, instruction);
     }
 
@@ -187,7 +308,86 @@ void ARM_Dynarmic::Run() {
         return;
     }
 
+#ifdef __SWITCH__
+    static unsigned switch_run_trace_samples = 0;
+    const bool switch_trace_run = switch_run_trace_samples++ < 32;
+    std::uint64_t switch_stats_before[12]{};
+    std::uint64_t switch_cb_before[SwitchCallbackStat::Count]{};
+    decltype(GetPC()) switch_pc_before{};
+    decltype(GetTimer().GetTicks()) switch_ticks_before{};
+    decltype(GetTimer().GetDowncount()) switch_downcount_before{};
+    if (switch_trace_run) {
+        DynarmicSwitchGetJitStats(switch_stats_before, 12);
+        SwitchCallbackStatsSnapshot(switch_cb_before, SwitchCallbackStat::Count);
+        switch_pc_before = GetPC();
+        switch_ticks_before = GetTimer().GetTicks();
+        switch_downcount_before = GetTimer().GetDowncount();
+    }
+    const auto switch_run_start = switch_trace_run ? std::chrono::steady_clock::now()
+                                                   : std::chrono::steady_clock::time_point{};
+#endif
     jit->Run();
+#ifdef __SWITCH__
+    const auto switch_run_ms = switch_trace_run ? SwitchDynarmicElapsedMs(switch_run_start) : 0;
+    static unsigned switch_slow_run_logs = 0;
+    if (switch_trace_run && switch_run_ms >= 500 && switch_slow_run_logs < 32) {
+        std::uint64_t switch_stats_after[12]{};
+        std::uint64_t switch_cb_after[SwitchCallbackStat::Count]{};
+        DynarmicSwitchGetJitStats(switch_stats_after, 12);
+        SwitchCallbackStatsSnapshot(switch_cb_after, SwitchCallbackStat::Count);
+        const auto switch_pc_after = GetPC();
+        const auto switch_ticks_after = GetTimer().GetTicks();
+        const auto switch_downcount_after = GetTimer().GetDowncount();
+        ++switch_slow_run_logs;
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=dynarmic.run.slow core=%u elapsed-ms=%llu emits=%llu "
+            "emit-ms=%llu emit-max-ms=%llu emit-arm64-ms=%llu link-ms=%llu relink-ms=%llu "
+            "invalidate-ms=%llu protect-ms=%llu clear=%llu bytes=%llu max-bytes=%llu "
+            "pc-before=%08X pc-after=%08X ticks-before=%lld ticks-after=%lld "
+            "down-before=%lld down-after=%lld cb-read=%llu cb-write=%llu cb-exclusive=%llu "
+            "cb-svc=%llu cb-svc-ms=%llu cb-svc-max-ms=%llu cb-svc-last=%llu cb-exception=%llu "
+            "cb-addticks=%llu cb-addticks-total=%llu cb-ticks-remaining=%llu "
+            "cb-ticks-code=%llu cb-code-read=%llu",
+            GetID(), static_cast<unsigned long long>(switch_run_ms),
+            static_cast<unsigned long long>(switch_stats_after[0] - switch_stats_before[0]),
+            static_cast<unsigned long long>(switch_stats_after[3] - switch_stats_before[3]),
+            static_cast<unsigned long long>(switch_stats_after[4]),
+            static_cast<unsigned long long>(switch_stats_after[5] - switch_stats_before[5]),
+            static_cast<unsigned long long>(switch_stats_after[6] - switch_stats_before[6]),
+            static_cast<unsigned long long>(switch_stats_after[7] - switch_stats_before[7]),
+            static_cast<unsigned long long>(switch_stats_after[8] - switch_stats_before[8]),
+            static_cast<unsigned long long>(switch_stats_after[9] - switch_stats_before[9]),
+            static_cast<unsigned long long>(switch_stats_after[2] - switch_stats_before[2]),
+            static_cast<unsigned long long>(switch_stats_after[10] - switch_stats_before[10]),
+            static_cast<unsigned long long>(switch_stats_after[11]), switch_pc_before,
+            switch_pc_after, static_cast<long long>(switch_ticks_before),
+            static_cast<long long>(switch_ticks_after), static_cast<long long>(switch_downcount_before),
+            static_cast<long long>(switch_downcount_after),
+            static_cast<unsigned long long>(switch_cb_after[ReadCount] - switch_cb_before[ReadCount]),
+            static_cast<unsigned long long>(switch_cb_after[WriteCount] -
+                                            switch_cb_before[WriteCount]),
+            static_cast<unsigned long long>(switch_cb_after[ExclusiveCount] -
+                                            switch_cb_before[ExclusiveCount]),
+            static_cast<unsigned long long>(switch_cb_after[SvcCount] - switch_cb_before[SvcCount]),
+            static_cast<unsigned long long>(switch_cb_after[SvcTotalMs] -
+                                            switch_cb_before[SvcTotalMs]),
+            static_cast<unsigned long long>(switch_cb_after[SvcMaxMs]),
+            static_cast<unsigned long long>(switch_cb_after[SvcLast]),
+            static_cast<unsigned long long>(switch_cb_after[ExceptionCount] -
+                                            switch_cb_before[ExceptionCount]),
+            static_cast<unsigned long long>(switch_cb_after[AddTicksCount] -
+                                            switch_cb_before[AddTicksCount]),
+            static_cast<unsigned long long>(switch_cb_after[AddTicksTotal] -
+                                            switch_cb_before[AddTicksTotal]),
+            static_cast<unsigned long long>(switch_cb_after[TicksRemainingCount] -
+                                            switch_cb_before[TicksRemainingCount]),
+            static_cast<unsigned long long>(switch_cb_after[TicksForCodeCount] -
+                                            switch_cb_before[TicksForCodeCount]),
+            static_cast<unsigned long long>(switch_cb_after[CodeReadCount] -
+                                            switch_cb_before[CodeReadCount]));
+    }
+#endif
 }
 
 void ARM_Dynarmic::Step() {

@@ -256,6 +256,11 @@ LayoutGeometry ComputeLayoutGeometry() {
         baseY *= scaling;
         break;
     case Settings::LayoutOption::LargeScreen:
+#ifdef __SWITCH__
+        if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::OpenGL) {
+            return {1280, 720, emulated_pointer};
+        }
+#endif
         if (swapped) { // Bottom screen biggest
             baseX = Core::kScreenBottomWidth + Core::kScreenTopWidth / 4;
             baseY = Core::kScreenBottomHeight;

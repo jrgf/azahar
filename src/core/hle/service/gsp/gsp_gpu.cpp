@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <atomic>
+#include <chrono>
 #include <span>
 #include <vector>
 #include <boost/serialization/base_object.hpp>
@@ -30,6 +32,10 @@ SERIALIZE_EXPORT_IMPL(Service::GSP::SessionData)
 SERIALIZE_EXPORT_IMPL(Service::GSP::GSP_GPU)
 SERVICE_CONSTRUCT_IMPL(Service::GSP::GSP_GPU)
 
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+
 namespace Service::GSP {
 
 // Beginning address of HW regs
@@ -54,6 +60,40 @@ constexpr Result ResultRegsMisaligned(ErrorDescription::MisalignedSize, ErrorMod
 constexpr Result ResultRegsInvalidSize(ErrorDescription::InvalidSize, ErrorModule::GX,
                                        ErrorSummary::InvalidArgument,
                                        ErrorLevel::Usage); // 0xE0E02BEC
+
+namespace {
+std::atomic<unsigned> switch_gsp_trace_logs{};
+constexpr unsigned SwitchGspTraceLogLimit = 32;
+
+bool SwitchGspReserveTrace() {
+    return switch_gsp_trace_logs.fetch_add(1, std::memory_order_relaxed) < SwitchGspTraceLogLimit;
+}
+
+long long SwitchGspElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+
+const char* SwitchGspCommandName(CommandId id) {
+    switch (id) {
+    case CommandId::RequestDma:
+        return "RequestDma";
+    case CommandId::SubmitCmdList:
+        return "SubmitCmdList";
+    case CommandId::MemoryFill:
+        return "MemoryFill";
+    case CommandId::DisplayTransfer:
+        return "DisplayTransfer";
+    case CommandId::TextureCopy:
+        return "TextureCopy";
+    case CommandId::CacheFlush:
+        return "CacheFlush";
+    default:
+        return "Unknown";
+    }
+}
+} // namespace
 
 u32 GSP_GPU::GetUnusedThreadId() const {
     for (u32 id = 0; id < MaxGSPThreads; ++id) {
@@ -575,6 +615,15 @@ void GSP_GPU::TriggerCmdReqQueue(Kernel::HLERequestContext& ctx) {
     auto& gpu = system.GPU();
 
     bool requires_delay = false;
+#ifdef __SWITCH__
+    const bool switch_trace = SwitchGspReserveTrace();
+    const auto switch_queue_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+    const u32 switch_initial_index = command_buffer->index.Value();
+    const u32 switch_initial_count = command_buffer->number_commands.Value();
+    unsigned switch_processed = 0;
+#endif
 
     while (command_buffer->number_commands) {
         if (command_buffer->should_stop) {
@@ -586,6 +635,15 @@ void GSP_GPU::TriggerCmdReqQueue(Kernel::HLERequestContext& ctx) {
         }
 
         Command command = command_buffer->commands[command_buffer->index];
+#ifdef __SWITCH__
+        const auto switch_command_start =
+            switch_trace ? std::chrono::steady_clock::now()
+                         : std::chrono::steady_clock::time_point{};
+        const auto switch_command_id = command.id.Value();
+        const auto switch_command_stop = command.stop.Value();
+        const u32 switch_index_before = command_buffer->index.Value();
+        const u32 switch_count_before = command_buffer->number_commands.Value();
+#endif
         if (command.id == CommandId::SubmitCmdList && !requires_delay &&
             Settings::values.delay_game_render_thread_us.GetValue() != 0) {
             requires_delay = true;
@@ -601,11 +659,43 @@ void GSP_GPU::TriggerCmdReqQueue(Kernel::HLERequestContext& ctx) {
         system.perf_stats->BeginGPUProcessing();
         gpu.Execute(command);
         system.perf_stats->EndGPUProcessing();
+#ifdef __SWITCH__
+        ++switch_processed;
+        const auto switch_command_ms = switch_trace ? SwitchGspElapsedMs(switch_command_start) : 0;
+        if (switch_trace && switch_command_ms >= 5) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=gsp.cmd id=%02X name=%s elapsed-ms=%lld thread=%u "
+                "idx=%u count=%u stop=%u data0=%08X data1=%08X data2=%08X data3=%08X "
+                "data4=%08X data5=%08X requires-delay=%u",
+                static_cast<unsigned>(switch_command_id),
+                SwitchGspCommandName(static_cast<CommandId>(switch_command_id)),
+                switch_command_ms, active_thread_id, switch_index_before, switch_count_before,
+                static_cast<unsigned>(switch_command_stop), command.dma_request.source_address,
+                command.dma_request.dest_address, command.dma_request.size,
+                command.submit_gpu_cmdlist.flags, command.submit_gpu_cmdlist.unused[0],
+                command.submit_gpu_cmdlist.unused[1], requires_delay ? 1U : 0U);
+        }
+#endif
 
         if (command.stop) {
             command_buffer->status.Assign(CommandBuffer::STATUS_STOPPED);
         }
     }
+#ifdef __SWITCH__
+    const auto switch_queue_ms = switch_trace ? SwitchGspElapsedMs(switch_queue_start) : 0;
+    if (switch_trace && switch_queue_ms >= 10) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=gsp.queue elapsed-ms=%lld thread=%u initial-index=%u "
+            "initial-count=%u processed=%u final-index=%u final-count=%u status=%u stop=%u "
+            "requires-delay=%u",
+            switch_queue_ms, active_thread_id, switch_initial_index, switch_initial_count,
+            switch_processed, command_buffer->index.Value(), command_buffer->number_commands.Value(),
+            command_buffer->status.Value(), command_buffer->should_stop.Value(),
+            requires_delay ? 1U : 0U);
+    }
+#endif
 
     if (requires_delay) {
         ctx.RunAsync(

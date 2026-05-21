@@ -12,13 +12,18 @@ add_library(input_common STATIC EXCLUDE_FROM_ALL
     touch_from_button.h
     sdl/sdl.cpp
     sdl/sdl.h
-    udp/client.cpp
     udp/client.h
     udp/protocol.cpp
     udp/protocol.h
     udp/udp.cpp
     udp/udp.h
 )
+
+if (NINTENDO_SWITCH)
+    target_sources(input_common PRIVATE udp/client_switch_stub.cpp)
+else()
+    target_sources(input_common PRIVATE udp/client.cpp)
+endif()
 
 if(ENABLE_SDL2)
     target_sources(input_common PRIVATE

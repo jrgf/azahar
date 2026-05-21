@@ -105,6 +105,12 @@ else()
     set(DEFAULT_ENABLE_OPENGL ON)
 endif()
 
+if (NINTENDO_SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+    set(DEFAULT_ENABLE_VULKAN OFF)
+else()
+    set(DEFAULT_ENABLE_VULKAN ON)
+endif()
+
 # Track which options were explicitly set by the user (for libretro conflict detection)
 set(_LIBRETRO_INCOMPATIBLE_OPTIONS
     ENABLE_SDL2 ENABLE_QT ENABLE_WEB_SERVICE ENABLE_SCRIPTING ENABLE_GDBSTUB
@@ -123,6 +129,9 @@ option(USE_SYSTEM_SDL2 "Use the system SDL2 lib (instead of the bundled one)" OF
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
 option(ENABLE_QT_UPDATE_CHECKER "Enable built-in update checker for the Qt frontend" OFF)
+option(ENABLE_SWITCH_HOMEBREW_CORE "Build experimental Nintendo Switch homebrew core target" OFF)
+option(ENABLE_DEKO3D "Enable experimental deko3d renderer backend" OFF)
+option(AZAHAR_SWITCH_OPENGL_SPIKE "Use switch-mesa OpenGL for the Switch homebrew core target" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_TESTS "Enable generating tests executable" ON "NOT IOS" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_ROOM "Enable dedicated room functionality" ON "NOT ANDROID AND NOT IOS" OFF)
@@ -140,7 +149,10 @@ CMAKE_DEPENDENT_OPTION(ENABLE_LIBUSB "Enable libusb for GameCube Adapter support
 CMAKE_DEPENDENT_OPTION(ENABLE_SOFTWARE_RENDERER "Enables the software renderer" ON "NOT ANDROID" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_OPENGL "Enables the OpenGL renderer" ${DEFAULT_ENABLE_OPENGL} "NOT APPLE" OFF)
 # NetBSD doesn't support Vulkan yet, remove this check when it does.
-CMAKE_DEPENDENT_OPTION(ENABLE_VULKAN "Enables the Vulkan renderer" ON "NOT (BSD MATCHES \"NetBSD\")" OFF)
+CMAKE_DEPENDENT_OPTION(ENABLE_VULKAN "Enables the Vulkan renderer" ${DEFAULT_ENABLE_VULKAN} "NOT (BSD MATCHES \"NetBSD\")" OFF)
+if ((NINTENDO_SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch") AND ENABLE_VULKAN)
+    message(FATAL_ERROR "ENABLE_VULKAN is not supported for Nintendo Switch homebrew yet; use OpenGL or a real deko3d backend.")
+endif()
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 

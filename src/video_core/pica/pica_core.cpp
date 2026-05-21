@@ -2,6 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#ifdef __SWITCH__
+#include <atomic>
+#include <chrono>
+#endif
+
 #include "common/arch.h"
 #include "common/archives.h"
 #include "common/microprofile.h"
@@ -15,11 +20,65 @@
 #include "video_core/rasterizer_interface.h"
 #include "video_core/shader/shader.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace Pica {
 
 MICROPROFILE_DEFINE(GPU_Drawing, "GPU", "Drawing", MP_RGB(50, 50, 240));
 
 using namespace DebugUtils;
+
+#ifdef __SWITCH__
+namespace {
+std::atomic<unsigned> switch_pica_trace_logs{};
+constexpr unsigned SwitchPicaTraceLogLimit = 64;
+
+bool SwitchPicaReserveLog() {
+    return switch_pica_trace_logs.fetch_add(1, std::memory_order_relaxed) < SwitchPicaTraceLogLimit;
+}
+
+long long SwitchPicaElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+
+bool SwitchPicaShouldLogSlow(long long elapsed_ms) {
+    return elapsed_ms >= 5;
+}
+
+const char* SwitchPicaRegName(u32 id) {
+    switch (id) {
+    case PICA_REG_INDEX(irq_request):
+        return "irq_request";
+    case PICA_REG_INDEX(pipeline.trigger_draw):
+        return "trigger_draw";
+    case PICA_REG_INDEX(pipeline.trigger_draw_indexed):
+        return "trigger_draw_indexed";
+    case PICA_REG_INDEX(pipeline.command_buffer.trigger[0]):
+        return "cmd_buffer_trigger0";
+    case PICA_REG_INDEX(pipeline.command_buffer.trigger[1]):
+        return "cmd_buffer_trigger1";
+    case PICA_REG_INDEX(pipeline.vs_default_attributes_setup.index):
+        return "vs_default_attr_index";
+    case PICA_REG_INDEX(pipeline.vs_default_attributes_setup.set_value[0]):
+    case PICA_REG_INDEX(pipeline.vs_default_attributes_setup.set_value[1]):
+    case PICA_REG_INDEX(pipeline.vs_default_attributes_setup.set_value[2]):
+        return "vs_default_attr_value";
+    case PICA_REG_INDEX(pipeline.num_vertices):
+        return "num_vertices";
+    case PICA_REG_INDEX(pipeline.vertex_offset):
+        return "vertex_offset";
+    default:
+        return "reg";
+    }
+}
+} // namespace
+#endif
 
 union CommandHeader {
     u32 hex;
@@ -97,8 +156,24 @@ void PicaCore::SetInterruptHandler(Service::GSP::InterruptHandler& signal_interr
 }
 
 void PicaCore::ProcessCmdList(PAddr list, u32 size, bool ignore_list) {
+#ifdef __SWITCH__
+    const bool switch_trace_list = SwitchPicaReserveLog();
+    const auto switch_list_start =
+        switch_trace_list ? std::chrono::steady_clock::now()
+                          : std::chrono::steady_clock::time_point{};
+#endif
     if (ignore_list) {
         signal_interrupt(Service::GSP::InterruptId::P3D, delay_generator.CalculateAndResetDelay());
+#ifdef __SWITCH__
+        const auto switch_list_ms =
+            switch_trace_list ? SwitchPicaElapsedMs(switch_list_start) : 0;
+        if (switch_trace_list && SwitchPicaShouldLogSlow(switch_list_ms)) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=pica.list ignored=1 list=%08X size=%u elapsed-ms=%lld", list,
+                size, switch_list_ms);
+        }
+#endif
         return;
     }
     // Initialize command list tracking.
@@ -116,11 +191,32 @@ void PicaCore::ProcessCmdList(PAddr list, u32 size, bool ignore_list) {
         }
 
         // Read the header and the value to write.
+        const u32 command_index = cmd_list.current_index;
         const u32 value = cmd_list.head[cmd_list.current_index++];
         const CommandHeader header{cmd_list.head[cmd_list.current_index++]};
 
         // Write to the requested PICA register.
+#ifdef __SWITCH__
+        const auto switch_reg_start =
+            switch_trace_list ? std::chrono::steady_clock::now()
+                              : std::chrono::steady_clock::time_point{};
+        const PAddr switch_reg_list = cmd_list.addr;
+        const u32 switch_reg_length = cmd_list.length;
+#endif
         WriteInternalReg(header.cmd_id, value, header.parameter_mask, stop_requested);
+#ifdef __SWITCH__
+        const auto switch_reg_ms = switch_trace_list ? SwitchPicaElapsedMs(switch_reg_start) : 0;
+        if (switch_trace_list && SwitchPicaShouldLogSlow(switch_reg_ms)) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=pica.reg.slow list=%08X size=%u index=%u cmd=%03X "
+                "name=%s value=%08X mask=%X extra=0 elapsed-ms=%lld stop=%u current=%u "
+                "length=%u",
+                switch_reg_list, switch_reg_length * static_cast<u32>(sizeof(u32)), command_index,
+                header.cmd_id, SwitchPicaRegName(header.cmd_id), value, header.parameter_mask,
+                switch_reg_ms, stop_requested ? 1U : 0U, cmd_list.current_index, cmd_list.length);
+        }
+#endif
 
         // Write any extra paramters as well.
         for (u32 i = 0; i < header.extra_data_length; ++i) {
@@ -128,10 +224,44 @@ void PicaCore::ProcessCmdList(PAddr list, u32 size, bool ignore_list) {
                 break;
             }
             const u32 cmd = header.cmd_id + (header.group_commands ? i + 1 : 0);
+            const u32 extra_index = cmd_list.current_index;
             const u32 extra_value = cmd_list.head[cmd_list.current_index++];
+#ifdef __SWITCH__
+            const auto switch_extra_start =
+                switch_trace_list ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+            const PAddr switch_extra_list = cmd_list.addr;
+            const u32 switch_extra_length = cmd_list.length;
+#endif
             WriteInternalReg(cmd, extra_value, header.parameter_mask, stop_requested);
+#ifdef __SWITCH__
+            const auto switch_extra_ms =
+                switch_trace_list ? SwitchPicaElapsedMs(switch_extra_start) : 0;
+            if (switch_trace_list && SwitchPicaShouldLogSlow(switch_extra_ms)) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=pica.reg.slow list=%08X size=%u index=%u cmd=%03X "
+                    "name=%s value=%08X mask=%X extra=%u elapsed-ms=%lld stop=%u current=%u "
+                    "length=%u",
+                    switch_extra_list, switch_extra_length * static_cast<u32>(sizeof(u32)),
+                    extra_index, cmd, SwitchPicaRegName(cmd), extra_value, header.parameter_mask,
+                    i + 1, switch_extra_ms, stop_requested ? 1U : 0U, cmd_list.current_index,
+                    cmd_list.length);
+            }
+#endif
         }
     }
+#ifdef __SWITCH__
+    const auto switch_list_ms = switch_trace_list ? SwitchPicaElapsedMs(switch_list_start) : 0;
+    if (switch_trace_list && SwitchPicaShouldLogSlow(switch_list_ms)) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=pica.list ignored=0 list=%08X size=%u elapsed-ms=%lld stop=%u "
+            "final-list=%08X current=%u length=%u",
+            list, size, switch_list_ms, stop_requested ? 1U : 0U, cmd_list.addr,
+            cmd_list.current_index, cmd_list.length);
+    }
+#endif
 }
 
 static bool any_byte_match(u32 a, u32 b) {
@@ -212,6 +342,15 @@ void PicaCore::WriteInternalReg(u32 id, u32 value, u32 mask, bool& stop_requeste
         const u32 index = static_cast<u32>(id - PICA_REG_INDEX(pipeline.command_buffer.trigger[0]));
         const PAddr addr = regs.internal.pipeline.command_buffer.GetPhysicalAddress(index);
         const u32 size = regs.internal.pipeline.command_buffer.GetSize(index);
+#ifdef __SWITCH__
+        if (SwitchPicaReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=pica.cmd-buffer.trigger id=%03X index=%u addr=%08X size=%u "
+                "parent-list=%08X parent-current=%u parent-length=%u",
+                id, index, addr, size, cmd_list.addr, cmd_list.current_index, cmd_list.length);
+        }
+#endif
         const u8* head = memory.GetPhysicalPointer(addr);
         cmd_list.Reset(addr, head, size);
         break;
@@ -221,7 +360,36 @@ void PicaCore::WriteInternalReg(u32 id, u32 value, u32 mask, bool& stop_requeste
     case PICA_REG_INDEX(pipeline.trigger_draw):
     case PICA_REG_INDEX(pipeline.trigger_draw_indexed): {
         const bool is_indexed = (id == PICA_REG_INDEX(pipeline.trigger_draw_indexed));
+#ifdef __SWITCH__
+        const bool switch_trace_draw = SwitchPicaReserveLog();
+        const u32 switch_vertices = regs.internal.pipeline.num_vertices;
+        const u32 switch_vertex_offset = regs.internal.pipeline.vertex_offset;
+        if (switch_trace_draw && cmd_list.length <= 16) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=pica.draw.begin id=%03X name=%s indexed=%u value=%08X "
+                "vertices=%u vertex-offset=%u list=%08X current=%u length=%u",
+                id, SwitchPicaRegName(id), is_indexed ? 1U : 0U, value, switch_vertices,
+                switch_vertex_offset, cmd_list.addr, cmd_list.current_index, cmd_list.length);
+        }
+        const auto switch_draw_start =
+            switch_trace_draw ? std::chrono::steady_clock::now()
+                              : std::chrono::steady_clock::time_point{};
+#endif
         DrawArrays(is_indexed);
+#ifdef __SWITCH__
+        const auto switch_draw_ms =
+            switch_trace_draw ? SwitchPicaElapsedMs(switch_draw_start) : 0;
+        if (switch_trace_draw && SwitchPicaShouldLogSlow(switch_draw_ms)) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=pica.draw.end id=%03X name=%s indexed=%u elapsed-ms=%lld "
+                "vertices=%u vertex-offset=%u list=%08X current=%u length=%u",
+                id, SwitchPicaRegName(id), is_indexed ? 1U : 0U, switch_draw_ms,
+                switch_vertices, switch_vertex_offset, cmd_list.addr, cmd_list.current_index,
+                cmd_list.length);
+        }
+#endif
         break;
     }
 
@@ -526,6 +694,19 @@ void PicaCore::DrawImmediate() {
 
 void PicaCore::DrawArrays(bool is_indexed) {
     MICROPROFILE_SCOPE(GPU_Drawing);
+#ifdef __SWITCH__
+    const bool switch_trace_draw_profile = SwitchPicaReserveLog();
+    const auto switch_draw_profile_start =
+        switch_trace_draw_profile ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+    const u32 switch_vertices = regs.internal.pipeline.num_vertices;
+    const u32 switch_vertex_offset = regs.internal.pipeline.vertex_offset;
+    const bool switch_use_hw_shader = Settings::values.use_hw_shader.GetValue();
+    const bool switch_primitive_empty = primitive_assembler.IsEmpty();
+    const auto switch_assembler_topology = primitive_assembler.GetTopology();
+    const auto switch_pipeline_topology = regs.internal.pipeline.triangle_topology.Value();
+    const auto switch_use_gs = regs.internal.pipeline.use_gs.Value();
+#endif
 
     // Track vertex in the debug recorder.
     if (debug_context) {
@@ -559,15 +740,80 @@ void PicaCore::DrawArrays(bool is_indexed) {
                                 regs.internal.pipeline.triangle_topology);
 
     // Attempt to use hardware vertex shaders if possible.
-    if (accelerate_draw && rasterizer->AccelerateDrawBatch(is_indexed)) {
-        return;
+    bool accelerated = false;
+#ifdef __SWITCH__
+    long long switch_accel_ms = 0;
+    long long switch_load_ms = 0;
+    long long switch_raster_ms = 0;
+#endif
+    if (accelerate_draw) {
+#ifdef __SWITCH__
+        const auto switch_accel_start =
+            switch_trace_draw_profile ? std::chrono::steady_clock::now()
+                                      : std::chrono::steady_clock::time_point{};
+#endif
+        accelerated = rasterizer->AccelerateDrawBatch(is_indexed);
+#ifdef __SWITCH__
+        switch_accel_ms =
+            switch_trace_draw_profile ? SwitchPicaElapsedMs(switch_accel_start) : 0;
+#endif
+        if (accelerated) {
+#ifdef __SWITCH__
+            const auto switch_total_ms =
+                switch_trace_draw_profile ? SwitchPicaElapsedMs(switch_draw_profile_start) : 0;
+            if (switch_trace_draw_profile && SwitchPicaShouldLogSlow(switch_total_ms)) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=pica.draw.profile path=accelerated total-ms=%lld "
+                    "accel-ms=%lld indexed=%u vertices=%u vertex-offset=%u use-hw=%u "
+                    "prim-empty=%u asm-topology=%u pipe-topology=%u use-gs=%u",
+                    switch_total_ms, switch_accel_ms, is_indexed ? 1U : 0U, switch_vertices,
+                    switch_vertex_offset, switch_use_hw_shader ? 1U : 0U,
+                    switch_primitive_empty ? 1U : 0U,
+                    static_cast<u32>(switch_assembler_topology),
+                    static_cast<u32>(switch_pipeline_topology), static_cast<u32>(switch_use_gs));
+            }
+#endif
+            return;
+        }
     }
 
     // We cannot accelerate the draw, so load and execute the vertex shader for each vertex.
+#ifdef __SWITCH__
+    const auto switch_load_start =
+        switch_trace_draw_profile ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
     LoadVertices(is_indexed);
+#ifdef __SWITCH__
+    switch_load_ms = switch_trace_draw_profile ? SwitchPicaElapsedMs(switch_load_start) : 0;
+#endif
 
     // Draw emitted triangles.
+#ifdef __SWITCH__
+    const auto switch_raster_start =
+        switch_trace_draw_profile ? std::chrono::steady_clock::now()
+                                  : std::chrono::steady_clock::time_point{};
+#endif
     rasterizer->DrawTriangles();
+#ifdef __SWITCH__
+    switch_raster_ms = switch_trace_draw_profile ? SwitchPicaElapsedMs(switch_raster_start) : 0;
+    const auto switch_total_ms =
+        switch_trace_draw_profile ? SwitchPicaElapsedMs(switch_draw_profile_start) : 0;
+    if (switch_trace_draw_profile && SwitchPicaShouldLogSlow(switch_total_ms)) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=pica.draw.profile path=cpu-fallback total-ms=%lld accel-ms=%lld "
+            "load-ms=%lld raster-ms=%lld accel-candidate=%u indexed=%u vertices=%u "
+            "vertex-offset=%u use-hw=%u prim-empty=%u asm-topology=%u pipe-topology=%u "
+            "use-gs=%u",
+            switch_total_ms, switch_accel_ms, switch_load_ms, switch_raster_ms,
+            accelerate_draw ? 1U : 0U, is_indexed ? 1U : 0U, switch_vertices,
+            switch_vertex_offset, switch_use_hw_shader ? 1U : 0U, switch_primitive_empty ? 1U : 0U,
+            static_cast<u32>(switch_assembler_topology),
+            static_cast<u32>(switch_pipeline_topology), static_cast<u32>(switch_use_gs));
+    }
+#endif
 
     if (debug_context) {
         debug_context->OnEvent(DebugContext::Event::FinishedPrimitiveBatch, nullptr);

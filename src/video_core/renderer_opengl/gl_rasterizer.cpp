@@ -2,6 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#ifdef __SWITCH__
+#include <atomic>
+#include <chrono>
+#endif
+
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/literals.h"
@@ -15,6 +20,12 @@
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/shader/generator/shader_gen.h"
 #include "video_core/texture/texture_decode.h"
+
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
 
 namespace OpenGL {
 
@@ -34,6 +45,48 @@ constexpr std::size_t VERTEX_BUFFER_SIZE = 16_MiB;
 constexpr std::size_t INDEX_BUFFER_SIZE = 2_MiB;
 constexpr std::size_t UNIFORM_BUFFER_SIZE = 8_MiB;
 constexpr std::size_t TEXTURE_BUFFER_SIZE = 2_MiB;
+
+constexpr bool PreferCoherentStreamBuffers() {
+#ifdef __SWITCH__
+    return true;
+#else
+    return false;
+#endif
+}
+
+#ifdef __SWITCH__
+std::atomic<unsigned> switch_gl_draw_trace_logs{};
+constexpr unsigned SwitchGlDrawTraceLogLimit = 32;
+
+bool SwitchGlReserveLog() {
+    return switch_gl_draw_trace_logs.fetch_add(1, std::memory_order_relaxed) <
+           SwitchGlDrawTraceLogLimit;
+}
+
+long long SwitchGlElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+
+void SwitchGlLogAccelFail(const char* reason, bool is_indexed, const Pica::RegsInternal& regs) {
+    if (!SwitchGlReserveLog()) {
+        return;
+    }
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=opengl.accel.fail reason=%s indexed=%u vertices=%u topology=%u "
+        "use-gs=%u gs-mode=%u",
+        reason, is_indexed ? 1U : 0U, regs.pipeline.num_vertices,
+        static_cast<u32>(regs.pipeline.triangle_topology.Value()),
+        static_cast<u32>(regs.pipeline.use_gs.Value()),
+        static_cast<u32>(regs.pipeline.gs_config.mode.Value()));
+}
+#endif
+
+bool UseSeparableShaders(const Driver& driver) {
+    return !driver.IsOpenGLES();
+}
 
 GLenum MakePrimitiveMode(Pica::PipelineRegs::TriangleTopology topology) {
     switch (topology) {
@@ -87,11 +140,13 @@ RasterizerOpenGL::RasterizerOpenGL(Memory::MemorySystem& memory, Pica::PicaCore&
     : VideoCore::RasterizerAccelerated{memory, pica}, driver{driver_},
       render_window{renderer.GetRenderWindow()}, runtime{driver, renderer},
       res_cache{memory, custom_tex_manager, runtime, regs, renderer},
-      vertex_buffer{driver, GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE},
-      uniform_buffer{driver, GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE},
-      index_buffer{driver, GL_ELEMENT_ARRAY_BUFFER, INDEX_BUFFER_SIZE},
-      texture_buffer{driver, GL_TEXTURE_BUFFER, TextureBufferSize(driver, false)},
-      texture_lf_buffer{driver, GL_TEXTURE_BUFFER, TextureBufferSize(driver, true)} {
+      vertex_buffer{driver, GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, PreferCoherentStreamBuffers()},
+      uniform_buffer{driver, GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, PreferCoherentStreamBuffers()},
+      index_buffer{driver, GL_ELEMENT_ARRAY_BUFFER, INDEX_BUFFER_SIZE, PreferCoherentStreamBuffers()},
+      texture_buffer{driver, GL_TEXTURE_BUFFER, TextureBufferSize(driver, false),
+                     PreferCoherentStreamBuffers()},
+      texture_lf_buffer{driver, GL_TEXTURE_BUFFER, TextureBufferSize(driver, true),
+                        PreferCoherentStreamBuffers()} {
 
     // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
     state.clip_distance[0] = true;
@@ -183,7 +238,7 @@ void RasterizerOpenGL::LoadDefaultDiskResources(
 
     shader_managers.clear();
     curr_shader_manager = shader_managers.emplace_back(std::make_shared<ShaderProgramManager>(
-        render_window, driver, program_id, !driver.IsOpenGLES()));
+        render_window, driver, program_id, UseSeparableShaders(driver)));
 
     curr_shader_manager->LoadDiskCache(stop_loading, callback, accurate_mul);
 }
@@ -208,7 +263,7 @@ void RasterizerOpenGL::SwitchDiskResources(u64 title_id) {
     if (new_pos >= shader_managers.size()) {
         new_pos = shader_managers.size();
         auto& new_manager = shader_managers.emplace_back(std::make_shared<ShaderProgramManager>(
-            render_window, driver, title_id, !driver.IsOpenGLES()));
+            render_window, driver, title_id, UseSeparableShaders(driver)));
 
         if (switch_disk_resources_callback) {
             switch_disk_resources_callback(VideoCore::LoadCallbackStage::Prepare, 0, 0, "");
@@ -369,10 +424,6 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset,
     const auto& vertex_attributes = regs.pipeline.vertex_attributes;
     PAddr base_address = vertex_attributes.GetPhysicalBaseAddress();
 
-    state.draw.vertex_array = hw_vao.handle;
-    state.draw.vertex_buffer = vertex_buffer.GetHandle();
-    state.Apply();
-
     std::array<bool, 16> enable_attributes{};
 
     for (const auto& loader : vertex_attributes.attribute_loaders) {
@@ -466,46 +517,161 @@ bool RasterizerOpenGL::SetupGeometryShader() {
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
+#ifdef __SWITCH__
+    const bool switch_trace = SwitchGlReserveLog();
+    const auto switch_accel_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     if (regs.pipeline.use_gs != Pica::PipelineRegs::UseGS::No) {
         if (regs.pipeline.gs_config.mode != Pica::PipelineRegs::GSMode::Point) {
+#ifdef __SWITCH__
+            if (switch_trace) {
+                SwitchGlLogAccelFail("gs-mode", is_indexed, regs);
+            }
+#endif
             return false;
         }
         if (regs.pipeline.triangle_topology != Pica::PipelineRegs::TriangleTopology::Shader) {
+#ifdef __SWITCH__
+            if (switch_trace) {
+                SwitchGlLogAccelFail("gs-topology", is_indexed, regs);
+            }
+#endif
             return false;
         }
     }
 
+#ifdef __SWITCH__
+    const auto switch_vs_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     if (!SetupVertexShader()) {
+#ifdef __SWITCH__
+        if (switch_trace) {
+            SwitchGlLogAccelFail("vertex-shader", is_indexed, regs);
+        }
+#endif
         return false;
     }
+#ifdef __SWITCH__
+    const auto switch_vs_ms = switch_trace ? SwitchGlElapsedMs(switch_vs_start) : 0;
+#endif
 
+#ifdef __SWITCH__
+    const auto switch_gs_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     if (!SetupGeometryShader()) {
+#ifdef __SWITCH__
+        if (switch_trace) {
+            SwitchGlLogAccelFail("geometry-shader", is_indexed, regs);
+        }
+#endif
         return false;
     }
+#ifdef __SWITCH__
+    const auto switch_gs_ms = switch_trace ? SwitchGlElapsedMs(switch_gs_start) : 0;
+#endif
 
-    return Draw(true, is_indexed);
+    const bool result = Draw(true, is_indexed);
+#ifdef __SWITCH__
+    const auto switch_accel_ms = switch_trace ? SwitchGlElapsedMs(switch_accel_start) : 0;
+    if (switch_trace && (!result || switch_accel_ms >= 5)) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.accel result=%u elapsed-ms=%lld vs-ms=%lld gs-ms=%lld "
+            "indexed=%u vertices=%u topology=%u use-gs=%u",
+            result ? 1U : 0U, switch_accel_ms, switch_vs_ms, switch_gs_ms,
+            is_indexed ? 1U : 0U, regs.pipeline.num_vertices,
+            static_cast<u32>(regs.pipeline.triangle_topology.Value()),
+            static_cast<u32>(regs.pipeline.use_gs.Value()));
+    }
+    if (switch_trace && !result) {
+        SwitchGlLogAccelFail("draw", is_indexed, regs);
+    }
+#endif
+    return result;
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatchInternal(bool is_indexed) {
+#ifdef __SWITCH__
+    const bool switch_trace = SwitchGlReserveLog();
+    const auto switch_internal_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+    const auto switch_analyze_start = switch_internal_start;
+#endif
     const GLenum primitive_mode = MakePrimitiveMode(regs.pipeline.triangle_topology);
     auto [vs_input_index_min, vs_input_index_max, vs_input_size] = AnalyzeVertexArray(is_indexed);
+#ifdef __SWITCH__
+    const auto switch_analyze_ms = switch_trace ? SwitchGlElapsedMs(switch_analyze_start) : 0;
+#endif
 
     if (vs_input_size > VERTEX_BUFFER_SIZE) {
         LOG_WARNING(Render_OpenGL, "Too large vertex input size {}", vs_input_size);
+#ifdef __SWITCH__
+        if (switch_trace) {
+            SwitchGlLogAccelFail("vertex-input-size", is_indexed, regs);
+        }
+#endif
         return false;
     }
 
+    state.draw.vertex_array = hw_vao.handle;
     state.draw.vertex_buffer = vertex_buffer.GetHandle();
+#ifdef __SWITCH__
+    const auto switch_bind_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     state.Apply();
+#ifdef __SWITCH__
+    const auto switch_bind_ms = switch_trace ? SwitchGlElapsedMs(switch_bind_start) : 0;
+#endif
 
     u8* buffer_ptr;
     GLintptr buffer_offset;
+#ifdef __SWITCH__
+    const auto switch_vertex_map_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     std::tie(buffer_ptr, buffer_offset, std::ignore) = vertex_buffer.Map(vs_input_size, 4);
+#ifdef __SWITCH__
+    const auto switch_vertex_map_ms =
+        switch_trace ? SwitchGlElapsedMs(switch_vertex_map_start) : 0;
+    const auto switch_setup_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     SetupVertexArray(buffer_ptr, buffer_offset, vs_input_index_min, vs_input_index_max);
+#ifdef __SWITCH__
+    const auto switch_setup_ms = switch_trace ? SwitchGlElapsedMs(switch_setup_start) : 0;
+    const auto switch_vertex_unmap_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
     vertex_buffer.Unmap(vs_input_size);
+#ifdef __SWITCH__
+    const auto switch_vertex_unmap_ms =
+        switch_trace ? SwitchGlElapsedMs(switch_vertex_unmap_start) : 0;
+    const auto switch_shader_apply_start =
+        switch_trace ? std::chrono::steady_clock::now()
+                     : std::chrono::steady_clock::time_point{};
+#endif
 
     curr_shader_manager->ApplyTo(state, accurate_mul);
     state.Apply();
+#ifdef __SWITCH__
+    const auto switch_shader_apply_ms =
+        switch_trace ? SwitchGlElapsedMs(switch_shader_apply_start) : 0;
+    long long switch_index_ms = 0;
+    long long switch_draw_ms = 0;
+    u32 switch_draw_kind = 0;
+#endif
 
     if (is_indexed) {
         bool index_u16 = regs.pipeline.index_array.format != 0;
@@ -513,23 +679,89 @@ bool RasterizerOpenGL::AccelerateDrawBatchInternal(bool is_indexed) {
 
         if (index_buffer_size > INDEX_BUFFER_SIZE) {
             LOG_WARNING(Render_OpenGL, "Too large index input size {}", index_buffer_size);
+#ifdef __SWITCH__
+            if (switch_trace) {
+                SwitchGlLogAccelFail("index-input-size", is_indexed, regs);
+            }
+#endif
             return false;
         }
 
         const u8* index_data =
             memory.GetPhysicalPointer(regs.pipeline.vertex_attributes.GetPhysicalBaseAddress() +
                                       regs.pipeline.index_array.offset);
+#ifdef __SWITCH__
+        const auto switch_index_start =
+            switch_trace ? std::chrono::steady_clock::now()
+                         : std::chrono::steady_clock::time_point{};
+#endif
         std::tie(buffer_ptr, buffer_offset, std::ignore) = index_buffer.Map(index_buffer_size, 4);
         std::memcpy(buffer_ptr, index_data, index_buffer_size);
         index_buffer.Unmap(index_buffer_size);
+#ifdef __SWITCH__
+        switch_index_ms = switch_trace ? SwitchGlElapsedMs(switch_index_start) : 0;
+        const auto switch_draw_start =
+            switch_trace ? std::chrono::steady_clock::now()
+                         : std::chrono::steady_clock::time_point{};
+#endif
 
-        glDrawRangeElementsBaseVertex(
-            primitive_mode, vs_input_index_min, vs_input_index_max, regs.pipeline.num_vertices,
-            index_u16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE,
-            reinterpret_cast<const void*>(buffer_offset), -static_cast<GLint>(vs_input_index_min));
+        if (vs_input_index_min == 0) {
+#ifdef __SWITCH__
+            switch_draw_kind = 1;
+#endif
+            glDrawElements(primitive_mode, regs.pipeline.num_vertices,
+                           index_u16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE,
+                           reinterpret_cast<const void*>(buffer_offset));
+        } else {
+#ifdef __SWITCH__
+            switch_draw_kind = 2;
+#endif
+            glDrawRangeElementsBaseVertex(
+                primitive_mode, vs_input_index_min, vs_input_index_max, regs.pipeline.num_vertices,
+                index_u16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE,
+                reinterpret_cast<const void*>(buffer_offset),
+                -static_cast<GLint>(vs_input_index_min));
+        }
+#ifdef __SWITCH__
+        switch_draw_ms = switch_trace ? SwitchGlElapsedMs(switch_draw_start) : 0;
+#endif
     } else {
+#ifdef __SWITCH__
+        const auto switch_draw_start =
+            switch_trace ? std::chrono::steady_clock::now()
+                         : std::chrono::steady_clock::time_point{};
+#endif
         glDrawArrays(primitive_mode, 0, regs.pipeline.num_vertices);
+#ifdef __SWITCH__
+        switch_draw_ms = switch_trace ? SwitchGlElapsedMs(switch_draw_start) : 0;
+#endif
     }
+#ifdef __SWITCH__
+    const auto switch_internal_ms =
+        switch_trace ? SwitchGlElapsedMs(switch_internal_start) : 0;
+    if (switch_trace && switch_internal_ms >= 5) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.accel.internal elapsed-ms=%lld indexed=%u vertices=%u "
+            "vs-min=%u vs-max=%u vs-bytes=%llu primitive=%u",
+            switch_internal_ms, is_indexed ? 1U : 0U, regs.pipeline.num_vertices,
+            vs_input_index_min, vs_input_index_max,
+            static_cast<unsigned long long>(vs_input_size), primitive_mode);
+    }
+    if (switch_trace && switch_internal_ms >= 5) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.accel.detail elapsed-ms=%lld analyze-ms=%lld "
+            "bind-ms=%lld vmap-ms=%lld setup-ms=%lld vunmap-ms=%lld shader-ms=%lld "
+            "index-ms=%lld draw-ms=%lld draw-kind=%u indexed=%u vertices=%u vs-min=%u "
+            "vs-max=%u vs-bytes=%llu primitive=%u",
+            switch_internal_ms, switch_analyze_ms, switch_bind_ms, switch_vertex_map_ms,
+            switch_setup_ms, switch_vertex_unmap_ms, switch_shader_apply_ms, switch_index_ms,
+            switch_draw_ms, switch_draw_kind, is_indexed ? 1U : 0U, regs.pipeline.num_vertices,
+            vs_input_index_min, vs_input_index_max,
+            static_cast<unsigned long long>(vs_input_size), primitive_mode);
+    }
+#endif
     return true;
 }
 

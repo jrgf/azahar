@@ -3,6 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <random>
 #include <tuple>
 #include "common/assert.h"
@@ -10,7 +12,21 @@
 #include "common/settings.h"
 #include "core/core_timing.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace Core {
+
+#ifdef __SWITCH__
+constexpr s64 SwitchMaxSliceLength = 50000;
+
+s64 ClampSwitchSliceLength(s64 max_slice_length) {
+    return std::min<s64>(max_slice_length, SwitchMaxSliceLength);
+}
+#endif
 
 // Sort by time, unless the times are the same, in which case sort by the order added to the queue
 bool Timing::Event::operator>(const Timing::Event& right) const {
@@ -86,6 +102,22 @@ void Timing::ScheduleEvent(s64 cycles_into_future, const TimingEventType* event_
         timer->ts_queue.Push(Event{static_cast<s64>(timer->GetTicks() + cycles_into_future), 0,
                                    user_data, event_type});
     } else {
+#ifdef __SWITCH__
+        if (current_timer == timer && timer->is_timer_sane && cycles_into_future <= 0) {
+            static std::atomic<unsigned> switch_timing_clamp_logs{};
+            if (switch_timing_clamp_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+                const char* name =
+                    event_type->name != nullptr ? event_type->name->c_str() : "unknown";
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=core.timing.requeue-clamp name=\"%s\" requested=%lld "
+                    "ticks=%llu",
+                    name, static_cast<long long>(cycles_into_future),
+                    static_cast<unsigned long long>(timer->GetTicks()));
+            }
+            cycles_into_future = 1;
+        }
+#endif
         s64 timeout = timer->GetTicks() + cycles_into_future;
         if (current_timer == timer) {
             // If this event needs to be scheduled before the next advance(), force one early
@@ -200,12 +232,16 @@ void Timing::Timer::MoveEvents() {
 }
 
 s64 Timing::Timer::GetMaxSliceLength() const {
+    s64 max_slice_length = MAX_SLICE_LENGTH;
     const auto& next_event = event_queue.begin();
     if (next_event != event_queue.end()) {
         ASSERT(next_event->time - executed_ticks > 0);
-        return next_event->time - executed_ticks;
+        max_slice_length = next_event->time - executed_ticks;
     }
-    return MAX_SLICE_LENGTH;
+#ifdef __SWITCH__
+    max_slice_length = ClampSwitchSliceLength(max_slice_length);
+#endif
+    return max_slice_length;
 }
 
 void Timing::Timer::Advance() {
@@ -224,7 +260,30 @@ void Timing::Timer::Advance() {
         std::pop_heap(event_queue.begin(), event_queue.end(), std::greater<>());
         event_queue.pop_back();
         if (evt.type->callback != nullptr) {
+#ifdef __SWITCH__
+            const auto switch_event_start = std::chrono::steady_clock::now();
+            const int switch_cycles_late = static_cast<int>(executed_ticks - evt.time);
+#endif
             evt.type->callback(evt.user_data, static_cast<int>(executed_ticks - evt.time));
+#ifdef __SWITCH__
+            const auto switch_event_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                             std::chrono::steady_clock::now() - switch_event_start)
+                                             .count();
+            if (switch_event_ms >= 100) {
+                static std::atomic<unsigned> switch_timing_event_logs{};
+                if (switch_timing_event_logs.fetch_add(1, std::memory_order_relaxed) < 16) {
+                    const char* name =
+                        evt.type->name != nullptr ? evt.type->name->c_str() : "unknown";
+                    Azahar::Switch::AppendLogFormat(
+                        nullptr,
+                        "android-flow stage=core.timing.event.slow name=\"%s\" elapsed-ms=%lld "
+                        "late=%d user=%llu ticks=%llu",
+                        name, static_cast<long long>(switch_event_ms), switch_cycles_late,
+                        static_cast<unsigned long long>(evt.user_data),
+                        static_cast<unsigned long long>(executed_ticks));
+                }
+            }
+#endif
         } else {
             LOG_ERROR(Core, "Event '{}' has no callback", *evt.type->name);
         }
@@ -234,6 +293,9 @@ void Timing::Timer::Advance() {
 }
 
 void Timing::Timer::SetNextSlice(s64 max_slice_length) {
+#ifdef __SWITCH__
+    max_slice_length = ClampSwitchSliceLength(max_slice_length);
+#endif
     slice_length = max_slice_length;
 
     // Still events left (scheduled in the future)

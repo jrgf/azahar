@@ -882,10 +882,14 @@ const std::string GetHomeDirectory() {
         if (envvar) {
             home_path = envvar;
         } else {
+#ifdef __SWITCH__
+            home_path = "sdmc:/";
+#else
             auto pw = getpwuid(getuid());
             ASSERT_MSG(pw,
                        "$HOME isn’t defined, and the current user can’t be found in /etc/passwd.");
             home_path = pw->pw_dir;
+#endif
         }
     }
     return home_path;
@@ -917,7 +921,9 @@ const std::string GetHomeDirectory() {
     }
 
     ASSERT_MSG(!user_dir.empty(), "User directory {} musn’t be empty.", envvar);
+#ifndef __SWITCH__
     ASSERT_MSG(user_dir[0] == '/', "User directory {} must be absolute.", envvar);
+#endif
 
     return user_dir;
 }
@@ -934,8 +940,8 @@ void SetUserPath(const std::string& path) {
     if (!path.empty() && CreateFullPath(path)) {
         LOG_INFO(Common_Filesystem, "Using {} as the user directory", path);
         user_path = path;
-        g_paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
-        g_paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
     } else {
 #ifdef _WIN32
         user_path = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
@@ -952,12 +958,18 @@ void SetUserPath(const std::string& path) {
             LOG_INFO(Common_Filesystem, "Using the local user directory");
         }
 
-        g_paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
-        g_paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
 #elif defined(ANDROID) && !defined(HAVE_LIBRETRO_VFS)
         user_path = "/";
-        g_paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
-        g_paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
+#elif defined(__SWITCH__)
+        user_path = "sdmc:/switch/azahar/";
+        g_paths[UserPath::LegacyCitraUserDir] = user_path;
+        g_paths[UserPath::LegacyLime3DSUserDir] = user_path;
+        g_paths.insert_or_assign(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+        g_paths.insert_or_assign(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
 #else
         std::string& legacy_citra_user_path = g_paths[UserPath::LegacyCitraUserDir];
         std::string& legacy_lime3ds_user_path = g_paths[UserPath::LegacyLime3DSUserDir];
@@ -965,8 +977,8 @@ void SetUserPath(const std::string& path) {
         if (current_dir.has_value() &&
             FileUtil::Exists(current_dir.value() + USERDATA_DIR DIR_SEP)) {
             user_path = current_dir.value() + USERDATA_DIR DIR_SEP;
-            g_paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
-            g_paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
         } else {
             std::string data_dir = GetUserDirectory("XDG_DATA_HOME") + DIR_SEP EMU_DATA_DIR DIR_SEP;
 
@@ -979,18 +991,18 @@ void SetUserPath(const std::string& path) {
             std::string cache_dir =
                 GetUserDirectory("XDG_CACHE_HOME") + DIR_SEP EMU_DATA_DIR DIR_SEP;
 
-            g_paths.emplace(UserPath::LegacyCitraConfigDir,
-                            GetUserDirectory("XDG_CONFIG_HOME") +
-                                DIR_SEP LEGACY_CITRA_DATA_DIR DIR_SEP);
-            g_paths.emplace(UserPath::LegacyCitraCacheDir,
-                            GetUserDirectory("XDG_CACHE_HOME") +
-                                DIR_SEP LEGACY_CITRA_DATA_DIR DIR_SEP);
-            g_paths.emplace(UserPath::LegacyLime3DSConfigDir,
-                            GetUserDirectory("XDG_CONFIG_HOME") +
-                                DIR_SEP LEGACY_LIME3DS_DATA_DIR DIR_SEP);
-            g_paths.emplace(UserPath::LegacyLime3DSCacheDir,
-                            GetUserDirectory("XDG_CACHE_HOME") +
-                                DIR_SEP LEGACY_LIME3DS_DATA_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::LegacyCitraConfigDir,
+                                     GetUserDirectory("XDG_CONFIG_HOME") +
+                                         DIR_SEP LEGACY_CITRA_DATA_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::LegacyCitraCacheDir,
+                                     GetUserDirectory("XDG_CACHE_HOME") +
+                                         DIR_SEP LEGACY_CITRA_DATA_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::LegacyLime3DSConfigDir,
+                                     GetUserDirectory("XDG_CONFIG_HOME") +
+                                         DIR_SEP LEGACY_LIME3DS_DATA_DIR DIR_SEP);
+            g_paths.insert_or_assign(UserPath::LegacyLime3DSCacheDir,
+                                     GetUserDirectory("XDG_CACHE_HOME") +
+                                         DIR_SEP LEGACY_LIME3DS_DATA_DIR DIR_SEP);
 
 #if defined(__APPLE__)
             // If XDG directories don't already exist from a previous setup, use standard macOS
@@ -1010,24 +1022,24 @@ void SetUserPath(const std::string& path) {
             user_path = data_dir;
             legacy_citra_user_path = legacy_citra_data_dir;
             legacy_lime3ds_user_path = legacy_lime3ds_data_dir;
-            g_paths.emplace(UserPath::ConfigDir, config_dir);
-            g_paths.emplace(UserPath::CacheDir, cache_dir);
+            g_paths.insert_or_assign(UserPath::ConfigDir, config_dir);
+            g_paths.insert_or_assign(UserPath::CacheDir, cache_dir);
         }
 #endif
     }
 
-    g_paths.emplace(UserPath::SDMCDir, user_path + SDMC_DIR DIR_SEP);
-    g_paths.emplace(UserPath::NANDDir, user_path + NAND_DIR DIR_SEP);
-    g_paths.emplace(UserPath::SysDataDir, user_path + SYSDATA_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::SDMCDir, user_path + SDMC_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::NANDDir, user_path + NAND_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::SysDataDir, user_path + SYSDATA_DIR DIR_SEP);
     // TODO: Put the logs in a better location for each OS
-    g_paths.emplace(UserPath::LogDir, user_path + LOG_DIR DIR_SEP);
-    g_paths.emplace(UserPath::CheatsDir, user_path + CHEATS_DIR DIR_SEP);
-    g_paths.emplace(UserPath::DLLDir, user_path + DLL_DIR DIR_SEP);
-    g_paths.emplace(UserPath::ShaderDir, user_path + SHADER_DIR DIR_SEP);
-    g_paths.emplace(UserPath::DumpDir, user_path + DUMP_DIR DIR_SEP);
-    g_paths.emplace(UserPath::LoadDir, user_path + LOAD_DIR DIR_SEP);
-    g_paths.emplace(UserPath::StatesDir, user_path + STATES_DIR DIR_SEP);
-    g_paths.emplace(UserPath::IconsDir, user_path + ICONS_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::LogDir, user_path + LOG_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::CheatsDir, user_path + CHEATS_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::DLLDir, user_path + DLL_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::ShaderDir, user_path + SHADER_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::DumpDir, user_path + DUMP_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::LoadDir, user_path + LOAD_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::StatesDir, user_path + STATES_DIR DIR_SEP);
+    g_paths.insert_or_assign(UserPath::IconsDir, user_path + ICONS_DIR DIR_SEP);
     g_default_paths = g_paths;
 }
 
@@ -1469,7 +1481,7 @@ static std::size_t pread(int fd, void* buf, std::size_t count, uint64_t offset) 
     }
     return read_bytes;
 }
-#else
+#elif !defined(__SWITCH__)
 #define pread ::pread
 #endif
 
@@ -1485,13 +1497,27 @@ std::size_t IOFile::ReadAtImpl(void* data, std::size_t byte_count, std::size_t o
 
     DEBUG_ASSERT(data != nullptr);
 
-#ifdef HAVE_LIBRETRO_VFS
+#if defined(HAVE_LIBRETRO_VFS)
     std::scoped_lock lock(m_file_pos_mutex);
     int64_t pos = filestream_tell(m_file);
     FSEEK(m_file, offset, RETRO_VFS_SEEK_POSITION_START);
     int64_t rv = FREAD(data, 1, byte_count, m_file);
     FSEEK(m_file, pos, RETRO_VFS_SEEK_POSITION_START);
     return rv;
+#elif defined(__SWITCH__)
+    std::scoped_lock lock(m_file_pos_mutex);
+    const auto pos = FTELL(m_file);
+    if (pos < 0 || FSEEK(m_file, static_cast<s64>(offset), SEEK_SET) != 0) {
+        m_good = false;
+        return std::numeric_limits<std::size_t>::max();
+    }
+
+    const std::size_t read_bytes = FREAD(data, 1, byte_count, m_file);
+    if (FSEEK(m_file, pos, SEEK_SET) != 0) {
+        m_good = false;
+        return std::numeric_limits<std::size_t>::max();
+    }
+    return read_bytes;
 #else
     return pread(fileno(m_file), data, byte_count, offset);
 #endif

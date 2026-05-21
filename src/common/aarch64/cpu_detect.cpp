@@ -15,11 +15,13 @@
 #include <sys/sysctl.h>
 // clang-format on
 #elif !defined(_WIN32)
-#ifndef __FreeBSD__
+#if !defined(__FreeBSD__) && !defined(__SWITCH__)
 #include <asm/hwcap.h>
-#endif // __FreeBSD__
+#endif // !__FreeBSD__ && !__SWITCH__
+#ifndef __SWITCH__
 #include <sys/auxv.h>
 #include <unistd.h>
+#endif
 #endif // __APPLE__
 
 #include "common/aarch64/cpu_detect.h"
@@ -35,6 +37,10 @@ static std::string GetCPUString() {
         return "Unknown";
     }
     return buf;
+}
+#elif defined(__SWITCH__)
+static std::string GetCPUString() {
+    return "Nintendo Switch Cortex-A57";
 }
 #elif !defined(WIN32)
 static std::string GetCPUString() {
@@ -82,6 +88,14 @@ static CPUCaps Detect() {
     // variables containing some of the CPU-specific values, which we could use for a lookup table
     // in the future. For now, assume all features are present as all known devices which are
     // Windows-on-ARM compatible also support these extensions.
+    caps.fp = true;
+    caps.asimd = true;
+    caps.aes = true;
+    caps.crc32 = true;
+    caps.sha1 = true;
+    caps.sha2 = true;
+#elif defined(__SWITCH__)
+    caps.cpu_string = GetCPUString();
     caps.fp = true;
     caps.asimd = true;
     caps.aes = true;

@@ -25,7 +25,6 @@ add_library(citra_common STATIC EXCLUDE_FROM_ALL
     common_precompiled_headers.h
     common_types.h
     construct.h
-    dynamic_library/dynamic_library.cpp
     dynamic_library/dynamic_library.h
     dynamic_library/ffmpeg.cpp
     dynamic_library/ffmpeg.h
@@ -107,6 +106,29 @@ add_library(citra_common STATIC EXCLUDE_FROM_ALL
 )
 
 target_include_directories(citra_common PUBLIC ${CMAKE_BINARY_DIR}/src)
+
+if (NINTENDO_SWITCH)
+  find_package(PkgConfig REQUIRED)
+  set(SWITCH_PORTLIBS_ROOT "$ENV{DEVKITPRO}/portlibs/switch")
+  set(ENV{PKG_CONFIG_PATH} "${SWITCH_PORTLIBS_ROOT}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  pkg_check_modules(SWITCH_FFMPEG REQUIRED
+    libavfilter
+    libavformat
+    libavcodec
+    libswresample
+    libavutil
+  )
+
+  target_compile_definitions(citra_common PRIVATE CITRA_STATIC_FFMPEG)
+  target_include_directories(citra_common PUBLIC ${SWITCH_FFMPEG_INCLUDE_DIRS})
+  target_link_directories(citra_common PUBLIC ${SWITCH_FFMPEG_STATIC_LIBRARY_DIRS})
+  target_link_libraries(citra_common PUBLIC ${SWITCH_FFMPEG_STATIC_LIBRARIES})
+  target_link_options(citra_common PUBLIC ${SWITCH_FFMPEG_STATIC_LDFLAGS_OTHER})
+else()
+  target_sources(citra_common PRIVATE
+    dynamic_library/dynamic_library.cpp
+  )
+endif()
 
 if (UNIX AND NOT APPLE)
   target_sources(citra_common PRIVATE

@@ -7,7 +7,6 @@
 #include <tuple>
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/unique_ptr.hpp>
-#include <cryptopp/osrng.h>
 #include <cryptopp/sha.h>
 #include <fmt/ranges.h>
 #include "common/archives.h"
@@ -30,6 +29,7 @@
 #include "core/hle/service/cfg/cfg_nor.h"
 #include "core/hle/service/cfg/cfg_s.h"
 #include "core/hle/service/cfg/cfg_u.h"
+#include "core/hw/cryptopp_rng.h"
 #include "core/hw/unique_data.h"
 #include "core/loader/loader.h"
 #ifdef HAVE_LIBRETRO
@@ -1170,7 +1170,7 @@ u8 Module::GetStateCode() {
 }
 
 std::pair<u32, u64> Module::GenerateConsoleUniqueId() const {
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     const u32 random_number = rng.GenerateWord32(0, 0xFFFF);
 
     u64_le local_friend_code_seed;
@@ -1324,7 +1324,7 @@ std::string GenerateRandomMAC() {
         {0x7CBB8A000000ULL, 0x7CBB8AFFFFFFULL},
         {0x8CCDE8000000ULL, 0x8CCDE8FFFFFFULL},
     }};
-    CryptoPP::AutoSeededRandomPool rng;
+    HW::CryptoRandomNumberGenerator rng;
     auto& range = ranges[rng.GenerateWord32(0, static_cast<CryptoPP::word32>(ranges.size() - 1))];
     u64 mac = range.first +
               rng.GenerateWord32(0, static_cast<CryptoPP::word32>(range.second - range.first));

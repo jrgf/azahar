@@ -4,7 +4,9 @@
 
 #include <memory>
 
+#ifndef CITRA_STATIC_FFMPEG
 #include "common/dynamic_library/dynamic_library.h"
+#endif
 #include "common/dynamic_library/ffmpeg.h"
 #include "common/logging/log.h"
 
@@ -112,6 +114,145 @@ swr_convert_func swr_convert;
 swr_free_func swr_free;
 swr_init_func swr_init;
 swresample_version_func swresample_version;
+
+#ifdef CITRA_STATIC_FFMPEG
+
+#define BIND_SYMBOL(name) name = ::name
+
+static bool CheckMajorVersion(const char* library, unsigned version, int expected) {
+    const auto major_version = AV_VERSION_MAJOR(version);
+    if (major_version == expected) {
+        return true;
+    }
+
+    LOG_WARNING(Common, "{} version {} does not match supported version {}.", library,
+                major_version, expected);
+    return false;
+}
+
+bool LoadFFmpeg() {
+    static bool initialized = false;
+    if (initialized) {
+        return true;
+    }
+
+    BIND_SYMBOL(avutil_version);
+    BIND_SYMBOL(avcodec_version);
+    BIND_SYMBOL(avfilter_version);
+    BIND_SYMBOL(avformat_version);
+    BIND_SYMBOL(swresample_version);
+
+    const bool versions_match =
+        CheckMajorVersion("libavutil", avutil_version(), LIBAVUTIL_VERSION_MAJOR) &&
+        CheckMajorVersion("libavcodec", avcodec_version(), LIBAVCODEC_VERSION_MAJOR) &&
+        CheckMajorVersion("libavfilter", avfilter_version(), LIBAVFILTER_VERSION_MAJOR) &&
+        CheckMajorVersion("libavformat", avformat_version(), LIBAVFORMAT_VERSION_MAJOR) &&
+        CheckMajorVersion("libswresample", swresample_version(), LIBSWRESAMPLE_VERSION_MAJOR);
+    if (!versions_match) {
+        return false;
+    }
+
+    BIND_SYMBOL(av_buffer_ref);
+    BIND_SYMBOL(av_buffer_unref);
+    BIND_SYMBOL(av_d2q);
+    BIND_SYMBOL(av_dict_count);
+    BIND_SYMBOL(av_dict_get);
+    BIND_SYMBOL(av_dict_get_string);
+    BIND_SYMBOL(av_dict_set);
+    BIND_SYMBOL(av_frame_alloc);
+    BIND_SYMBOL(av_frame_free);
+    BIND_SYMBOL(av_frame_unref);
+    BIND_SYMBOL(av_freep);
+    BIND_SYMBOL(av_get_bytes_per_sample);
+    BIND_SYMBOL(av_get_pix_fmt);
+    BIND_SYMBOL(av_get_pix_fmt_name);
+    BIND_SYMBOL(av_get_sample_fmt_name);
+    BIND_SYMBOL(av_hwdevice_ctx_create);
+    BIND_SYMBOL(av_hwdevice_get_hwframe_constraints);
+    BIND_SYMBOL(av_hwframe_constraints_free);
+    BIND_SYMBOL(av_hwframe_ctx_alloc);
+    BIND_SYMBOL(av_hwframe_ctx_init);
+    BIND_SYMBOL(av_hwframe_get_buffer);
+    BIND_SYMBOL(av_hwframe_transfer_data);
+    BIND_SYMBOL(av_int_list_length_for_size);
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 53, 100) // lavu 56.53.100
+    BIND_SYMBOL(av_opt_child_class_iterate);
+#else
+    BIND_SYMBOL(av_opt_child_class_next);
+#endif
+    BIND_SYMBOL(av_opt_next);
+    BIND_SYMBOL(av_opt_set_bin);
+    BIND_SYMBOL(av_pix_fmt_desc_get);
+    BIND_SYMBOL(av_pix_fmt_desc_next);
+    BIND_SYMBOL(av_sample_fmt_is_planar);
+    BIND_SYMBOL(av_samples_alloc_array_and_samples);
+    BIND_SYMBOL(av_strdup);
+
+    BIND_SYMBOL(av_codec_is_encoder);
+    BIND_SYMBOL(av_codec_iterate);
+    BIND_SYMBOL(av_init_packet);
+    BIND_SYMBOL(av_packet_alloc);
+    BIND_SYMBOL(av_packet_free);
+    BIND_SYMBOL(av_packet_rescale_ts);
+    BIND_SYMBOL(av_parser_close);
+    BIND_SYMBOL(av_parser_init);
+    BIND_SYMBOL(av_parser_parse2);
+    BIND_SYMBOL(avcodec_alloc_context3);
+    BIND_SYMBOL(avcodec_descriptor_next);
+    BIND_SYMBOL(avcodec_find_decoder);
+    BIND_SYMBOL(avcodec_find_encoder_by_name);
+    BIND_SYMBOL(avcodec_free_context);
+    BIND_SYMBOL(avcodec_get_class);
+    BIND_SYMBOL(avcodec_get_hw_config);
+    BIND_SYMBOL(avcodec_open2);
+    BIND_SYMBOL(avcodec_parameters_from_context);
+    BIND_SYMBOL(avcodec_receive_frame);
+    BIND_SYMBOL(avcodec_receive_packet);
+    BIND_SYMBOL(avcodec_send_frame);
+    BIND_SYMBOL(avcodec_send_packet);
+
+    BIND_SYMBOL(av_buffersink_get_frame);
+    BIND_SYMBOL(av_buffersrc_add_frame);
+    BIND_SYMBOL(avfilter_get_by_name);
+    BIND_SYMBOL(avfilter_graph_alloc);
+    BIND_SYMBOL(avfilter_graph_config);
+    BIND_SYMBOL(avfilter_graph_create_filter);
+    BIND_SYMBOL(avfilter_graph_free);
+    BIND_SYMBOL(avfilter_graph_parse_ptr);
+    BIND_SYMBOL(avfilter_inout_alloc);
+    BIND_SYMBOL(avfilter_inout_free);
+
+    BIND_SYMBOL(av_guess_format);
+    BIND_SYMBOL(av_interleaved_write_frame);
+    BIND_SYMBOL(av_muxer_iterate);
+    BIND_SYMBOL(av_write_trailer);
+    BIND_SYMBOL(avformat_alloc_output_context2);
+    BIND_SYMBOL(avformat_free_context);
+    BIND_SYMBOL(avformat_get_class);
+    BIND_SYMBOL(avformat_network_init);
+    BIND_SYMBOL(avformat_new_stream);
+    BIND_SYMBOL(avformat_query_codec);
+    BIND_SYMBOL(avformat_write_header);
+    BIND_SYMBOL(avio_closep);
+    BIND_SYMBOL(avio_open);
+
+#if LIBSWRESAMPLE_VERSION_INT >= AV_VERSION_INT(4, 5, 100)
+    BIND_SYMBOL(swr_alloc_set_opts2);
+#else
+    BIND_SYMBOL(swr_alloc_set_opts);
+#endif
+    BIND_SYMBOL(swr_convert);
+    BIND_SYMBOL(swr_free);
+    BIND_SYMBOL(swr_init);
+
+    initialized = true;
+    LOG_INFO(Common, "Using statically linked FFmpeg.");
+    return true;
+}
+
+#undef BIND_SYMBOL
+
+#else
 
 static std::unique_ptr<Common::DynamicLibrary> avutil;
 static std::unique_ptr<Common::DynamicLibrary> avcodec;
@@ -390,5 +531,7 @@ static bool LoadSWResample() {
 bool LoadFFmpeg() {
     return LoadAVUtil() && LoadAVCodec() && LoadAVFilter() && LoadAVFormat() && LoadSWResample();
 }
+
+#endif
 
 } // namespace DynamicLibrary::FFmpeg

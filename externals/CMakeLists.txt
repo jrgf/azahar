@@ -39,12 +39,15 @@ else()
     target_link_libraries(boost_serialization PUBLIC boost)
 
     # Boost::iostreams
-    add_library(
-        boost_iostreams
-        STATIC
+    set(boost_iostreams_SRC
         ${CMAKE_SOURCE_DIR}/externals/boost/libs/iostreams/src/file_descriptor.cpp
-        ${CMAKE_SOURCE_DIR}/externals/boost/libs/iostreams/src/mapped_file.cpp
     )
+    if (NOT NINTENDO_SWITCH)
+        list(APPEND boost_iostreams_SRC
+            ${CMAKE_SOURCE_DIR}/externals/boost/libs/iostreams/src/mapped_file.cpp
+        )
+    endif()
+    add_library(boost_iostreams STATIC ${boost_iostreams_SRC})
     target_link_libraries(boost_iostreams PUBLIC boost)
     # Add additional boost libs here; remember to ALIAS them in the root CMakeLists!
 endif()
@@ -69,7 +72,9 @@ if(USE_SYSTEM_CRYPTOPP)
     add_library(cryptopp INTERFACE)
     target_link_libraries(cryptopp INTERFACE cryptopp::cryptopp)
 else()
-    if (WIN32 AND NOT MSVC AND "arm64" IN_LIST ARCHITECTURE)
+    if (NINTENDO_SWITCH)
+        set(CRYPTOPP_DISABLE_ASM ON CACHE BOOL "" FORCE)
+    elseif (WIN32 AND NOT MSVC AND "arm64" IN_LIST ARCHITECTURE)
         # TODO: CryptoPP ARM64 ASM does not seem to support Windows unless compiled with MSVC.
         # TODO: See https://github.com/weidai11/cryptopp/issues/1260
         set(CRYPTOPP_DISABLE_ASM ON CACHE BOOL "")
@@ -80,6 +85,9 @@ else()
     set(CRYPTOPP_INSTALL OFF CACHE BOOL "")
     set(CRYPTOPP_SOURCES "${CMAKE_SOURCE_DIR}/externals/cryptopp" CACHE STRING "")
     add_subdirectory(cryptopp-cmake EXCLUDE_FROM_ALL)
+    if (NINTENDO_SWITCH)
+        target_compile_definitions(cryptopp PRIVATE CRYPTOPP_NO_CPU_FEATURE_PROBES=1)
+    endif()
 endif()
 
 # dds-ktx
@@ -136,8 +144,16 @@ if ("x86_64" IN_LIST ARCHITECTURE OR "arm64" IN_LIST ARCHITECTURE)
         set(DYNARMIC_TESTS OFF CACHE BOOL "")
         set(DYNARMIC_FRONTENDS "A32" CACHE STRING "")
         set(DYNARMIC_USE_PRECOMPILED_HEADERS ${CITRA_USE_PRECOMPILED_HEADERS} CACHE BOOL "")
+        if (NINTENDO_SWITCH)
+            set(DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT ON CACHE BOOL "" FORCE)
+            set(DYNARMIC_ENABLE_CPU_FEATURE_DETECTION OFF CACHE BOOL "" FORCE)
+        endif()
         add_subdirectory(dynarmic EXCLUDE_FROM_ALL)
     endif()
+endif()
+
+if (NOT TARGET tsl::robin_map)
+    add_subdirectory(dynarmic/externals/robin-map EXCLUDE_FROM_ALL)
 endif()
 
 # getopt
@@ -325,7 +341,9 @@ else()
 endif()
 
 # OpenSSL
-if (USE_SYSTEM_OPENSSL)
+if (NINTENDO_SWITCH)
+    set(OPENSSL_LIBRARIES "")
+elseif (USE_SYSTEM_OPENSSL)
     find_package(OpenSSL 1.1)
     set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
 else()
@@ -366,8 +384,10 @@ else()
     target_include_directories(httplib INTERFACE ./httplib)
     target_disable_warnings(httplib)
 endif()
-target_compile_options(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
-target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
+if (NOT NINTENDO_SWITCH)
+    target_compile_options(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
+    target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
+endif()
 
 if (UNIX AND NOT APPLE)
     add_subdirectory(gamemode EXCLUDE_FROM_ALL)
@@ -428,7 +448,15 @@ endif()
 # OpenGL dependencies
 if (ENABLE_OPENGL)
     # Glad
-    add_subdirectory(glad EXCLUDE_FROM_ALL)
+    if (NINTENDO_SWITCH)
+        add_library(glad STATIC IMPORTED GLOBAL)
+        set_target_properties(glad PROPERTIES
+            IMPORTED_LOCATION "$ENV{DEVKITPRO}/portlibs/switch/lib/libglad.a"
+            INTERFACE_INCLUDE_DIRECTORIES "$ENV{DEVKITPRO}/portlibs/switch/include"
+        )
+    else()
+        add_subdirectory(glad EXCLUDE_FROM_ALL)
+    endif()
 endif()
 
 # Vulkan dependencies

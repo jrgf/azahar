@@ -11,6 +11,12 @@
 #include "common/settings.h"
 #include "core/hle/service/cfg/cfg.h"
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace BaseKeys = Settings::HKeys;
 
 namespace LibRetro {
@@ -892,6 +898,10 @@ static Settings::GraphicsAPI GetGraphicsAPI(const std::string& name) {
     if (name == "Vulkan")
         return Settings::GraphicsAPI::Vulkan;
 #endif
+#ifdef ENABLE_DEKO3D
+    if (name == "Deko3D")
+        return Settings::GraphicsAPI::Deko3D;
+#endif
 #ifdef ENABLE_OPENGL
     if (name == "OpenGL")
         return Settings::GraphicsAPI::OpenGL;
@@ -935,8 +945,33 @@ static void ParseGraphicsOptions(void) {
                                                                config::disabled) == config::enabled;
 
     Settings::values.dump_textures = LibRetro::FetchVariable(config::graphics::dump_textures,
-                                                             config::disabled) == config::enabled;
+                                                              config::disabled) == config::enabled;
 }
+
+#ifdef __SWITCH__
+static void ApplySwitchPerformanceOptions() {
+    Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+    Settings::values.use_gles = false;
+    Settings::values.use_hw_shader = true;
+    Settings::values.use_shader_jit = true;
+    Settings::values.shaders_accurate_mul = false;
+    Settings::values.use_disk_shader_cache = true;
+    Settings::values.async_shader_compilation = true;
+    Settings::values.use_vsync = false;
+    Settings::values.frame_limit = 0.0;
+    Settings::values.delay_game_render_thread_us = 0;
+    Settings::values.simulate_3ds_gpu_timings = false;
+    Settings::values.use_cpu_jit = true;
+    Settings::values.cpu_clock_percentage = 100;
+    Settings::values.is_new_3ds = true;
+
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=libretro.switch-settings graphics=opengl hw-shaders=1 "
+        "shader-jit=1 accurate-mul=0 disk-cache=1 async-shaders=1 vsync=0 frame-limit=0 "
+        "gpu-timings=0 cpu-jit=1 cpu-clock=100 new3ds=1");
+}
+#endif
 
 static Settings::LayoutOption GetLayoutOption(const std::string& name) {
     if (name == "single_screen" || name == "Single Screen Only")
@@ -961,6 +996,11 @@ static void ParseLayoutOptions(void) {
     auto large_screen_proportion =
         LibRetro::FetchVariable(config::layout::large_screen_proportion, "4.00");
     Settings::values.large_screen_proportion = std::stof(large_screen_proportion);
+
+#ifdef __SWITCH__
+    Settings::values.screen_gap = 0;
+    Settings::values.small_screen_position = Settings::SmallScreenPosition::TopRight;
+#endif
 }
 
 static void ParseStorageOptions(void) {
@@ -1060,6 +1100,9 @@ void ParseCoreOptions(void) {
     ParseSystemOptions();
     ParseAudioOptions();
     ParseGraphicsOptions();
+#ifdef __SWITCH__
+    ApplySwitchPerformanceOptions();
+#endif
     ParseLayoutOptions();
     ParseStorageOptions();
     ParseInputOptions();

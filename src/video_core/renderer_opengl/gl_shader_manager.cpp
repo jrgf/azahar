@@ -3,6 +3,10 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#ifdef __SWITCH__
+#include <atomic>
+#include <chrono>
+#endif
 #include <mutex>
 #include <set>
 #include <span>
@@ -10,6 +14,7 @@
 #include <unordered_map>
 #include <variant>
 #include "common/hash.h"
+#include "common/file_util.h"
 #include "common/settings.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/pica/shader_setup.h"
@@ -25,7 +30,31 @@
 using namespace Pica::Shader::Generator;
 using Pica::Shader::FSConfig;
 
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
+
 namespace OpenGL {
+
+#ifdef __SWITCH__
+namespace {
+std::atomic<unsigned> switch_gl_shader_trace_logs{};
+constexpr unsigned SwitchGlShaderTraceLogLimit = 64;
+
+bool SwitchGlShaderReserveLog() {
+    return switch_gl_shader_trace_logs.fetch_add(1, std::memory_order_relaxed) <
+           SwitchGlShaderTraceLogLimit;
+}
+
+long long SwitchGlShaderElapsedMs(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                 start)
+        .count();
+}
+} // namespace
+#endif
 
 static u64 GetUniqueIdentifier(const Pica::RegsInternal& regs, const ProgramCode& code) {
     std::size_t hash = 0;
@@ -161,29 +190,111 @@ public:
     template <typename... Args>
     std::tuple<u64, GLuint, std::optional<std::string>> Get(const KeyConfigType& config,
                                                             Args&&... args) {
-        auto [iter, new_shader] = shaders.emplace(config.Hash(), OGLShaderStage{separable});
+#ifdef __SWITCH__
+        const auto switch_total_start = std::chrono::steady_clock::now();
+        long long switch_codegen_ms = 0;
+        long long switch_create_ms = 0;
+        u64 switch_code_hash = 0;
+#endif
+        const size_t config_hash = config.Hash();
+        auto map_it = shader_map.find(config_hash);
+        if (map_it != shader_map.end()) {
+            if (map_it->second == nullptr) {
+                return {0, 0, std::nullopt};
+            }
+#ifdef __SWITCH__
+            const auto switch_total_ms = SwitchGlShaderElapsedMs(switch_total_start);
+            if (switch_total_ms >= 5 && SwitchGlShaderReserveLog()) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=opengl.shader.stagecache total-ms=%lld "
+                    "codegen-ms=0 create-ms=0 key-hit=1 code-hit=1 created=0 type=%u "
+                    "key=%016llX code=0 handle=%u",
+                    switch_total_ms, static_cast<u32>(ShaderType),
+                    static_cast<unsigned long long>(config_hash), map_it->second->GetHandle());
+            }
+#endif
+            return {config_hash, map_it->second->GetHandle(), std::nullopt};
+        }
+
+#ifdef __SWITCH__
+        const auto switch_codegen_start = std::chrono::steady_clock::now();
+#endif
+        auto generated = Common::HashableString(CodeGenerator(config, std::forward<Args>(args)...));
+#ifdef __SWITCH__
+        switch_codegen_ms = SwitchGlShaderElapsedMs(switch_codegen_start);
+        switch_code_hash = generated.Hash();
+#endif
+        if (generated.empty()) {
+            shader_map[config_hash] = nullptr;
+            return {0, 0, std::nullopt};
+        }
+
+        auto [iter, new_shader] = shader_cache.emplace(generated.Hash(), OGLShaderStage{separable});
         OGLShaderStage& cached_shader = iter->second;
         std::optional<std::string> result{};
+        result = std::move(generated);
         if (new_shader) {
-            result = CodeGenerator(config, args...);
+#ifdef __SWITCH__
+            const auto switch_create_start = std::chrono::steady_clock::now();
+#endif
             cached_shader.Create(result->c_str(), ShaderType);
+#ifdef __SWITCH__
+            switch_create_ms = SwitchGlShaderElapsedMs(switch_create_start);
+#endif
         }
-        return {iter->first, cached_shader.GetHandle(), std::move(result)};
+        shader_map[config_hash] = &cached_shader;
+#ifdef __SWITCH__
+        const auto switch_total_ms = SwitchGlShaderElapsedMs(switch_total_start);
+        if (switch_total_ms >= 5 && SwitchGlShaderReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=opengl.shader.stagecache total-ms=%lld codegen-ms=%lld "
+                "create-ms=%lld key-hit=0 code-hit=%u created=%u type=%u key=%016llX "
+                "code=%016llX handle=%u",
+                switch_total_ms, switch_codegen_ms, switch_create_ms, new_shader ? 0U : 1U,
+                new_shader ? 1U : 0U, static_cast<u32>(ShaderType),
+                static_cast<unsigned long long>(config_hash),
+                static_cast<unsigned long long>(switch_code_hash), cached_shader.GetHandle());
+        }
+#endif
+        return {config_hash, cached_shader.GetHandle(), std::move(result)};
     }
 
     void Inject(const KeyConfigType& key, OGLProgram&& program) {
         OGLShaderStage stage{separable};
         stage.Inject(std::move(program));
-        shaders.emplace(key.Hash(), std::move(stage));
+        const auto iter = shader_cache.emplace(key.Hash(), std::move(stage)).first;
+        OGLShaderStage& cached_shader = iter->second;
+        shader_map.insert_or_assign(key.Hash(), &cached_shader);
+    }
+
+    void Inject(const KeyConfigType& key, std::string decomp, OGLProgram&& program) {
+        OGLShaderStage stage{separable};
+        stage.Inject(std::move(program));
+        auto decomp_hash = Common::HashableString(std::move(decomp));
+        const auto iter = shader_cache.emplace(decomp_hash.Hash(), std::move(stage)).first;
+        OGLShaderStage& cached_shader = iter->second;
+        shader_map.insert_or_assign(key.Hash(), &cached_shader);
     }
 
     void Inject(const KeyConfigType& key, OGLShaderStage&& stage) {
-        shaders.emplace(key.Hash(), std::move(stage));
+        const auto iter = shader_cache.emplace(key.Hash(), std::move(stage)).first;
+        OGLShaderStage& cached_shader = iter->second;
+        shader_map.insert_or_assign(key.Hash(), &cached_shader);
+    }
+
+    void Inject(const KeyConfigType& key, std::string decomp, OGLShaderStage&& stage) {
+        auto decomp_hash = Common::HashableString(std::move(decomp));
+        const auto iter = shader_cache.emplace(decomp_hash.Hash(), std::move(stage)).first;
+        OGLShaderStage& cached_shader = iter->second;
+        shader_map.insert_or_assign(key.Hash(), &cached_shader);
     }
 
 private:
     bool separable;
-    std::unordered_map<u64, OGLShaderStage> shaders;
+    std::unordered_map<u64, OGLShaderStage*> shader_map;
+    std::unordered_map<u64, OGLShaderStage> shader_cache;
 };
 
 // This is a cache designed for shaders translated from PICA shaders. The first cache matches the
@@ -201,11 +312,27 @@ public:
     std::tuple<u64, GLuint, std::optional<std::string>> Get(const KeyConfigType& key,
                                                             const ExtraConfigType& extra,
                                                             const Pica::ShaderSetup& setup) {
+#ifdef __SWITCH__
+        const auto switch_total_start = std::chrono::steady_clock::now();
+        long long switch_codegen_ms = 0;
+        long long switch_create_ms = 0;
+        bool switch_generated_code = false;
+        bool switch_created_shader = false;
+        u64 switch_program_hash = 0;
+#endif
         std::optional<std::string> result{};
         const size_t key_hash = key.Hash();
         auto map_it = shader_map.find(key_hash);
         if (map_it == shader_map.end()) {
+#ifdef __SWITCH__
+            const auto switch_codegen_start = std::chrono::steady_clock::now();
+#endif
             auto program = Common::HashableString(CodeGenerator(setup, key, extra));
+#ifdef __SWITCH__
+            switch_codegen_ms = SwitchGlShaderElapsedMs(switch_codegen_start);
+            switch_generated_code = true;
+            switch_program_hash = program.Hash();
+#endif
             if (program.empty()) {
                 shader_map[key_hash] = nullptr;
                 return {0, 0, std::nullopt};
@@ -214,11 +341,32 @@ public:
             auto [iter, new_shader] =
                 shader_cache.emplace(program.Hash(), OGLShaderStage{separable});
             OGLShaderStage& cached_shader = iter->second;
+            result = std::move(program);
             if (new_shader) {
-                result = std::move(program);
+#ifdef __SWITCH__
+                const auto switch_create_start = std::chrono::steady_clock::now();
+#endif
                 cached_shader.Create((*result).c_str(), ShaderType);
+#ifdef __SWITCH__
+                switch_create_ms = SwitchGlShaderElapsedMs(switch_create_start);
+                switch_created_shader = true;
+#endif
             }
             shader_map[key_hash] = &cached_shader;
+#ifdef __SWITCH__
+            const auto switch_total_ms = SwitchGlShaderElapsedMs(switch_total_start);
+            if (switch_total_ms >= 5 && SwitchGlShaderReserveLog()) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=opengl.shader.doublecache total-ms=%lld codegen-ms=%lld "
+                    "create-ms=%lld key-hit=0 code-hit=%u created=%u type=%u key=%016llX "
+                    "code=%016llX handle=%u",
+                    switch_total_ms, switch_codegen_ms, switch_create_ms,
+                    switch_created_shader ? 0U : 1U, switch_created_shader ? 1U : 0U,
+                    static_cast<u32>(ShaderType), static_cast<unsigned long long>(key_hash),
+                    static_cast<unsigned long long>(switch_program_hash), cached_shader.GetHandle());
+            }
+#endif
             return {key_hash, cached_shader.GetHandle(), std::move(result)};
         }
 
@@ -226,6 +374,18 @@ public:
             return {0, 0, std::nullopt};
         }
 
+#ifdef __SWITCH__
+        const auto switch_total_ms = SwitchGlShaderElapsedMs(switch_total_start);
+        if (switch_total_ms >= 5 && SwitchGlShaderReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=opengl.shader.doublecache total-ms=%lld codegen-ms=0 "
+                "create-ms=0 key-hit=1 code-hit=1 created=0 type=%u key=%016llX code=0 "
+                "handle=%u",
+                switch_total_ms, static_cast<u32>(ShaderType),
+                static_cast<unsigned long long>(key_hash), map_it->second->GetHandle());
+        }
+#endif
         return {key_hash, map_it->second->GetHandle(), std::nullopt};
     }
 
@@ -358,19 +518,36 @@ ShaderProgramManager::~ShaderProgramManager() = default;
 bool ShaderProgramManager::UseProgrammableVertexShader(const Pica::RegsInternal& regs,
                                                        Pica::ShaderSetup& setup,
                                                        bool accurate_mul) {
+#ifdef __SWITCH__
+    const auto switch_start = std::chrono::steady_clock::now();
+#endif
 
     PicaVSConfig config{regs, setup};
     ExtraVSConfig extra = impl->CalcExtraConfig(config, accurate_mul);
 
     auto [hash, handle, result] = impl->programmable_vertex_shaders.Get(config, extra, setup);
-    if (handle == 0)
+    if (handle == 0) {
+#ifdef __SWITCH__
+        const auto switch_ms = SwitchGlShaderElapsedMs(switch_start);
+        if (SwitchGlShaderReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=opengl.vs.use result=0 elapsed-ms=%lld new-shader=0 "
+                "handle=0 hash=%016llX",
+                switch_ms, static_cast<unsigned long long>(hash));
+        }
+#endif
         return false;
+    }
     impl->current.vs = handle;
     impl->current.vs_hash = hash;
 
     // Save VS to the disk cache if its a new shader
     if (result) {
         auto& disk_cache = impl->disk_cache;
+#ifdef __SWITCH__
+        const auto switch_cache_save_start = std::chrono::steady_clock::now();
+#endif
         const auto& program_code = setup.GetProgramCode();
         const auto& swizzle_data = setup.GetSwizzleData();
         ProgramCode new_program_code{program_code.begin(), program_code.end()};
@@ -380,7 +557,33 @@ bool ShaderProgramManager::UseProgrammableVertexShader(const Pica::RegsInternal&
                                      std::move(new_program_code)};
         disk_cache.SaveRaw(raw);
         disk_cache.SaveDecompiled(unique_identifier, *result, accurate_mul);
+#ifdef __SWITCH__
+        if (impl->separable) {
+            disk_cache.SaveDump(unique_identifier, handle);
+            disk_cache.SaveVirtualPrecompiledFile();
+        }
+        const auto switch_cache_save_ms = SwitchGlShaderElapsedMs(switch_cache_save_start);
+        if (SwitchGlShaderReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=opengl.shader.cache.save elapsed-ms=%lld separable=%u "
+                "program=%016llX shader=%016llX handle=%u code-bytes=%zu",
+                switch_cache_save_ms, impl->separable ? 1U : 0U,
+                static_cast<unsigned long long>(disk_cache.GetProgramID()),
+                static_cast<unsigned long long>(unique_identifier), handle, result->size());
+        }
+#endif
     }
+#ifdef __SWITCH__
+    const auto switch_ms = SwitchGlShaderElapsedMs(switch_start);
+    if (switch_ms >= 5 && SwitchGlShaderReserveLog()) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.vs.use result=1 elapsed-ms=%lld new-shader=%u "
+            "handle=%u hash=%016llX",
+            switch_ms, result ? 1U : 0U, handle, static_cast<unsigned long long>(hash));
+    }
+#endif
     return true;
 }
 
@@ -456,8 +659,31 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
                                          const VideoCore::DiskResourceLoadCallback& callback,
                                          bool accurate_mul) {
     auto& disk_cache = impl->disk_cache;
+#ifdef __SWITCH__
+    if (SwitchGlShaderReserveLog()) {
+        const auto shader_dir = FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir);
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.shader.cache.load.begin program=%016llX separable=%u "
+            "disk=%u hw=%u accurate-mul=%u shader-dir=\"%s\"",
+            static_cast<unsigned long long>(disk_cache.GetProgramID()),
+            impl->separable ? 1U : 0U,
+            Settings::values.use_disk_shader_cache.GetValue() ? 1U : 0U,
+            Settings::values.use_hw_shader.GetValue() ? 1U : 0U, accurate_mul ? 1U : 0U,
+            shader_dir.c_str());
+    }
+#endif
     const auto transferable = disk_cache.LoadTransferable();
     if (!transferable) {
+#ifdef __SWITCH__
+        if (SwitchGlShaderReserveLog()) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=opengl.shader.cache.load.skip program=%016llX separable=%u",
+                static_cast<unsigned long long>(disk_cache.GetProgramID()),
+                impl->separable ? 1U : 0U);
+        }
+#endif
         return;
     }
     const auto& raws = *transferable;
@@ -465,6 +691,16 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
     // Load uncompressed precompiled file for non-separable shaders.
     // Precompiled file for separable shaders is compressed.
     auto [decompiled, dumps] = disk_cache.LoadPrecompiled(impl->separable);
+#ifdef __SWITCH__
+    if (SwitchGlShaderReserveLog()) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=opengl.shader.cache.load.entries program=%016llX separable=%u "
+            "raws=%zu decompiled=%zu dumps=%zu",
+            static_cast<unsigned long long>(disk_cache.GetProgramID()), impl->separable ? 1U : 0U,
+            raws.size(), decompiled.size(), dumps.size());
+    }
+#endif
 
     if (stop_loading) {
         return;
@@ -514,6 +750,8 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
                 // Only load the vertex shader if its sanitize_mul setting matches
                 if (raw.GetProgramType() == ProgramType::VS &&
                     decomp->second.sanitize_mul != accurate_mul) {
+                    std::scoped_lock lock(mutex);
+                    load_raws_index.push_back(i);
                     continue;
                 }
 
@@ -521,10 +759,17 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
                 shader =
                     GeneratePrecompiledProgram(dump->second, supported_formats, impl->separable);
                 if (shader.handle == 0) {
+#ifdef __SWITCH__
+                    std::scoped_lock lock(mutex);
+                    load_raws_index.push_back(i);
+                    precompiled_cache_altered = true;
+                    continue;
+#else
                     // If any shader failed, stop trying to compile, delete the cache, and start
                     // loading from raws
                     compilation_failed = true;
                     return;
+#endif
                 }
                 // we have both the binary shader and the decompiled, so inject it into the
                 // cache
@@ -537,7 +782,7 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
                     // TODO: Support UserConfig in disk shader cache
                     const FSConfig conf(raw.GetRawShaderConfig());
                     std::scoped_lock lock(mutex);
-                    impl->fragment_shaders.Inject(conf, std::move(shader));
+                    impl->fragment_shaders.Inject(conf, decomp->second.code, std::move(shader));
                 } else {
                     // Unsupported shader type got stored somehow so nuke the cache
 
@@ -638,22 +883,24 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
             if (raw.GetProgramType() == ProgramType::VS) {
                 auto [conf, setup] = BuildVSConfigFromRaw(raw, driver, accurate_mul);
                 ExtraVSConfig extra = impl->CalcExtraConfig(conf, accurate_mul);
-                code = GLSL::GenerateVertexShader(setup, conf, extra);
-                OGLShaderStage stage{impl->separable};
-                stage.Create(code.c_str(), GL_VERTEX_SHADER);
-                handle = stage.GetHandle();
                 sanitize_mul = accurate_mul;
                 std::scoped_lock lock(mutex);
-                impl->programmable_vertex_shaders.Inject(conf, code, std::move(stage));
+                auto [_, shader_handle, result] =
+                    impl->programmable_vertex_shaders.Get(conf, extra, setup);
+                handle = shader_handle;
+                if (result) {
+                    code = std::move(*result);
+                }
             } else if (raw.GetProgramType() == ProgramType::FS) {
                 // TODO: Support UserConfig in disk shader cache
                 const FSConfig fs_config{raw.GetRawShaderConfig()};
-                code = GLSL::GenerateFragmentShader(fs_config, {}, impl->profile);
-                OGLShaderStage stage{impl->separable};
-                stage.Create(code.c_str(), GL_FRAGMENT_SHADER);
-                handle = stage.GetHandle();
                 std::scoped_lock lock(mutex);
-                impl->fragment_shaders.Inject(fs_config, std::move(stage));
+                auto [_, shader_handle, result] =
+                    impl->fragment_shaders.Get(fs_config, Pica::Shader::UserConfig{}, impl->profile);
+                handle = shader_handle;
+                if (result) {
+                    code = std::move(*result);
+                }
             } else {
                 // Unsupported shader type got stored somehow so nuke the cache
                 LOG_ERROR(Frontend, "failed to load raw ProgramType {}", raw.GetProgramType());
