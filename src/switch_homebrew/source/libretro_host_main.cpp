@@ -70,7 +70,11 @@ struct HostState {
 
 HostState g_host;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
-constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v44";
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+constexpr const char* LibretroBuildMarker = "switch-libretro-deko-deferred-v45";
+#else
+constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v45";
+#endif
 
 #ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 constexpr retro_hw_context_type SwitchHwContextType() {
@@ -252,6 +256,10 @@ bool HostEnvironment(unsigned cmd, void* data) {
         return true;
     case RETRO_ENVIRONMENT_SET_HW_RENDER: {
         auto* callback = static_cast<retro_hw_render_callback*>(data);
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=libretro.hw-render.request context=%u reset=%u",
+            callback != nullptr ? static_cast<unsigned>(callback->context_type) : 0xFFFFFFFFU,
+            callback != nullptr && callback->context_reset != nullptr ? 1U : 0U);
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
         if (callback != nullptr && callback->context_type == RETRO_HW_CONTEXT_NONE &&
             callback->context_reset != nullptr) {
@@ -575,7 +583,7 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
     info.path = game.path;
     Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.load.begin");
     auto stage_start = std::chrono::steady_clock::now();
-    const bool loaded = retro_load_game(&info);
+    bool loaded = retro_load_game(&info);
     auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                           std::chrono::steady_clock::now() - stage_start)
                           .count();
@@ -583,6 +591,15 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
                                     "android-flow stage=libretro.load result=%s elapsed-ms=%lld",
                                     loaded ? "ok" : "failed",
                                     static_cast<long long>(elapsed_ms));
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+    if (loaded && g_host.hw_render.context_reset == nullptr &&
+        g_host.variables["citra_graphics_api"] == "Deko3D") {
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=libretro.context-reset.missing graphics=deko3d action=fail-fast");
+        loaded = false;
+    }
+#endif
     if (loaded && g_host.hw_render.context_reset != nullptr) {
         Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.context-reset begin");
         stage_start = std::chrono::steady_clock::now();

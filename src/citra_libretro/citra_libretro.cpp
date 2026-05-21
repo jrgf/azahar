@@ -690,7 +690,15 @@ bool retro_load_game(const struct retro_game_info* info) {
         emu_instance->hw_render.context_reset = context_reset;
         emu_instance->hw_render.context_destroy = context_destroy;
         emu_instance->hw_render.cache_context = false;
-        if (!LibRetro::SetHWRenderer(&emu_instance->hw_render)) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=libretro.deko-deferred.request context=%u reset=%u",
+            static_cast<unsigned>(emu_instance->hw_render.context_type),
+            emu_instance->hw_render.context_reset != nullptr ? 1U : 0U);
+        const bool deko_deferred_set = LibRetro::SetHWRenderer(&emu_instance->hw_render);
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=libretro.deko-deferred.result ok=%u",
+            deko_deferred_set ? 1U : 0U);
+        if (!deko_deferred_set) {
             LibRetro::DisplayMessage("Failed to set Deko3D deferred renderer");
             return false;
         }
