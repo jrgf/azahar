@@ -71,9 +71,9 @@ struct HostState {
 HostState g_host;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
-constexpr const char* LibretroBuildMarker = "switch-libretro-deko-trace-off-v48";
+constexpr const char* LibretroBuildMarker = "switch-libretro-deko-video-submit-v50";
 #else
-constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v48";
+constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v50";
 #endif
 
 #ifdef AZAHAR_SWITCH_OPENGL_SPIKE
@@ -624,12 +624,26 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
         const auto run_start = trace_run ? std::chrono::steady_clock::now()
                                          : std::chrono::steady_clock::time_point{};
         const unsigned frames_before = trace_run ? g_host.video_frames : 0;
+        if (trace_run) {
+            Azahar::Switch::AppendLogFormat(nullptr,
+                                            "android-flow stage=libretro.run.call.begin "
+                                            "iteration=%u frames=%u",
+                                            iterations + 1, frames_before);
+        }
         retro_run();
         const auto run_ms =
             trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::steady_clock::now() - run_start)
                             .count()
                       : 0;
+        if (trace_run) {
+            Azahar::Switch::AppendLogFormat(nullptr,
+                                            "android-flow stage=libretro.run.call.end "
+                                            "iteration=%u frames-before=%u frames-after=%u "
+                                            "elapsed-ms=%lld",
+                                            iterations + 1, frames_before, g_host.video_frames,
+                                            static_cast<long long>(run_ms));
+        }
         ++iterations;
         if (trace_run && run_ms >= 1000 && g_host.slow_run_logs < 32) {
             ++g_host.slow_run_logs;

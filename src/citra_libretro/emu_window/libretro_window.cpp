@@ -92,6 +92,13 @@ void EmuWindow_LibRetro::SwapBuffers() {
 #endif
         break;
     }
+#ifdef ENABLE_DEKO3D
+    case Settings::GraphicsAPI::Deko3D: {
+        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+                                   static_cast<unsigned>(height), 0);
+        break;
+    }
+#endif
     case Settings::GraphicsAPI::Software: {
         retro_framebuffer fb;
         u8* data;

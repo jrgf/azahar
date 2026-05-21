@@ -292,16 +292,28 @@ void retro_run() {
 
 #ifdef __SWITCH__
     static unsigned switch_run_sample_count = 0;
-    const bool switch_trace_run = switch_run_sample_count++ < 32;
+    const unsigned switch_run_sample = switch_run_sample_count++;
+    const bool switch_trace_run = switch_run_sample < 32;
     const auto switch_run_start = switch_trace_run ? std::chrono::steady_clock::now()
                                                    : std::chrono::steady_clock::time_point{};
     unsigned switch_runloop_count = 0;
     long long switch_runloop_total_ms = 0;
     long long switch_runloop_max_ms = 0;
+    if (switch_trace_run) {
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=libretro.retro-run.begin sample=%u graphics=%u",
+            switch_run_sample,
+            static_cast<unsigned>(Settings::values.graphics_api.GetValue()));
+    }
 #endif
 
     while (!emu_instance->emu_window->HasSubmittedFrame()) {
 #ifdef __SWITCH__
+        if (switch_trace_run && switch_runloop_count < 8) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr, "android-flow stage=libretro.runloop.before sample=%u loop=%u",
+                switch_run_sample, switch_runloop_count + 1);
+        }
         const auto switch_loop_start = switch_trace_run ? std::chrono::steady_clock::now()
                                                         : std::chrono::steady_clock::time_point{};
 #endif
@@ -323,6 +335,14 @@ void retro_run() {
             switch_runloop_total_ms += switch_loop_ms;
             switch_runloop_max_ms =
                 std::max(switch_runloop_max_ms, static_cast<long long>(switch_loop_ms));
+            if (switch_runloop_count <= 8) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=libretro.runloop.after sample=%u loop=%u result=%d "
+                    "elapsed-ms=%lld",
+                    switch_run_sample, switch_runloop_count, static_cast<int>(result),
+                    static_cast<long long>(switch_loop_ms));
+            }
         }
 #endif
 
@@ -365,6 +385,14 @@ void retro_run() {
                                         static_cast<long long>(switch_run_ms),
                                         switch_runloop_count, switch_runloop_total_ms,
                                         switch_runloop_max_ms);
+    }
+    if (switch_trace_run) {
+        Azahar::Switch::AppendLogFormat(nullptr,
+                                        "android-flow stage=libretro.retro-run.end sample=%u "
+                                        "elapsed-ms=%lld loops=%u",
+                                        switch_run_sample,
+                                        static_cast<long long>(switch_run_ms),
+                                        switch_runloop_count);
     }
 #endif
 }

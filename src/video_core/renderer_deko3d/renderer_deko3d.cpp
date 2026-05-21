@@ -55,6 +55,7 @@ constexpr float PresentOverlayAlpha = 0.35f;
 constexpr bool PresentDebugOverlay = false;
 constexpr bool PresentDebugMirrorBottom = false;
 constexpr bool DekoHotTrace = false;
+constexpr bool DekoFrameSummaryTrace = true;
 
 constexpr std::array<DkVtxAttribState, 3> PresentVertexAttribState{{
     {0, 0, static_cast<u32>(offsetof(PresentVertex, position)), DkVtxAttribSize_4x32,
@@ -72,6 +73,11 @@ constexpr std::array<DkVtxBufferState, 1> PresentVertexBufferState{{
 #ifdef __SWITCH__
 bool ShouldTraceDekoFrame(u32 frame) {
     return DekoHotTrace && (frame < 8 || frame == 16 || frame == 32 || (frame % 60) == 0);
+}
+
+bool ShouldTraceDekoFrameSummary(u32 frame) {
+    return DekoFrameSummaryTrace &&
+           (frame < 4 || frame == 8 || frame == 16 || (frame % 120) == 0);
 }
 #endif
 
@@ -168,6 +174,11 @@ s32 WrapTextureCoord(Pica::TexturingRegs::TextureConfig::WrapMode mode, s32 coor
     }
 }
 
+bool IsSupportedPresentTextureType(u32 type) {
+    return type == Pica::TexturingRegs::TextureConfig::Texture2D ||
+           type == Pica::TexturingRegs::TextureConfig::Projection2D;
+}
+
 bool SampleTexture0Color(Memory::MemorySystem& memory, const Pica::RegsInternal& regs,
                          const Common::Vec2f& tex_coord0, float tex_coord0_w,
                          std::array<float, 4>& color) {
@@ -231,14 +242,16 @@ bool SampleTexture0Color(Memory::MemorySystem& memory, const Pica::RegsInternal&
 
 PresentTextureInfo GetTexture0Info(const Pica::RegsInternal& regs) {
     const auto texture0 = regs.texturing.GetTextures()[0];
+    const bool has_texture = texture0.enabled != 0 && texture0.config.address != 0 &&
+                             texture0.config.width.Value() != 0 &&
+                             texture0.config.height.Value() != 0;
     return {
         texture0.config.GetPhysicalAddress(),
         static_cast<u32>(texture0.config.width.Value()),
         static_cast<u32>(texture0.config.height.Value()),
         static_cast<u32>(texture0.format),
         static_cast<u32>(texture0.config.type.Value()),
-        texture0.enabled != 0 && texture0.config.address != 0 &&
-            texture0.config.type.Value() == Pica::TexturingRegs::TextureConfig::Texture2D,
+        has_texture,
     };
 }
 
@@ -485,6 +498,7 @@ struct DekoTextureImage {
         config.address.Assign(info.address / 8);
         config.width.Assign(info.width);
         config.height.Assign(info.height);
+        config.type.Assign(static_cast<Pica::TexturingRegs::TextureConfig::TextureType>(info.type));
         const auto format = static_cast<Pica::TexturingRegs::TextureFormat>(info.format);
         const auto texture_info = Pica::Texture::TextureInfo::FromPicaRegister(config, format);
         for (u32 y = 0; y < info.height; ++y) {
@@ -714,18 +728,28 @@ struct RendererDeko3D::Context {
         return true;
     }
 
-    bool BindTextureForBatch(const PresentTextureInfo& texture, Memory::MemorySystem& memory) {
+    bool BindTextureForBatch(const PresentTextureInfo& texture, Memory::MemorySystem& memory,
+                             bool* uploaded_now_out = nullptr) {
         DekoTextureImage* image = &white_texture;
         if (texture.enabled) {
+            if (!IsSupportedPresentTextureType(texture.type)) {
+                return false;
+            }
             auto [it, inserted] = texture_cache.try_emplace(TextureCacheKey(texture));
             if (it->second.Ensure(device, queue, memory, texture)) {
                 image = &it->second;
             } else if (inserted) {
                 texture_cache.erase(it);
+                return false;
+            } else {
+                return false;
             }
         }
 
         const bool uploaded_now = image->UploadIfNeeded(command_buffer);
+        if (uploaded_now_out != nullptr) {
+            *uploaded_now_out = uploaded_now;
+        }
         if (uploaded_now) {
             command_buffer.barrier(DkBarrier_None, DkInvalidateFlags_Image);
         }
@@ -743,7 +767,7 @@ struct RendererDeko3D::Context {
         image_descriptor_set.BindForImages(command_buffer);
         sampler_descriptor_set.BindForSamplers(command_buffer);
         command_buffer.bindTextures(DkStage_Fragment, 0, dkMakeTextureHandle(0, 0));
-        return uploaded_now;
+        return true;
     }
 
     void DrawPresentVertices(const std::vector<PresentVertex>& vertices,
@@ -892,16 +916,24 @@ struct RendererDeko3D::Context {
         u32 vertex_count = 0;
         u32 textured_batches = 0;
         u32 uploaded_textures = 0;
+        u32 skipped_texture_batches = 0;
+        u32 drawn_batches = 0;
         for (const auto& batch : batches) {
             vertex_count += static_cast<u32>(batch.vertices.size());
             if (batch.texture.enabled) {
                 ++textured_batches;
             }
-            if (BindTextureForBatch(batch.texture, memory)) {
+            bool uploaded_now = false;
+            if (!BindTextureForBatch(batch.texture, memory, &uploaded_now)) {
+                ++skipped_texture_batches;
+                continue;
+            }
+            if (uploaded_now) {
                 ++uploaded_textures;
             }
             DrawPresentVertices(batch.vertices, target_rect, frame_count, using_cached_batches, 1.0f,
                                 false, "pica-target");
+            ++drawn_batches;
         }
         command_buffer.barrier(DkBarrier_Tiles, DkInvalidateFlags_Image);
 
@@ -912,18 +944,18 @@ struct RendererDeko3D::Context {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.target-render frame=%u changed=%u pica=%08X "
-                "pica-size=%ux%u image=%ux%u batches=%u textured=%u uploaded=%u cache=%u "
-                "vertices=%u cached=%u",
+                "pica-size=%ux%u image=%ux%u batches=%u drawn=%u textured=%u skipped=%u "
+                "uploaded=%u cache=%u vertices=%u cached=%u",
                 frame_count, changed ? 1 : 0, static_cast<u32>(pica_target.color_address),
                 pica_target.width, pica_target.height, pica_color_target.width,
-                pica_color_target.height, static_cast<u32>(batches.size()), textured_batches,
-                uploaded_textures, static_cast<u32>(texture_cache.size()), vertex_count,
-                using_cached_batches ? 1 : 0);
+                pica_color_target.height, static_cast<u32>(batches.size()), drawn_batches,
+                textured_batches, skipped_texture_batches, uploaded_textures,
+                static_cast<u32>(texture_cache.size()), vertex_count, using_cached_batches ? 1 : 0);
         }
         ++target_render_log_count;
 #endif
 
-        return true;
+        return drawn_batches != 0;
     }
 
     void BlitSource(DekoSourceImage& source, const DekoScreenFrame& screen,
@@ -1135,6 +1167,20 @@ struct RendererDeko3D::Context {
             BlitSource(bottom_source, bottom, framebuffer_view);
         }
 
+#ifdef __SWITCH__
+        if (ShouldTraceDekoFrameSummary(frame_count)) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=deko3d.frame-summary frame=%u rendered-pica=%u "
+                "batches=%u cached=%u transfers=%u top-rgb=%u bottom-rgb=%u top-transfer=%u "
+                "bottom-transfer=%u",
+                frame_count, rendered_pica_target ? 1 : 0, static_cast<u32>(draw_batches->size()),
+                using_cached_batches ? 1 : 0, static_cast<u32>(display_transfers.size()),
+                top.has_rgb ? 1 : 0, bottom.has_rgb ? 1 : 0, top_transfer != nullptr ? 1 : 0,
+                bottom_transfer != nullptr ? 1 : 0);
+        }
+#endif
+
         if (PresentDebugOverlay) {
             for (const auto& batch : *draw_batches) {
                 BindTextureForBatch(batch.texture, memory);
@@ -1172,6 +1218,9 @@ void RasterizerDeko3D::DrawTriangles() {
     const std::size_t count = std::min(available, vertex_batch.size());
     PresentBatch batch{};
     batch.texture = GetTexture0Info(regs);
+    const bool texture0_projection =
+        batch.texture.enabled &&
+        batch.texture.type == Pica::TexturingRegs::TextureConfig::Projection2D;
     batch.vertices.reserve(count);
     for (std::size_t i = 0; i < count; ++i) {
         const auto& vertex = vertex_batch[i];
@@ -1179,7 +1228,13 @@ void RasterizerDeko3D::DrawTriangles() {
         present.position = {vertex.position.x, vertex.position.y, vertex.position.z,
                             vertex.position.w};
         present.color = {vertex.color.x, vertex.color.y, vertex.color.z, vertex.color.w};
-        present.tex_coord0 = {vertex.tex_coord0.x, vertex.tex_coord0.y};
+        float tex0_s = vertex.tex_coord0.x;
+        float tex0_t = vertex.tex_coord0.y;
+        if (texture0_projection && std::abs(vertex.tex_coord0_w) >= 0.000001f) {
+            tex0_s /= vertex.tex_coord0_w;
+            tex0_t /= vertex.tex_coord0_w;
+        }
+        present.tex_coord0 = {tex0_s, tex0_t};
         batch.vertices.emplace_back(present);
     }
     if (!batch.vertices.empty()) {
