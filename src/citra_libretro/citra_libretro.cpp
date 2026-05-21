@@ -684,10 +684,22 @@ bool retro_load_game(const struct retro_game_info* info) {
 #ifdef ENABLE_DEKO3D
     case Settings::GraphicsAPI::Deko3D:
         LOG_INFO(Frontend, "Using Deko3D renderer");
+#ifdef __SWITCH__
+        emu_instance->hw_render = {};
+        emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_NONE;
+        emu_instance->hw_render.context_reset = context_reset;
+        emu_instance->hw_render.context_destroy = context_destroy;
+        emu_instance->hw_render.cache_context = false;
+        if (!LibRetro::SetHWRenderer(&emu_instance->hw_render)) {
+            LibRetro::DisplayMessage("Failed to set Deko3D deferred renderer");
+            return false;
+        }
+#else
         emu_instance->emu_window->CreateContext();
         emu_instance->game_loaded = do_load_game();
         if (!emu_instance->game_loaded)
             return false;
+#endif
         break;
 #endif
     }

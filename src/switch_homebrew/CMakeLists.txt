@@ -80,16 +80,11 @@ if (ENABLE_LIBRETRO)
         source/switch_runtime.h
     )
 
-    target_compile_definitions(azahar-switch-libretro PRIVATE AZAHAR_SWITCH_OPENGL_SPIKE)
     target_include_directories(azahar-switch-libretro PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/source
         ${PROJECT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/externals/libretro-common/libretro-common/include
         ${NX_STANDARD_INCLUDE_DIRECTORIES}
-        $ENV{DEVKITPRO}/portlibs/switch/include
-    )
-    target_link_directories(azahar-switch-libretro PRIVATE
-        $ENV{DEVKITPRO}/portlibs/switch/lib
     )
     target_link_libraries(azahar-switch-libretro PRIVATE
         azahar_libretro
@@ -102,12 +97,21 @@ if (ENABLE_LIBRETRO)
         network
         video_core
         ${NX_STANDARD_LIBRARIES}
-        EGL
-        glapi
-        drm_nouveau
     )
-    if (TARGET glad)
-        target_link_libraries(azahar-switch-libretro PRIVATE glad)
+    if (ENABLE_OPENGL)
+        target_link_directories(azahar-switch-libretro PRIVATE
+            $ENV{DEVKITPRO}/portlibs/switch/lib
+        )
+        target_link_libraries(azahar-switch-libretro PRIVATE EGL glapi drm_nouveau)
+        if (TARGET glad)
+            target_link_libraries(azahar-switch-libretro PRIVATE glad)
+        endif()
+    endif()
+    if (AZAHAR_SWITCH_OPENGL_SPIKE)
+        target_compile_definitions(azahar-switch-libretro PRIVATE AZAHAR_SWITCH_OPENGL_SPIKE)
+        target_include_directories(azahar-switch-libretro PRIVATE
+            $ENV{DEVKITPRO}/portlibs/switch/include
+        )
     endif()
 
     nx_generate_nacp(

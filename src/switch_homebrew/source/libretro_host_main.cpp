@@ -6,7 +6,9 @@
 #include "switch_input.h"
 #include "switch_runtime.h"
 
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 #include <EGL/egl.h>
+#endif
 #include <libretro.h>
 #include <switch.h>
 
@@ -70,6 +72,7 @@ HostState g_host;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
 constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v44";
 
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 constexpr retro_hw_context_type SwitchHwContextType() {
 #ifdef USING_GLES
     return RETRO_HW_CONTEXT_OPENGLES3;
@@ -85,6 +88,7 @@ constexpr const char* SwitchHwContextName() {
     return "opengl-core";
 #endif
 }
+#endif
 
 const char* BoolText(bool value) {
     return value ? "ok" : "failed";
@@ -99,6 +103,7 @@ void LogMessage(enum retro_log_level, const char* format, ...) {
     Azahar::Switch::AppendLogFormat(nullptr, "libretro-log %s", buffer);
 }
 
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 retro_proc_address_t HostGetProcAddress(const char* symbol) {
     return reinterpret_cast<retro_proc_address_t>(eglGetProcAddress(symbol));
 }
@@ -106,6 +111,7 @@ retro_proc_address_t HostGetProcAddress(const char* symbol) {
 uintptr_t HostGetCurrentFramebuffer() {
     return 0;
 }
+#endif
 
 void CaptureCoreOptionDefaults(const retro_core_options_v2* options) {
     if (options == nullptr || options->definitions == nullptr) {
@@ -121,7 +127,11 @@ void CaptureCoreOptionDefaults(const retro_core_options_v2* options) {
     g_host.variables["citra_layout_option"] = "large_screen";
     g_host.variables["citra_large_screen_proportion"] = "2.25";
     g_host.variables["citra_resolution_factor"] = "1";
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+    g_host.variables["citra_graphics_api"] = "Deko3D";
+#else
     g_host.variables["citra_graphics_api"] = "OpenGL";
+#endif
 }
 
 void CaptureCoreOptionDefaults(const retro_core_option_definition* options) {
@@ -138,7 +148,11 @@ void CaptureCoreOptionDefaults(const retro_core_option_definition* options) {
     g_host.variables["citra_layout_option"] = "large_screen";
     g_host.variables["citra_large_screen_proportion"] = "2.25";
     g_host.variables["citra_resolution_factor"] = "1";
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+    g_host.variables["citra_graphics_api"] = "Deko3D";
+#else
     g_host.variables["citra_graphics_api"] = "OpenGL";
+#endif
 }
 
 void CaptureVariables(const retro_variable* variables) {
@@ -161,6 +175,7 @@ void CaptureVariables(const retro_variable* variables) {
     }
 }
 
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 bool EnsureOpenGLContext() {
     if (g_host.gl_context != nullptr) {
         u32 result = 0;
@@ -185,6 +200,7 @@ bool EnsureOpenGLContext() {
     Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.opengl.ready");
     return true;
 }
+#endif
 
 bool HostEnvironment(unsigned cmd, void* data) {
     switch (cmd) {
@@ -226,12 +242,26 @@ bool HostEnvironment(unsigned cmd, void* data) {
         g_host.pixel_format = *static_cast<retro_pixel_format*>(data);
         return g_host.pixel_format == RETRO_PIXEL_FORMAT_XRGB8888;
     case RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER:
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
         *static_cast<retro_hw_context_type*>(data) = SwitchHwContextType();
+#else
+        *static_cast<retro_hw_context_type*>(data) = RETRO_HW_CONTEXT_NONE;
+#endif
         return true;
     case RETRO_ENVIRONMENT_SET_HW_SHARED_CONTEXT:
         return true;
     case RETRO_ENVIRONMENT_SET_HW_RENDER: {
         auto* callback = static_cast<retro_hw_render_callback*>(data);
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+        if (callback != nullptr && callback->context_type == RETRO_HW_CONTEXT_NONE &&
+            callback->context_reset != nullptr) {
+            g_host.hw_render = *callback;
+            Azahar::Switch::AppendLogFormat(
+                nullptr, "android-flow stage=libretro.hw-render context=deko3d-deferred");
+            return true;
+        }
+#endif
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
         if (callback == nullptr || callback->context_type != SwitchHwContextType()) {
             return false;
         }
@@ -245,6 +275,9 @@ bool HostEnvironment(unsigned cmd, void* data) {
             nullptr, "android-flow stage=libretro.hw-render context=%s version=%u.%u",
             SwitchHwContextName(), callback->version_major, callback->version_minor);
         return true;
+#else
+        return false;
+#endif
     }
     case RETRO_ENVIRONMENT_SET_GEOMETRY:
     case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO:
@@ -274,6 +307,7 @@ bool HostEnvironment(unsigned cmd, void* data) {
 
 void HostVideoRefresh(const void* data, unsigned width, unsigned height, std::size_t pitch) {
     (void)pitch;
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
     if (data == RETRO_HW_FRAME_BUFFER_VALID && g_host.gl_context != nullptr) {
         u32 result = 0;
         const bool trace_swap = g_host.swap_timing_samples++ < 32;
@@ -298,6 +332,7 @@ void HostVideoRefresh(const void* data, unsigned width, unsigned height, std::si
                                             static_cast<long long>(swap_ms));
         }
     }
+#endif
     ++g_host.video_frames;
     if (g_host.video_frames == 1 || g_host.video_frames == 60 ||
         (g_host.video_frames % 600) == 0) {
@@ -624,12 +659,14 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
     Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.deinit.begin");
     retro_deinit();
     Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.deinit.end");
+#ifdef AZAHAR_SWITCH_OPENGL_SPIKE
     if (g_host.gl_context != nullptr) {
         Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.gl-destroy.begin");
         Azahar::Switch::Platform::DestroyOpenGLContext(g_host.gl_context);
         g_host.gl_context = nullptr;
         Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=libretro.gl-destroy.end");
     }
+#endif
     const auto thread_restore_result = Azahar::Switch::Platform::SetThreadPriorityBoost(false);
     Azahar::Switch::AppendLogFormat(
         nullptr,
