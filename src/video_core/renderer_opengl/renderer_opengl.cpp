@@ -1004,7 +1004,12 @@ void RendererOpenGL::TryPresent(int timeout_ms, bool is_secondary) {
     }
 
     // Clearing before a full overwrite of a fbo can signal to drivers that they can avoid a
-    // readback since we won't be doing any blending
+    // readback since we won't be doing any blending. On tile-based GPUs (Switch/Tegra) an
+    // explicit invalidate hint is cheaper than the clear itself.
+    if (glad_glInvalidateFramebuffer != nullptr) {
+        const GLenum present_attachments[] = {GL_COLOR_ATTACHMENT0};
+        glInvalidateFramebuffer(GL_DRAW_FRAMEBUFFER, 1, present_attachments);
+    }
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Recreate the presentation FBO if the color attachment was changed
