@@ -108,7 +108,9 @@ std::tuple<float, float> GetSwitchStick(unsigned stick_index) {
     UpdateSwitchInput();
     std::scoped_lock lock(input_state.mutex);
     const HidAnalogStickState& stick = input_state.sticks[std::min<unsigned>(stick_index, 1)];
-    return {NormalizeStickAxis(stick.x), NormalizeStickAxis(stick.y)};
+    // libnx reports positive Y as up; citra's analog stick consumer expects
+    // positive Y as down, so invert here.
+    return {NormalizeStickAxis(stick.x), -NormalizeStickAxis(stick.y)};
 }
 
 bool IsSwitchButtonPressed(SwitchButton button) {
