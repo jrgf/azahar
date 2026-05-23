@@ -58,6 +58,7 @@ const char* GetRomDirectory();
 
 bool EnsureAppDirectories(int* error_out);
 bool AppendLogFormat(int* error_out, const char* format, ...);
+void FlushLog();
 GameCatalog ScanGameDirectory();
 void MoveSelection(const GameCatalog& catalog, int& selected_index, int delta);
 

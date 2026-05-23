@@ -28,6 +28,11 @@ namespace {
 std::atomic<unsigned> switch_gl_shader_util_logs{};
 constexpr unsigned SwitchGlShaderUtilLogLimit = 5000;
 
+// Cumulative link counters so the log shows whether program linking is a
+// startup-only cost or keeps firing during gameplay.
+std::atomic<unsigned> switch_gl_total_links{};
+std::atomic<long long> switch_gl_total_link_ms{};
+
 bool SwitchGlShaderUtilReserveLog() {
     return switch_gl_shader_util_logs.fetch_add(1, std::memory_order_relaxed) <
            SwitchGlShaderUtilLogLimit;
@@ -179,13 +184,18 @@ GLuint LoadProgram(bool separable_program, std::span<const GLuint> shaders,
     }
 
 #ifdef __SWITCH__
+    const unsigned total_links =
+        switch_gl_total_links.fetch_add(1, std::memory_order_relaxed) + 1;
+    const long long total_link_ms =
+        switch_gl_total_link_ms.fetch_add(switch_link_ms, std::memory_order_relaxed) +
+        switch_link_ms;
     if ((switch_link_ms >= 5 || result == GL_FALSE) && SwitchGlShaderUtilReserveLog()) {
         Azahar::Switch::AppendLogFormat(
             nullptr,
             "android-flow stage=opengl.program.link separable=%u result=%u elapsed-ms=%lld "
-            "shader-count=%zu handle=%u",
+            "shader-count=%zu handle=%u total-links=%u total-ms=%lld",
             separable_program ? 1U : 0U, result == GL_TRUE ? 1U : 0U, switch_link_ms,
-            shaders.size(), program_id);
+            shaders.size(), program_id, total_links, total_link_ms);
     }
 #endif
     return program_id;

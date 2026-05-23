@@ -124,6 +124,10 @@ if (ENABLE_OPENGL)
         renderer_opengl/frame_dumper_opengl.h
         renderer_opengl/gl_blit_helper.cpp
         renderer_opengl/gl_blit_helper.h
+        renderer_opengl/gl_async_compiler.cpp
+        renderer_opengl/gl_async_compiler.h
+        renderer_opengl/gl_async_probe.cpp
+        renderer_opengl/gl_async_probe.h
         renderer_opengl/gl_driver.cpp
         renderer_opengl/gl_driver.h
         renderer_opengl/gl_rasterizer.cpp
@@ -213,6 +217,21 @@ if (ENABLE_DEKO3D)
         message(FATAL_ERROR "ENABLE_DEKO3D requires the devkitPro Switch CMake toolchain")
     endif()
     target_sources(video_core PRIVATE
+        renderer_deko3d/deko_descriptor_update_queue.cpp
+        renderer_deko3d/deko_descriptor_update_queue.h
+        renderer_deko3d/deko_instance.cpp
+        renderer_deko3d/deko_instance.h
+        renderer_deko3d/deko_master_fence.cpp
+        renderer_deko3d/deko_master_fence.h
+        renderer_deko3d/deko_resource_pool.cpp
+        renderer_deko3d/deko_resource_pool.h
+        renderer_deko3d/deko_scheduler.cpp
+        renderer_deko3d/deko_scheduler.h
+        renderer_deko3d/deko_stream_buffer.cpp
+        renderer_deko3d/deko_stream_buffer.h
+        renderer_deko3d/deko_texture_runtime.cpp
+        renderer_deko3d/deko_texture_runtime.h
+        renderer_deko3d/pica_to_deko.h
         renderer_deko3d/renderer_deko3d.cpp
         renderer_deko3d/renderer_deko3d.h
     )
@@ -230,7 +249,7 @@ if (ENABLE_DEKO3D)
         video_core_deko_present_vsh
         video_core_deko_present_fsh
     )
-    target_link_libraries(video_core PRIVATE deko3d video_core_deko_present_shaders)
+    target_link_libraries(video_core PRIVATE deko3d video_core_deko_present_shaders uam)
 endif()
 
 if(ENABLE_SDL2)

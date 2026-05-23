@@ -52,11 +52,15 @@
 #define GLAD_GL_ES_VERSION_3_2 0
 #endif
 
+// These come from GL_ARB_buffer_storage. Switch-Mesa advertises the extension
+// but glad's GLES headers don't pull in the desktop bits, so default them to
+// the spec values rather than 0 — otherwise the persistent-buffer path in
+// gl_stream_buffer.cpp is dead-coded at compile time.
 #ifndef GL_MAP_PERSISTENT_BIT
-#define GL_MAP_PERSISTENT_BIT 0
+#define GL_MAP_PERSISTENT_BIT 0x0040
 #endif
 #ifndef GL_MAP_COHERENT_BIT
-#define GL_MAP_COHERENT_BIT 0
+#define GL_MAP_COHERENT_BIT 0x0080
 #endif
 
 #ifndef GL_FACTOR_MIN_AMD

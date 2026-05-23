@@ -132,6 +132,10 @@ option(ENABLE_QT_UPDATE_CHECKER "Enable built-in update checker for the Qt front
 option(ENABLE_SWITCH_HOMEBREW_CORE "Build experimental Nintendo Switch homebrew core target" OFF)
 option(ENABLE_DEKO3D "Enable experimental deko3d renderer backend" OFF)
 option(AZAHAR_SWITCH_OPENGL_SPIKE "Use switch-mesa OpenGL for the Switch homebrew core target" OFF)
+if (AZAHAR_SWITCH_OPENGL_SPIKE AND ENABLE_DEKO3D)
+    message(STATUS "AZAHAR_SWITCH_OPENGL_SPIKE is enabled; disabling ENABLE_DEKO3D for the Mesa/OpenGL NRO")
+    set(ENABLE_DEKO3D OFF CACHE BOOL "Enable experimental deko3d renderer backend" FORCE)
+endif()
 
 CMAKE_DEPENDENT_OPTION(ENABLE_TESTS "Enable generating tests executable" ON "NOT IOS" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_ROOM "Enable dedicated room functionality" ON "NOT ANDROID AND NOT IOS" OFF)

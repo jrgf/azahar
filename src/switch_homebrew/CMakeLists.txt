@@ -72,6 +72,7 @@ if (ENABLE_LIBRETRO)
     add_executable(azahar-switch-libretro
         source/emulator_bootstrap.cpp
         source/emulator_bootstrap.h
+        source/heap_tracker.cpp
         source/libretro_host_main.cpp
         source/switch_input.cpp
         source/switch_input.h
@@ -98,6 +99,9 @@ if (ENABLE_LIBRETRO)
         video_core
         ${NX_STANDARD_LIBRARIES}
     )
+    # libuam.a internal symbols are localised by externals/CMakeLists.txt via
+    # objcopy --keep-global-symbols, so we don't need any link-time multiple-
+    # definition hacks here.
     if (ENABLE_OPENGL)
         target_link_directories(azahar-switch-libretro PRIVATE
             $ENV{DEVKITPRO}/portlibs/switch/lib

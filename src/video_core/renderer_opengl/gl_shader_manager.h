@@ -52,7 +52,10 @@ public:
 
     void UseFragmentShader(const Pica::RegsInternal& config, const Pica::Shader::UserConfig& user);
 
-    void ApplyTo(OpenGLState& state, bool accurate_mul);
+    // Returns true if all required shader stages are ready and the pipeline
+    // state was bound. Returns false when an async-compiled stage is still in
+    // flight — caller MUST skip the corresponding draw call and state apply.
+    bool ApplyTo(OpenGLState& state, bool accurate_mul);
 
     u64 GetProgramID() const;
 

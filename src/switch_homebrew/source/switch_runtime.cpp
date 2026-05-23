@@ -851,3 +851,34 @@ void SuspendConsole() {
 }
 
 } // namespace Azahar::Switch::Platform
+
+namespace Azahar::Switch {
+
+// Exposes libnx heap stats to non-Switch-header callers (the citra/azahar
+// type system conflicts with <switch.h>, so anything outside this file uses
+// this helper). On query failure the outputs are left at 0.
+void QueryHeapInfo(unsigned long long* total_bytes, unsigned long long* used_bytes) {
+    // mallinfo() caused devkitA64 builds to refuse to boot — falling back to
+    // the OS-level reservation (constant, so the log is mostly useless for
+    // leak hunting, but harmless). A future change should override operator
+    // new/delete and maintain an atomic counter instead.
+    constexpr Handle kCurrentProcess = CUR_PROCESS_HANDLE;
+    if (total_bytes != nullptr) {
+        u64 value = 0;
+        if (R_SUCCEEDED(svcGetInfo(&value, InfoType_TotalMemorySize, kCurrentProcess, 0))) {
+            *total_bytes = static_cast<unsigned long long>(value);
+        } else {
+            *total_bytes = 0;
+        }
+    }
+    if (used_bytes != nullptr) {
+        u64 value = 0;
+        if (R_SUCCEEDED(svcGetInfo(&value, InfoType_UsedMemorySize, kCurrentProcess, 0))) {
+            *used_bytes = static_cast<unsigned long long>(value);
+        } else {
+            *used_bytes = 0;
+        }
+    }
+}
+
+} // namespace Azahar::Switch

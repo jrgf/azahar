@@ -7,8 +7,16 @@
 #include "common/assert.h"
 #include "common/settings.h"
 #include "video_core/custom_textures/custom_format.h"
+#include "video_core/renderer_opengl/gl_async_compiler.h"
+#include "video_core/renderer_opengl/gl_async_probe.h"
 #include "video_core/renderer_opengl/gl_driver.h"
 #include "video_core/renderer_opengl/gl_vars.h"
+
+#ifdef __SWITCH__
+namespace Azahar::Switch {
+bool AppendLogFormat(int* error_out, const char* format, ...);
+}
+#endif
 
 namespace OpenGL {
 
@@ -217,6 +225,23 @@ void Driver::CheckExtensionSupport() {
     blend_minmax_factor =
         HasGLExtension("GL_AMD_blend_minmax_factor") || HasGLExtension("GL_NV_blend_minmax_factor");
     is_suitable = GLAD_GL_VERSION_4_3;
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=opengl.driver suitable=%u gles=%u "
+        "buffer_storage_arb=%u buffer_storage_ext=%u "
+        "clear_texture=%u get_texture_sub_image=%u bptc=%u s3tc=%u "
+        "clip_cull_distance=%u fb_fetch_ext=%u fb_fetch_arm=%u "
+        "fsi_arb=%u fsi_nv=%u fso_intel=%u blend_minmax=%u",
+        is_suitable ? 1U : 0U, is_gles ? 1U : 0U,
+        arb_buffer_storage ? 1U : 0U, ext_buffer_storage ? 1U : 0U,
+        arb_clear_texture ? 1U : 0U, arb_get_texture_sub_image ? 1U : 0U,
+        arb_texture_compression_bptc ? 1U : 0U, ext_texture_compression_s3tc ? 1U : 0U,
+        clip_cull_distance ? 1U : 0U, ext_shader_framebuffer_fetch ? 1U : 0U,
+        arm_shader_framebuffer_fetch ? 1U : 0U, arb_fragment_shader_interlock ? 1U : 0U,
+        nv_fragment_shader_interlock ? 1U : 0U, intel_fragment_shader_ordering ? 1U : 0U,
+        blend_minmax_factor ? 1U : 0U);
+    RunSharedContextProbe();
+    RunAsyncCompilerSmokeTest();
 #else
     ext_buffer_storage = GLAD_GL_EXT_buffer_storage;
     arb_buffer_storage = GLAD_GL_ARB_buffer_storage;

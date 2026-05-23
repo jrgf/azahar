@@ -294,8 +294,8 @@ void retro_run() {
     static unsigned switch_run_sample_count = 0;
     const unsigned switch_run_sample = switch_run_sample_count++;
     const bool switch_trace_run = switch_run_sample < 32;
-    const auto switch_run_start = switch_trace_run ? std::chrono::steady_clock::now()
-                                                   : std::chrono::steady_clock::time_point{};
+    static unsigned switch_runloop_slow_logs = 0;
+    const auto switch_run_start = std::chrono::steady_clock::now();
     unsigned switch_runloop_count = 0;
     long long switch_runloop_total_ms = 0;
     long long switch_runloop_max_ms = 0;
@@ -309,13 +309,13 @@ void retro_run() {
 
     while (!emu_instance->emu_window->HasSubmittedFrame()) {
 #ifdef __SWITCH__
-        if (switch_trace_run && switch_runloop_count < 8) {
+        const bool switch_trace_loop = switch_trace_run && switch_runloop_count < 8;
+        if (switch_trace_loop) {
             Azahar::Switch::AppendLogFormat(
                 nullptr, "android-flow stage=libretro.runloop.before sample=%u loop=%u",
                 switch_run_sample, switch_runloop_count + 1);
         }
-        const auto switch_loop_start = switch_trace_run ? std::chrono::steady_clock::now()
-                                                        : std::chrono::steady_clock::time_point{};
+        const auto switch_loop_start = std::chrono::steady_clock::now();
 #endif
         auto result = Core::System::GetInstance().RunLoop(
 #ifdef __SWITCH__
@@ -325,24 +325,29 @@ void retro_run() {
 #endif
         );
 #ifdef __SWITCH__
-        const auto switch_loop_ms =
-            switch_trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
-                                   std::chrono::steady_clock::now() - switch_loop_start)
-                                   .count()
-                             : 0;
-        if (switch_trace_run) {
-            ++switch_runloop_count;
-            switch_runloop_total_ms += switch_loop_ms;
-            switch_runloop_max_ms =
-                std::max(switch_runloop_max_ms, static_cast<long long>(switch_loop_ms));
-            if (switch_runloop_count <= 8) {
-                Azahar::Switch::AppendLogFormat(
-                    nullptr,
-                    "android-flow stage=libretro.runloop.after sample=%u loop=%u result=%d "
-                    "elapsed-ms=%lld",
-                    switch_run_sample, switch_runloop_count, static_cast<int>(result),
-                    static_cast<long long>(switch_loop_ms));
-            }
+        const auto switch_loop_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        std::chrono::steady_clock::now() - switch_loop_start)
+                                        .count();
+        ++switch_runloop_count;
+        switch_runloop_total_ms += switch_loop_ms;
+        switch_runloop_max_ms =
+            std::max(switch_runloop_max_ms, static_cast<long long>(switch_loop_ms));
+        if (switch_trace_loop) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=libretro.runloop.after sample=%u loop=%u result=%d "
+                "elapsed-ms=%lld",
+                switch_run_sample, switch_runloop_count, static_cast<int>(result),
+                static_cast<long long>(switch_loop_ms));
+        }
+        if (switch_loop_ms >= 50 && switch_runloop_slow_logs < 128) {
+            ++switch_runloop_slow_logs;
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=libretro.runloop.slow sample=%u loop=%u result=%d "
+                "elapsed-ms=%lld",
+                switch_run_sample, switch_runloop_count, static_cast<int>(result),
+                static_cast<long long>(switch_loop_ms));
         }
 #endif
 
@@ -371,15 +376,13 @@ void retro_run() {
 
 #ifdef __SWITCH__
     static unsigned switch_detail_logs = 0;
-    const auto switch_run_ms =
-        switch_trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
-                               std::chrono::steady_clock::now() - switch_run_start)
-                               .count()
-                         : 0;
-    if (switch_trace_run && switch_run_ms >= 1000 && switch_detail_logs < 32) {
+    const auto switch_run_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                   std::chrono::steady_clock::now() - switch_run_start)
+                                   .count();
+    if (switch_run_ms >= 100 && switch_detail_logs < 128) {
         ++switch_detail_logs;
         Azahar::Switch::AppendLogFormat(nullptr,
-                                        "android-flow stage=libretro.runloop-detail "
+                                        "android-flow stage=libretro.retro-run.slow "
                                         "elapsed-ms=%lld loops=%u total-loop-ms=%lld "
                                         "max-loop-ms=%lld",
                                         static_cast<long long>(switch_run_ms),

@@ -264,7 +264,8 @@ LayoutGeometry ComputeLayoutGeometry() {
         break;
     case Settings::LayoutOption::LargeScreen:
 #ifdef __SWITCH__
-        if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::OpenGL) {
+        if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::OpenGL ||
+            Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Deko3D) {
             return {1280, 720, emulated_pointer};
         }
 #endif

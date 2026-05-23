@@ -663,7 +663,11 @@ bool RasterizerOpenGL::AccelerateDrawBatchInternal(bool is_indexed) {
                      : std::chrono::steady_clock::time_point{};
 #endif
 
-    curr_shader_manager->ApplyTo(state, accurate_mul);
+    if (!curr_shader_manager->ApplyTo(state, accurate_mul)) {
+        // Async shader compile still in flight — skip the draw entirely.
+        // The geometry briefly disappears; next frame retries.
+        return true;
+    }
     state.Apply();
 #ifdef __SWITCH__
     const auto switch_shader_apply_ms =
@@ -857,21 +861,24 @@ bool RasterizerOpenGL::Draw(bool accelerate, bool is_indexed) {
         state.draw.vertex_buffer = vertex_buffer.GetHandle();
         curr_shader_manager->UseTrivialVertexShader();
         curr_shader_manager->UseTrivialGeometryShader();
-        curr_shader_manager->ApplyTo(state, accurate_mul);
-        state.Apply();
+        if (curr_shader_manager->ApplyTo(state, accurate_mul)) {
+            state.Apply();
 
-        std::size_t max_vertices = 3 * (VERTEX_BUFFER_SIZE / (3 * sizeof(HardwareVertex)));
-        for (std::size_t base_vertex = 0; base_vertex < vertex_batch.size();
-             base_vertex += max_vertices) {
-            const std::size_t vertices = std::min(max_vertices, vertex_batch.size() - base_vertex);
-            const std::size_t vertex_size = vertices * sizeof(HardwareVertex);
+            std::size_t max_vertices = 3 * (VERTEX_BUFFER_SIZE / (3 * sizeof(HardwareVertex)));
+            for (std::size_t base_vertex = 0; base_vertex < vertex_batch.size();
+                 base_vertex += max_vertices) {
+                const std::size_t vertices =
+                    std::min(max_vertices, vertex_batch.size() - base_vertex);
+                const std::size_t vertex_size = vertices * sizeof(HardwareVertex);
 
-            const auto [vbo, offset, _] = vertex_buffer.Map(vertex_size, sizeof(HardwareVertex));
-            std::memcpy(vbo, vertex_batch.data() + base_vertex, vertex_size);
-            vertex_buffer.Unmap(vertex_size);
+                const auto [vbo, offset, _] =
+                    vertex_buffer.Map(vertex_size, sizeof(HardwareVertex));
+                std::memcpy(vbo, vertex_batch.data() + base_vertex, vertex_size);
+                vertex_buffer.Unmap(vertex_size);
 
-            glDrawArrays(GL_TRIANGLES, static_cast<GLint>(offset / sizeof(HardwareVertex)),
-                         static_cast<GLsizei>(vertices));
+                glDrawArrays(GL_TRIANGLES, static_cast<GLint>(offset / sizeof(HardwareVertex)),
+                             static_cast<GLsizei>(vertices));
+            }
         }
     }
 

@@ -27,9 +27,57 @@
 #include "video_core/host_shaders/opengl_present_vert.h"
 
 #ifdef __SWITCH__
+#include <cstdint>
+
 namespace Azahar::Switch {
 bool AppendLogFormat(int* error_out, const char* format, ...);
+// Implemented in switch_runtime.cpp where <switch.h> is safe to include.
+void QueryHeapInfo(unsigned long long* total_bytes, unsigned long long* used_bytes);
+// Implemented in heap_tracker.cpp — global operator new/delete instrumentation.
+void QueryHeapTracker(std::int64_t* live_count, std::int64_t* peak_count,
+                      std::uint64_t* total_news, std::uint64_t* total_deletes);
 }
+
+namespace {
+
+// Periodic GPU/heap pressure relief: glFinish forces Mesa to flush internal
+// transient state that otherwise accumulates and eventually triggers
+// std::bad_alloc on long sessions. Heap usage is logged each time so we can
+// watch growth rate and tune the cadence.
+void SwitchPressureRelief() {
+    static std::atomic<unsigned> present_count{0};
+    constexpr unsigned kReliefIntervalInvocations = 60; // ~1 s at 60 fps in SwapBuffers
+
+    const unsigned next = present_count.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (next % kReliefIntervalInvocations != 0) {
+        return;
+    }
+
+    glFinish();
+
+    unsigned long long total_bytes = 0;
+    unsigned long long used_bytes = 0;
+    Azahar::Switch::QueryHeapInfo(&total_bytes, &used_bytes);
+
+    std::int64_t live_count = 0;
+    std::int64_t peak_count = 0;
+    std::uint64_t total_news = 0;
+    std::uint64_t total_deletes = 0;
+    Azahar::Switch::QueryHeapTracker(&live_count, &peak_count, &total_news, &total_deletes);
+
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=opengl.pressure-relief invocations=%u "
+        "heap-total-mb=%llu heap-used-mb=%llu heap-free-mb=%lld "
+        "live-allocs=%lld peak-allocs=%lld total-news=%llu total-deletes=%llu",
+        next, total_bytes >> 20, used_bytes >> 20,
+        static_cast<long long>((total_bytes - used_bytes) >> 20),
+        static_cast<long long>(live_count), static_cast<long long>(peak_count),
+        static_cast<unsigned long long>(total_news),
+        static_cast<unsigned long long>(total_deletes));
+}
+
+} // namespace
 #endif
 
 namespace OpenGL {
@@ -136,6 +184,7 @@ RendererOpenGL::~RendererOpenGL() = default;
 
 void RendererOpenGL::SwapBuffers() {
 #ifdef __SWITCH__
+    SwitchPressureRelief();
     const bool switch_trace_present = SwitchPresentReserveSample();
     const auto switch_present_start =
         switch_trace_present ? std::chrono::steady_clock::now()
@@ -995,6 +1044,10 @@ void RendererOpenGL::DrawBottomScreen(const Layout::FramebufferLayout& layout,
 }
 
 void RendererOpenGL::TryPresent(int timeout_ms, bool is_secondary) {
+#ifdef __SWITCH__
+    SwitchPressureRelief();
+#endif
+
     const auto& window = is_secondary ? *secondary_window : render_window;
     const auto& layout = window.GetFramebufferLayout();
     auto frame = window.mailbox->TryGetPresentFrame(timeout_ms);

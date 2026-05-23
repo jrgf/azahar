@@ -32,7 +32,13 @@ bool ShouldFlushLogLine(const char* format) {
     return g_log_line_count < 16 || std::strstr(format, "shutdown") != nullptr ||
            std::strstr(format, "fatal") != nullptr || std::strstr(format, "crash") != nullptr ||
            std::strstr(format, "libretro-build-marker") != nullptr ||
+           std::strstr(format, "stage=process.") != nullptr ||
            std::strstr(format, "stage=libretro.") != nullptr ||
+           std::strstr(format, "stage=deko3d.stack") != nullptr ||
+           std::strstr(format, "stage=deko3d.present-") != nullptr ||
+           std::strstr(format, "stage=deko3d.frame-submit") != nullptr ||
+           std::strstr(format, "stage=deko3d.pica-target") != nullptr ||
+           std::strstr(format, "stage=deko3d-rasterizer.cpu-vs-batch") != nullptr ||
            std::strstr(format, "stage=switch-opengl.") != nullptr ||
            std::strstr(format, "stage=switch-cpu-boost") != nullptr ||
            std::strstr(format, "stage=switch-thread-priority") != nullptr ||
@@ -167,7 +173,7 @@ bool AppendLogFormat(int* error_out, const char* format, ...) {
     }
 
     if (g_log_file == nullptr) {
-        g_log_file = std::fopen(LogPath, "a");
+        g_log_file = std::fopen(LogPath, "w");
         if (g_log_file != nullptr) {
             std::setvbuf(g_log_file, g_log_buffer, _IOFBF, sizeof(g_log_buffer));
         }
@@ -193,6 +199,12 @@ bool AppendLogFormat(int* error_out, const char* format, ...) {
         std::fflush(g_log_file);
     }
     return true;
+}
+
+void FlushLog() {
+    if (g_log_file != nullptr) {
+        std::fflush(g_log_file);
+    }
 }
 
 GameCatalog ScanGameDirectory() {

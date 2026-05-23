@@ -25,6 +25,7 @@ src/common/scm_rev.cpp
 *.kdev4
 .markdown-preview.html
 .idea/
+.claude/
 .vs/
 .codex-backups/
 .vscode/

@@ -18,6 +18,7 @@
 #include "common/settings.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/pica/shader_setup.h"
+#include "video_core/renderer_opengl/gl_async_compiler.h"
 #include "video_core/renderer_opengl/gl_driver.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_disk_cache.h"
@@ -139,6 +140,41 @@ public:
         }
     }
 
+    OGLShaderStage(const OGLShaderStage&) = delete;
+    OGLShaderStage& operator=(const OGLShaderStage&) = delete;
+
+#ifdef __SWITCH__
+    // std::atomic is not movable; implement move manually so the cache can
+    // still emplace/move stages. Any in-flight async handle on `other` is
+    // transferred into `*this`; an existing async handle on `*this` is freed.
+    OGLShaderStage(OGLShaderStage&& other) noexcept
+        : shader_or_program(std::move(other.shader_or_program)),
+          async_handle(other.async_handle.exchange(0, std::memory_order_acq_rel)) {}
+
+    OGLShaderStage& operator=(OGLShaderStage&& other) noexcept {
+        if (this != &other) {
+            shader_or_program = std::move(other.shader_or_program);
+            const GLuint taken = other.async_handle.exchange(0, std::memory_order_acq_rel);
+            const GLuint prev = async_handle.exchange(taken, std::memory_order_acq_rel);
+            if (prev != 0) {
+                glDeleteProgram(prev);
+            }
+        }
+        return *this;
+    }
+
+    ~OGLShaderStage() {
+        const GLuint h = async_handle.load(std::memory_order_acquire);
+        if (h != 0) {
+            glDeleteProgram(h);
+        }
+    }
+#else
+    OGLShaderStage(OGLShaderStage&&) noexcept = default;
+    OGLShaderStage& operator=(OGLShaderStage&&) noexcept = default;
+    ~OGLShaderStage() = default;
+#endif
+
     void Create(const char* source, GLenum type) {
         if (shader_or_program.index() == 0) {
             std::get<OGLShader>(shader_or_program).Create(source, type);
@@ -150,7 +186,28 @@ public:
         }
     }
 
+#ifdef __SWITCH__
+    // Hands the source off to the worker. GetHandle() returns 0 until the
+    // worker completes; callers must treat 0 as "skip this draw". `this`
+    // must remain stable (unordered_map values are stable across rehashing)
+    // and the AsyncShaderCompiler is destroyed before any OGLShaderStage,
+    // so the captured `this` is always valid at callback time.
+    void CreateAsync(u64 key, const char* source, GLenum type,
+                     AsyncShaderCompiler& compiler) {
+        compiler.Enqueue(key, type, std::string{source},
+                         [this](GLuint program) {
+                             async_handle.store(program, std::memory_order_release);
+                         });
+    }
+#endif
+
     GLuint GetHandle() const {
+#ifdef __SWITCH__
+        const GLuint async = async_handle.load(std::memory_order_acquire);
+        if (async != 0) {
+            return async;
+        }
+#endif
         if (shader_or_program.index() == 0) {
             return std::get<OGLShader>(shader_or_program).handle;
         } else {
@@ -164,6 +221,9 @@ public:
 
 private:
     std::variant<OGLShader, OGLProgram> shader_or_program;
+#ifdef __SWITCH__
+    std::atomic<GLuint> async_handle{0};
+#endif
 };
 
 class TrivialVertexShader {
@@ -186,6 +246,19 @@ class ShaderCache {
 public:
     explicit ShaderCache(bool separable_) : separable{separable_} {}
     ~ShaderCache() = default;
+
+#ifdef __SWITCH__
+    void SetAsyncCompiler(AsyncShaderCompiler* compiler) {
+        async_compiler = compiler;
+    }
+    // Used by LoadDiskCache to force the synchronous compile path during
+    // warm-up; returns the previous value so the caller can restore it.
+    AsyncShaderCompiler* SwapAsyncCompiler(AsyncShaderCompiler* next) {
+        AsyncShaderCompiler* prev = async_compiler;
+        async_compiler = next;
+        return prev;
+    }
+#endif
 
     template <typename... Args>
     std::tuple<u64, GLuint, std::optional<std::string>> Get(const KeyConfigType& config,
@@ -237,10 +310,36 @@ public:
         if (new_shader) {
 #ifdef __SWITCH__
             const auto switch_create_start = std::chrono::steady_clock::now();
-#endif
-            cached_shader.Create(result->c_str(), ShaderType);
-#ifdef __SWITCH__
+            if (async_compiler != nullptr) {
+                // `generated` was moved into `result` above, so its internal
+                // string is empty and generated.Hash() would collide for every
+                // call. Use iter->first which is the pre-move hash captured at
+                // emplace time.
+                cached_shader.CreateAsync(iter->first, result->c_str(), ShaderType,
+                                          *async_compiler);
+                if (SwitchGlShaderReserveLog()) {
+                    Azahar::Switch::AppendLogFormat(
+                        nullptr,
+                        "android-flow stage=opengl.async.compiler.dispatch type=%u "
+                        "key=%016llX bytes=%zu",
+                        static_cast<u32>(ShaderType),
+                        static_cast<unsigned long long>(iter->first), result->size());
+                }
+            } else {
+                cached_shader.Create(result->c_str(), ShaderType);
+                if (SwitchGlShaderReserveLog()) {
+                    Azahar::Switch::AppendLogFormat(
+                        nullptr,
+                        "android-flow stage=opengl.async.compiler.fallback-sync type=%u "
+                        "key=%016llX bytes=%zu cache_ptr=%p",
+                        static_cast<u32>(ShaderType),
+                        static_cast<unsigned long long>(iter->first), result->size(),
+                        static_cast<const void*>(this));
+                }
+            }
             switch_create_ms = SwitchGlShaderElapsedMs(switch_create_start);
+#else
+            cached_shader.Create(result->c_str(), ShaderType);
 #endif
         }
         shader_map[config_hash] = &cached_shader;
@@ -295,6 +394,9 @@ private:
     bool separable;
     std::unordered_map<u64, OGLShaderStage*> shader_map;
     std::unordered_map<u64, OGLShaderStage> shader_cache;
+#ifdef __SWITCH__
+    AsyncShaderCompiler* async_compiler = nullptr;
+#endif
 };
 
 // This is a cache designed for shaders translated from PICA shaders. The first cache matches the
@@ -447,6 +549,21 @@ public:
             .has_gl_nv_fragment_shader_barycentric = false,
             .is_vulkan = false,
         };
+#ifdef __SWITCH__
+        if (separable && Settings::values.async_shader_compilation.GetValue()) {
+            async_compiler = AsyncShaderCompiler::Create();
+            if (async_compiler) {
+                fragment_shaders.SetAsyncCompiler(async_compiler.get());
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=opengl.async.compiler.wired target=fragment-shaders "
+                    "title=%016llX cache_ptr=%p compiler_ptr=%p",
+                    static_cast<unsigned long long>(title_id),
+                    static_cast<const void*>(&fragment_shaders),
+                    static_cast<const void*>(async_compiler.get()));
+            }
+        }
+#endif
     }
 
     struct ShaderTuple {
@@ -488,6 +605,12 @@ public:
     std::unordered_map<u64, OGLProgram> program_cache;
     OGLPipeline pipeline;
     ShaderDiskCache disk_cache;
+#ifdef __SWITCH__
+    // Declared LAST so it is destroyed FIRST during Impl teardown. The
+    // compiler's destructor joins the worker thread, guaranteeing no callback
+    // can race against OGLShaderStage destruction in the caches above.
+    std::unique_ptr<AsyncShaderCompiler> async_compiler;
+#endif
 
     Pica::Shader::Generator::ExtraVSConfig CalcExtraConfig(
         const Pica::Shader::Generator::PicaVSConfig& config, bool accurate_mul) {
@@ -622,11 +745,50 @@ void ShaderProgramManager::UseFragmentShader(const Pica::RegsInternal& regs,
         ShaderDiskCacheRaw raw{unique_identifier, ProgramType::FS, regs, {}};
         disk_cache.SaveRaw(raw);
         disk_cache.SaveDecompiled(unique_identifier, *result, false);
+#ifdef __SWITCH__
+        // Mirror the VS path: in separable mode each shader is its own GL
+        // program, so we have to persist the compiled FS binary ourselves —
+        // otherwise the precompiled cache stays empty and every cold launch
+        // re-links every fragment shader from GLSL source. Fragment programs
+        // are the ones taking ~1s per link on Tegra/Mesa.
+        // handle is 0 when async compilation is still in flight — skip the
+        // binary save in that case; the dump call would be invalid on a zero
+        // program. A future iteration could trigger save from the async
+        // callback, but binary cache load is broken on Switch (see
+        // gl_shader_manager.cpp::LoadPrecompiledShader fallback) so this is
+        // pure best-effort for now.
+        if (impl->separable && handle != 0) {
+            const auto switch_save_start = std::chrono::steady_clock::now();
+            disk_cache.SaveDump(unique_identifier, handle);
+            disk_cache.SaveVirtualPrecompiledFile();
+            const auto switch_save_ms = SwitchGlShaderElapsedMs(switch_save_start);
+            if (SwitchGlShaderReserveLog()) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=opengl.shader.cache.save.fs elapsed-ms=%lld "
+                    "program=%016llX shader=%016llX handle=%u code-bytes=%zu",
+                    switch_save_ms,
+                    static_cast<unsigned long long>(disk_cache.GetProgramID()),
+                    static_cast<unsigned long long>(unique_identifier), handle,
+                    result->size());
+            }
+        }
+#endif
     }
 }
 
-void ShaderProgramManager::ApplyTo(OpenGLState& state, bool accurate_mul) {
+bool ShaderProgramManager::ApplyTo(OpenGLState& state, bool accurate_mul) {
     if (impl->separable) {
+#ifdef __SWITCH__
+        // Re-fetch handles via GetHandle (which checks async state) since
+        // the cached impl->current.fs may have been 0 last frame; we want a
+        // fresh atomic load here. impl->current.fs gets set in
+        // UseFragmentShader, which is called every draw, so it already
+        // reflects the latest atomic. Just skip if still not ready.
+        if (impl->current.fs == 0) {
+            return false;
+        }
+#endif
         if (driver.HasBug(DriverBug::ShaderStageChangeFreeze)) {
             glUseProgramStages(
                 impl->pipeline.handle,
@@ -649,6 +811,7 @@ void ShaderProgramManager::ApplyTo(OpenGLState& state, bool accurate_mul) {
         }
         state.draw.shader_program = cached_program.handle;
     }
+    return true;
 }
 
 u64 ShaderProgramManager::GetProgramID() const {
@@ -659,6 +822,21 @@ void ShaderProgramManager::LoadDiskCache(const std::atomic_bool& stop_loading,
                                          const VideoCore::DiskResourceLoadCallback& callback,
                                          bool accurate_mul) {
     auto& disk_cache = impl->disk_cache;
+#ifdef __SWITCH__
+    // The load path treats handle==0 from Get() as a hard failure (line ~1043,
+    // "compilation from raw failed") and nukes the cache. With the async
+    // compiler wired up, every FS in the cache load would return 0 and the
+    // whole load would abort. The load is itself an offline warm-up so force
+    // sync compile here; restore the async pointer when load is done.
+    AsyncShaderCompiler* saved_compiler = impl->fragment_shaders.SwapAsyncCompiler(nullptr);
+    struct AsyncRestore {
+        FragmentShaders* cache;
+        AsyncShaderCompiler* prev;
+        ~AsyncRestore() {
+            cache->SwapAsyncCompiler(prev);
+        }
+    } restore_async{&impl->fragment_shaders, saved_compiler};
+#endif
 #ifdef __SWITCH__
     if (SwitchGlShaderReserveLog()) {
         const auto shader_dir = FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir);

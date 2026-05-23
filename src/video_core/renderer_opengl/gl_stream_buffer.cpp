@@ -10,6 +10,18 @@
 #ifdef __SWITCH__
 #include "video_core/renderer_opengl/gl_switch_compat.h"
 
+// Switch-Mesa's eglGetProcAddress doesn't expose glBufferStorage even though
+// the extension string advertises GL_ARB_buffer_storage. Devkit-A64 has no
+// dlfcn, so use weak references: if Mesa's static lib provides the symbol,
+// the linker resolves it and the address is non-null; otherwise it stays
+// null and we fall through to glBufferData.
+extern "C" {
+__attribute__((weak)) void glBufferStorage(GLenum target, GLsizeiptr size, const void* data,
+                                           GLbitfield flags);
+__attribute__((weak)) void glBufferStorageEXT(GLenum target, GLsizeiptr size, const void* data,
+                                              GLbitfield flags);
+}
+
 namespace Azahar::Switch {
 bool AppendLogFormat(int* error_out, const char* format, ...);
 }
@@ -24,20 +36,37 @@ namespace OpenGL {
 namespace {
 using BufferStorageProc = void (*)(GLenum, GLsizeiptr, const void*, GLbitfield);
 
-BufferStorageProc GetBufferStorageProc() {
-    static const auto proc =
-        reinterpret_cast<BufferStorageProc>(eglGetProcAddress("glBufferStorage"));
-    if (proc != nullptr) {
-        return proc;
-    }
-    static const auto arb_proc =
-        reinterpret_cast<BufferStorageProc>(eglGetProcAddress("glBufferStorageARB"));
-    if (arb_proc != nullptr) {
-        return arb_proc;
-    }
-    static const auto ext_proc =
-        reinterpret_cast<BufferStorageProc>(eglGetProcAddress("glBufferStorageEXT"));
-    return ext_proc;
+struct BufferStorageResolution {
+    BufferStorageProc proc;
+    const char* source;
+};
+
+// Switch-Mesa advertises GL_ARB_buffer_storage in the extension string but its
+// eglGetProcAddress only returns symbols for the currently-bound API class, so
+// glBufferStorage / glBufferStorageARB / glBufferStorageEXT all come back null
+// even though the underlying entry point is statically linked in. Fall back to
+// dlsym against the running image, which can see the symbol directly.
+BufferStorageResolution GetBufferStorageProc() {
+    static const BufferStorageResolution resolved = [] {
+        static constexpr const char* kNames[] = {
+            "glBufferStorage",
+            "glBufferStorageARB",
+            "glBufferStorageEXT",
+        };
+        for (const char* name : kNames) {
+            if (auto p = reinterpret_cast<BufferStorageProc>(eglGetProcAddress(name))) {
+                return BufferStorageResolution{p, "egl"};
+            }
+        }
+        if (&glBufferStorage != nullptr) {
+            return BufferStorageResolution{&glBufferStorage, "weak"};
+        }
+        if (&glBufferStorageEXT != nullptr) {
+            return BufferStorageResolution{&glBufferStorageEXT, "weak-ext"};
+        }
+        return BufferStorageResolution{nullptr, "none"};
+    }();
+    return resolved;
 }
 } // namespace
 #endif
@@ -55,10 +84,11 @@ OGLStreamBuffer::OGLStreamBuffer(Driver& driver, GLenum target, GLsizeiptr size,
 
 #ifdef __SWITCH__
     const bool has_buffer_storage = driver.HasArbBufferStorage() || driver.HasExtBufferStorage();
-    const auto buffer_storage = has_buffer_storage && GL_MAP_PERSISTENT_BIT != 0 &&
-                                        GL_MAP_COHERENT_BIT != 0
-                                    ? GetBufferStorageProc()
-                                    : nullptr;
+    const auto resolved =
+        has_buffer_storage && GL_MAP_PERSISTENT_BIT != 0 && GL_MAP_COHERENT_BIT != 0
+            ? GetBufferStorageProc()
+            : BufferStorageResolution{nullptr, "skipped"};
+    const auto buffer_storage = resolved.proc;
     if (buffer_storage != nullptr) {
 #else
     if (driver.HasArbBufferStorage()) {
@@ -81,11 +111,11 @@ OGLStreamBuffer::OGLStreamBuffer(Driver& driver, GLenum target, GLsizeiptr size,
     Azahar::Switch::AppendLogFormat(
         nullptr,
         "android-flow stage=opengl.stream-buffer target=%u size=%lld allocate=%lld "
-        "persistent=%u coherent=%u arb=%u ext=%u proc=%u",
+        "persistent=%u coherent=%u arb=%u ext=%u proc=%u proc_src=%s",
         static_cast<unsigned>(gl_target), static_cast<long long>(buffer_size),
         static_cast<long long>(allocate_size), persistent ? 1U : 0U, coherent ? 1U : 0U,
         driver.HasArbBufferStorage() ? 1U : 0U, driver.HasExtBufferStorage() ? 1U : 0U,
-        buffer_storage != nullptr ? 1U : 0U);
+        buffer_storage != nullptr ? 1U : 0U, resolved.source);
 #endif
 }
 

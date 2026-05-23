@@ -18,9 +18,13 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <csignal>
 #include <cstring>
+#include <exception>
 #include <map>
 #include <string>
+#include <typeinfo>
 
 namespace Azahar::Switch {
 namespace {
@@ -69,12 +73,22 @@ struct HostState {
 };
 
 HostState g_host;
+std::atomic_uint g_run_iteration{0};
+std::atomic_bool g_in_retro_run{false};
+std::terminate_handler g_previous_terminate_handler = nullptr;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
-constexpr const char* LibretroBuildMarker = "switch-libretro-deko-video-submit-v50";
+constexpr const char* LibretroBuildMarker = "switch-libretro-deko-display-pixel-format-v118";
 #else
-constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v50";
+constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v56";
 #endif
+#if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
+constexpr bool DiagnosticSafeRun = true;
+#else
+constexpr bool DiagnosticSafeRun = false;
+#endif
+constexpr unsigned DiagnosticSafeRunMaxIterations = 1800;
+constexpr unsigned DiagnosticSafeRunMaxFrames = 1200;
 
 #ifdef AZAHAR_SWITCH_OPENGL_SPIKE
 constexpr retro_hw_context_type SwitchHwContextType() {
@@ -96,6 +110,107 @@ constexpr const char* SwitchHwContextName() {
 
 const char* BoolText(bool value) {
     return value ? "ok" : "failed";
+}
+
+const char* SignalName(int signal) {
+    switch (signal) {
+    case SIGABRT:
+        return "SIGABRT";
+    case SIGFPE:
+        return "SIGFPE";
+    case SIGILL:
+        return "SIGILL";
+    case SIGINT:
+        return "SIGINT";
+    case SIGSEGV:
+        return "SIGSEGV";
+    case SIGTERM:
+        return "SIGTERM";
+#ifdef SIGBUS
+    case SIGBUS:
+        return "SIGBUS";
+#endif
+    default:
+        return "unknown";
+    }
+}
+
+void LogProcessState(const char* stage, int signal = 0) {
+    Azahar::Switch::AppendLogFormat(
+        nullptr,
+        "android-flow stage=%s signal=%d signal-name=%s in-retro-run=%u iteration=%u "
+        "video-frames=%u stop=%u input=%04X",
+        stage, signal, signal != 0 ? SignalName(signal) : "none",
+        g_in_retro_run.load(std::memory_order_relaxed) ? 1U : 0U,
+        g_run_iteration.load(std::memory_order_relaxed), g_host.video_frames,
+        g_host.stop_requested ? 1U : 0U, static_cast<unsigned>(g_host.last_input_mask));
+    Azahar::Switch::FlushLog();
+}
+
+void ProcessExitLogger() {
+    LogProcessState("process.exit");
+}
+
+[[noreturn]] void TerminateLogger() {
+    LogProcessState("fatal.terminate");
+
+    // If an in-flight exception is what triggered std::terminate, rethrow it
+    // briefly and capture type + message so we can see WHY the runtime aborted
+    // — otherwise the signal handler just shows SIGABRT with no context.
+    const auto eptr = std::current_exception();
+    if (eptr) {
+        const char* what_msg = "<no what()>";
+        const char* type_name = "<unknown>";
+        std::string captured_what;
+        try {
+            std::rethrow_exception(eptr);
+        } catch (const std::exception& e) {
+            captured_what = e.what();
+            what_msg = captured_what.c_str();
+            type_name = typeid(e).name();
+        } catch (...) {
+            type_name = "<non-std::exception>";
+        }
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=fatal.terminate.exception type=\"%s\" what=\"%s\"",
+            type_name, what_msg);
+        Azahar::Switch::FlushLog();
+    } else {
+        Azahar::Switch::AppendLogFormat(
+            nullptr, "android-flow stage=fatal.terminate.exception type=\"<none>\"");
+        Azahar::Switch::FlushLog();
+    }
+
+    if (g_previous_terminate_handler != nullptr) {
+        g_previous_terminate_handler();
+    }
+    std::abort();
+}
+
+void SignalLogger(int signal) {
+    LogProcessState("fatal.signal", signal);
+    std::signal(signal, SIG_DFL);
+    std::raise(signal);
+}
+
+void InstallFatalLogging() {
+    static bool installed = false;
+    if (installed) {
+        return;
+    }
+    installed = true;
+    g_previous_terminate_handler = std::set_terminate(TerminateLogger);
+    std::atexit(ProcessExitLogger);
+    std::signal(SIGABRT, SignalLogger);
+    std::signal(SIGFPE, SignalLogger);
+    std::signal(SIGILL, SignalLogger);
+    std::signal(SIGINT, SignalLogger);
+    std::signal(SIGSEGV, SignalLogger);
+    std::signal(SIGTERM, SignalLogger);
+#ifdef SIGBUS
+    std::signal(SIGBUS, SignalLogger);
+#endif
+    Azahar::Switch::AppendLogFormat(nullptr, "android-flow stage=process.handlers-installed");
 }
 
 void LogMessage(enum retro_log_level, const char* format, ...) {
@@ -620,22 +735,34 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
             exit_reason = "applet";
             break;
         }
+        if (DiagnosticSafeRun &&
+            (iterations >= DiagnosticSafeRunMaxIterations ||
+             g_host.video_frames >= DiagnosticSafeRunMaxFrames)) {
+            exit_reason = "diagnostic-safe-cap";
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=libretro.diagnostic-stop reason=safe-cap "
+                "iterations=%u frames=%u max-iterations=%u max-frames=%u",
+                iterations, g_host.video_frames, DiagnosticSafeRunMaxIterations,
+                DiagnosticSafeRunMaxFrames);
+            break;
+        }
         const bool trace_run = iterations < 32;
-        const auto run_start = trace_run ? std::chrono::steady_clock::now()
-                                         : std::chrono::steady_clock::time_point{};
-        const unsigned frames_before = trace_run ? g_host.video_frames : 0;
+        const auto run_start = std::chrono::steady_clock::now();
+        const unsigned frames_before = g_host.video_frames;
         if (trace_run) {
             Azahar::Switch::AppendLogFormat(nullptr,
                                             "android-flow stage=libretro.run.call.begin "
                                             "iteration=%u frames=%u",
                                             iterations + 1, frames_before);
         }
+        g_run_iteration.store(iterations + 1, std::memory_order_relaxed);
+        g_in_retro_run.store(true, std::memory_order_relaxed);
         retro_run();
-        const auto run_ms =
-            trace_run ? std::chrono::duration_cast<std::chrono::milliseconds>(
-                            std::chrono::steady_clock::now() - run_start)
-                            .count()
-                      : 0;
+        g_in_retro_run.store(false, std::memory_order_relaxed);
+        const auto run_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - run_start)
+                                .count();
         if (trace_run) {
             Azahar::Switch::AppendLogFormat(nullptr,
                                             "android-flow stage=libretro.run.call.end "
@@ -645,13 +772,15 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
                                             static_cast<long long>(run_ms));
         }
         ++iterations;
-        if (trace_run && run_ms >= 1000 && g_host.slow_run_logs < 32) {
+        if (run_ms >= 100 && g_host.slow_run_logs < 128) {
             ++g_host.slow_run_logs;
             Azahar::Switch::AppendLogFormat(nullptr,
                                             "android-flow stage=libretro.run.slow iteration=%u "
-                                            "frames-before=%u frames-after=%u elapsed-ms=%lld",
+                                            "frames-before=%u frames-after=%u elapsed-ms=%lld "
+                                            "input=%04X",
                                             iterations, frames_before, g_host.video_frames,
-                                            static_cast<long long>(run_ms));
+                                            static_cast<long long>(run_ms),
+                                            static_cast<unsigned>(g_host.last_input_mask));
         }
         if ((iterations % 600) == 0) {
             const auto now = std::chrono::steady_clock::now();
@@ -674,6 +803,7 @@ void RunGame(const Azahar::Switch::GameCandidate& game) {
     if (g_host.stop_requested) {
         exit_reason = "core-shutdown";
     }
+    g_in_retro_run.store(false, std::memory_order_relaxed);
 
     Azahar::Switch::AppendLogFormat(
         nullptr,
@@ -730,6 +860,7 @@ int main(int argc, char* argv[]) {
     padInitializeDefault(&pad);
 
     RuntimeState state = InitializeRuntime();
+    InstallFatalLogging();
     Azahar::Switch::AppendLogFormat(nullptr, "libretro-build-marker id=%s",
                                     LibretroBuildMarker);
     GameCatalog catalog = Azahar::Switch::ScanGameDirectory();

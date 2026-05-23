@@ -167,6 +167,11 @@ private:
     /// Unregisters sentenced surfaces that have surpassed the destruction threshold.
     void RunGarbageCollector();
 
+    /// Sentences cold surfaces when the cache size exceeds the soft cap.
+    /// Idle surfaces (not accessed for IdleThreshold frames) are sentenced
+    /// for the normal GC pass to evict.
+    void RunLruEviction();
+
     /// Removes any framebuffers that reference the provided surface_id.
     void RemoveFramebuffers(SurfaceId surface_id);
 
@@ -222,6 +227,12 @@ private:
     std::unordered_map<SamplerParams, SamplerId> samplers;
     std::list<std::pair<SurfaceId, u64>> sentenced;
     Common::SlotVector<Surface> slot_surfaces;
+    // LRU eviction: maps surface id -> frame_tick of last access. Surfaces
+    // not present here are still considered untouched. Used by
+    // RunGarbageCollector to sentence cold surfaces when slot_surfaces is
+    // above the soft cap — addresses the OOM after long sessions on
+    // memory-constrained platforms (Switch homebrew).
+    std::unordered_map<SurfaceId, u64> last_used_tick;
     Common::SlotVector<Sampler> slot_samplers;
     Common::SlotVector<Framebuffer> slot_framebuffers;
     SurfaceMap dirty_regions;

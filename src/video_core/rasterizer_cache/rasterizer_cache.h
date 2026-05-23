@@ -5,6 +5,7 @@
 #pragma once
 
 #include <type_traits>
+#include <unordered_set>
 #include <boost/container/small_vector.hpp>
 #include <boost/range/iterator_range.hpp>
 #include "common/alignment.h"
@@ -88,6 +89,7 @@ template <class T>
 void RasterizerCache<T>::TickFrame() {
     custom_tex_manager.TickFrame();
     RunGarbageCollector();
+    RunLruEviction();
 
     const auto new_filter = Settings::values.texture_filter.GetValue();
     if (filter != new_filter) [[unlikely]] {
@@ -121,7 +123,38 @@ void RasterizerCache<T>::RunGarbageCollector() {
         }
         RemoveFramebuffers(surface_id);
         slot_surfaces.erase(surface_id);
+        last_used_tick.erase(surface_id);
         it = sentenced.erase(it);
+    }
+}
+
+template <class T>
+void RasterizerCache<T>::RunLruEviction() {
+    // Citra was designed for desktop RAM and never caps the surface cache.
+    // On memory-constrained platforms (Switch homebrew) the cache grows on
+    // scene transitions and eventually triggers std::bad_alloc. Cap at a
+    // generous soft limit; when exceeded, sentence cold surfaces (idle for
+    // at least IdleThreshold frames) so the normal GC pass evicts them.
+    constexpr std::size_t kSoftCap = 1024;
+    constexpr u64 kIdleThreshold = 240; // ~4 s at 60 fps
+    if (slot_surfaces.size() <= kSoftCap) {
+        return;
+    }
+    // Already-sentenced surfaces don't need to be sentenced again. Build a
+    // small set so we can skip them cheaply.
+    std::unordered_set<SurfaceId> already_sentenced;
+    already_sentenced.reserve(sentenced.size());
+    for (const auto& [id, tick] : sentenced) {
+        already_sentenced.insert(id);
+    }
+    for (const auto& [surface_id, last_tick] : last_used_tick) {
+        if (frame_tick - last_tick < kIdleThreshold) {
+            continue;
+        }
+        if (already_sentenced.contains(surface_id)) {
+            continue;
+        }
+        sentenced.emplace_back(surface_id, frame_tick);
     }
 }
 
@@ -366,6 +399,8 @@ bool RasterizerCache<T>::AccelerateFill(const Pica::MemoryFillConfig& config) {
 
 template <class T>
 typename T::Surface& RasterizerCache<T>::GetSurface(SurfaceId surface_id) {
+    // Touch for LRU eviction. Cheap (single hash-map update).
+    last_used_tick[surface_id] = frame_tick;
     return slot_surfaces[surface_id];
 }
 

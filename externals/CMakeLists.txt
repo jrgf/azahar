@@ -561,3 +561,53 @@ else()
     target_compile_definitions(xxhash PRIVATE XXH_VECTOR=XXH_SCALAR)
     message(STATUS "Disabling SIMD for xxHash")
 endif()
+
+# uam — runtime GLSL → DKSH compiler used by the deko3d renderer for PICA shader
+# translation. Built out-of-tree via meson (uam has no native CMake build) and
+# exposed as an imported static library. Only built when ENABLE_DEKO3D=ON; the
+# meson cross-file targets the same devkitA64 toolchain we use for the rest of
+# the Switch build.
+if (ENABLE_DEKO3D)
+    set(UAM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/uam)
+    set(UAM_BUILD_DIR  ${CMAKE_CURRENT_BINARY_DIR}/uam-build)
+    set(UAM_LIB        ${UAM_BUILD_DIR}/libuam.a)
+
+    find_program(MESON_EXECUTABLE meson REQUIRED)
+    find_program(NINJA_EXECUTABLE ninja REQUIRED)
+    find_program(BISON_BREW NAMES bison HINTS /opt/homebrew/opt/bison/bin)
+
+    if (BISON_BREW)
+        get_filename_component(BISON_DIR ${BISON_BREW} DIRECTORY)
+        set(UAM_ENV_PATH "${BISON_DIR}:$ENV{PATH}")
+    else()
+        set(UAM_ENV_PATH "$ENV{PATH}")
+    endif()
+
+    ExternalProject_Add(uam-ext
+        SOURCE_DIR        ${UAM_SOURCE_DIR}
+        BINARY_DIR        ${UAM_BUILD_DIR}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "PATH=${UAM_ENV_PATH}"
+                          ${MESON_EXECUTABLE} setup --reconfigure
+                          --cross-file ${UAM_SOURCE_DIR}/cross-switch.txt
+                          ${UAM_BUILD_DIR} ${UAM_SOURCE_DIR}
+        BUILD_COMMAND     ${CMAKE_COMMAND} -E env "PATH=${UAM_ENV_PATH}"
+                          ${NINJA_EXECUTABLE} -C ${UAM_BUILD_DIR}
+        INSTALL_COMMAND   ""
+        BUILD_BYPRODUCTS  ${UAM_LIB}
+        BUILD_ALWAYS      0
+    )
+
+    # uam is compiled with -fvisibility=hidden so every internal Mesa/codegen
+    # symbol carries STV_HIDDEN at the ELF level. Only the entries in
+    # uam_capi.h are tagged with __attribute__((visibility("default"))).
+    # Hidden symbols can be referenced within libuam.a's own objects (intra-
+    # archive lookups still work) but the final linker never matches them
+    # against devkitPro's libEGL.a copies — no duplicate-definition errors,
+    # no need to partial-link or objcopy.
+    add_library(uam STATIC IMPORTED GLOBAL)
+    set_target_properties(uam PROPERTIES
+        IMPORTED_LOCATION             ${UAM_LIB}
+        INTERFACE_INCLUDE_DIRECTORIES ${UAM_SOURCE_DIR}/source
+    )
+    add_dependencies(uam uam-ext)
+endif()
