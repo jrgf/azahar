@@ -78,7 +78,7 @@ std::atomic_bool g_in_retro_run{false};
 std::terminate_handler g_previous_terminate_handler = nullptr;
 constexpr const char* HostDirectory = "sdmc:/switch/azahar";
 #if defined(ENABLE_DEKO3D) && !defined(AZAHAR_SWITCH_OPENGL_SPIKE)
-constexpr const char* LibretroBuildMarker = "switch-libretro-deko-display-pixel-format-v118";
+constexpr const char* LibretroBuildMarker = "switch-libretro-deko-transfer-rgba8-blit-v150";
 #else
 constexpr const char* LibretroBuildMarker = "switch-libretro-gl-hw-restore-v56";
 #endif

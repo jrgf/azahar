@@ -163,6 +163,13 @@ struct DisplayTransferRecord {
     u32 batch_count = 0;
 };
 
+struct MemoryFillRecord {
+    PAddr start_address = 0;
+    PAddr end_address = 0;
+    u32 value = 0;
+    u32 width_bits = 0;
+};
+
 /// Interface the RendererDeko3D::Context exposes so the rasterizer can
 /// submit a PICA batch to the GPU immediately during DrawTriangles —
 /// mirroring vk_rasterizer's Draw()-per-call architecture. The previous
@@ -211,6 +218,7 @@ public:
     bool AccelerateDrawBatch(bool is_indexed) override;
     TextureBinding GetTextureBinding(const PresentTextureConfig& texture);
     std::vector<DisplayTransferRecord> ConsumeDisplayTransfers();
+    std::vector<MemoryFillRecord> ConsumeMemoryFills();
     std::vector<PresentBatch> ConsumePresentBatches();
 
     /// Snapshot of the PICA fragment-shader uniforms last computed by
@@ -240,6 +248,7 @@ private:
     TextureRuntime texture_runtime;
     RasterizerCache res_cache;
     std::vector<DisplayTransferRecord> display_transfers;
+    std::vector<MemoryFillRecord> memory_fills;
     std::vector<PresentBatch> present_batches;
     BatchSubmitter* batch_submitter = nullptr;
 };

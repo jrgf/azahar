@@ -70,6 +70,17 @@ constexpr u32 CommandMemorySize = 4 * 1024 * 1024;
 constexpr u32 ShaderMemorySize = 256 * 1024;
 constexpr u32 PicaShaderChunkSize = 256 * 1024;
 constexpr u32 MaxPicaShaderChunks = 8;
+/// v118 Ryujinx closed inside queue.presentImage immediately after these two
+/// PICA FS variants were inserted. Quarantine only the known-bad hashes so the
+/// rest of the scene can keep warming the shader cache.
+constexpr u64 QuarantinedPicaShaderHash0 = 0xCC4BE2529AC9F2D5ULL;
+constexpr u64 QuarantinedPicaShaderHash1 = 0x4E8380EB80A7D994ULL;
+constexpr bool EnablePicaShaderHashQuarantine = false;
+
+constexpr bool IsQuarantinedPicaShaderHash(u64 hash) {
+    return EnablePicaShaderHashQuarantine &&
+           (hash == QuarantinedPicaShaderHash0 || hash == QuarantinedPicaShaderHash1);
+}
 /// Master switch for the experimental "runtime-compiled PICA shaders bound
 /// for pica-target draws" path. When false, the renderer behaves exactly as
 /// the MVP (present_vsh+fsh for every quad). When true, EnsurePicaRuntimeShaders
@@ -90,6 +101,9 @@ constexpr bool DebugForceSimpleFS = false;
 /// Ryujinx tolerates either way; the visual will lose depth-tested
 /// occlusion when off, which is fine for 2D-only UI scenes.
 constexpr bool EnableDepthAttachment = true;
+/// PICA stencil is required for D24S8 framebuffer effects. Vulkan/OpenGL keep
+/// this live; disabling it leaves masks as visible white panels.
+constexpr bool EnableStencilState = true;
 /// Bind PICA LUT samplerBuffers (lighting / fog / proctex). Hardware is the
 /// source of truth: generated PICA fragment shaders declare slots 3-7, so we
 /// must bind valid descriptors even if Ryujinx's host backend dislikes the
@@ -99,6 +113,22 @@ constexpr bool EnableLutBinding = true;
 /// hardware is the source of truth. Keep this off unless explicitly bisecting
 /// emulator-only queue timing.
 constexpr bool DebugWaitIdleAfterFrameSubmit = false;
+constexpr bool DebugWaitIdleAfterPicaShaderCompile = true;
+constexpr u32 PicaShaderCompileSyncFrames = 120;
+constexpr bool EnableMemoryFillTargetClear = false;
+/// Display transfers are hard snapshot boundaries. SM3DL renders top/right-eye/bottom into the
+/// same PICA color address, so replaying full segments cumulatively makes later LCD outputs contain
+/// earlier-screen pixels. Cropped transfers get a filtered replay path below for their own viewport.
+constexpr bool ClearEachStagedTransferSegment = true;
+/// Projected crop matching admitted too many top-screen batches in v145. Keep the helper for future
+/// diagnostics, but exact viewport matching is the only clean selection so far.
+constexpr bool EnableProjectedTransferCrop = false;
+constexpr bool UseShaderDisplayTransferMaterialize = false;
+constexpr bool ForceDisplayTransferTargetsRGBA8 = true;
+constexpr u32 DisplayTransferFlipVerticallyFlag = 1u << 0;
+constexpr u32 DisplayTransferInputLinearFlag = 1u << 1;
+constexpr u32 DisplayTransferCropInputLinesFlag = 1u << 2;
+constexpr u32 DisplayTransferDontSwizzleFlag = 1u << 5;
 /// Master switch for heavyweight diagnostic dumps (full FS-GLSL chunks,
 /// per-variant FS dumps, alpha-patch byte dumps). These emit 30+ KB of
 /// log writes per frame which hardware SD storage can't keep up with —
@@ -490,6 +520,7 @@ struct DekoScreenFrame {
 
 struct DekoPicaTargetInfo {
     PAddr color_address = 0;
+    PAddr depth_address = 0;
     u32 width = 0;
     u32 height = 0;
     /// PICA framebuffer.color_format raw value (Pica::FramebufferRegs::ColorFormat).
@@ -751,6 +782,23 @@ struct DekoRenderTarget {
         }
     }
 
+    static u32 BytesPerDkFormat(DkImageFormat format) {
+        switch (format) {
+        case DkImageFormat_RGB565_Unorm:
+        case DkImageFormat_RGB5A1_Unorm:
+        case DkImageFormat_RGBA4_Unorm:
+            return 2;
+        case DkImageFormat_RGBX8_Unorm:
+        case DkImageFormat_RGBA8_Unorm:
+        default:
+            return 4;
+        }
+    }
+
+    u64 ByteSize() const {
+        return static_cast<u64>(width) * height * BytesPerDkFormat(color_format);
+    }
+
     bool Ensure(dk::Device device, dk::Queue queue, PAddr new_address, u32 new_width,
                 u32 new_height, u32 pica_color_format = 0) {
         return EnsureDkFormat(device, queue, new_address, new_width, new_height,
@@ -857,6 +905,7 @@ struct RendererDeko3D::Context : public BatchSubmitter {
     std::unordered_map<PAddr, DekoRenderTarget> pica_depth_targets{};
     std::unordered_map<PAddr, DekoRenderTarget> display_targets{};
     std::vector<DisplayTransferRecord> cached_display_transfers{};
+    std::vector<MemoryFillRecord> last_memory_fills{};
     DekoDescriptorSet image_descriptor_set{};
     DekoDescriptorSet sampler_descriptor_set{};
     DekoTextureImage white_texture{};
@@ -872,6 +921,7 @@ struct RendererDeko3D::Context : public BatchSubmitter {
     u32 target_render_log_count = 0;
     u32 lut_upload_log_count = 0;
     u32 pica_vtx_bind_log_count = 0;
+    u32 stencil_state_log_count = 0;
     u32 variant_log_count = 0;
     u32 transfer_pick_log_count = 0;
     std::vector<PresentBatch> cached_present_batches;
@@ -879,6 +929,7 @@ struct RendererDeko3D::Context : public BatchSubmitter {
     u32 cached_display_transfer_age = 0;
     u32 pica_compile_frame = std::numeric_limits<u32>::max();
     u32 pica_compiles_this_frame = 0;
+    u32 pica_shader_sync_until_frame = 0;
     /// Next free byte (aligned) inside `shader_memory`. Bumped past the
     /// present shaders during InitializePresentShaders so runtime-compiled
     /// PICA HW shaders can be placed after.
@@ -1118,6 +1169,9 @@ struct RendererDeko3D::Context : public BatchSubmitter {
         profile.has_clip_planes = 1;
         profile.has_geometry_shader = 1;
         profile.has_custom_border_color = 1;
+        // Deko has fixed-function min/max blending. Keep GL-style bindings for uam, but do not
+        // generate the shader-side tex_color blend fallback; slot 7 is only a white safety texture.
+        profile.has_blend_minmax_factor = 1;
         profile.has_logic_op = 1;
         // deko3d uses Vulkan-style [0,1] depth range; with =1 the FS would
         // assume OpenGL [-1,1] and compute gl_FragDepth values outside the
@@ -1290,6 +1344,9 @@ void main() {
         profile.has_clip_planes = 1;
         profile.has_geometry_shader = 1;
         profile.has_custom_border_color = 1;
+        // Deko has fixed-function min/max blending. Keep GL-style bindings for uam, but do not
+        // generate the shader-side tex_color blend fallback; slot 7 is only a white safety texture.
+        profile.has_blend_minmax_factor = 1;
         profile.has_logic_op = 1;
         // deko3d uses Vulkan-style [0,1] depth range; with =1 the FS would
         // assume OpenGL [-1,1] and compute gl_FragDepth values outside the
@@ -1554,11 +1611,50 @@ void main() {
         return uploaded;
     }
 
+    DekoRenderTarget* FindMaterializedTextureTarget(const PresentTextureConfig& texture) {
+        if (!texture.enabled) {
+            return nullptr;
+        }
+
+        const PAddr address = TextureAddress(texture);
+        if (address == 0) {
+            return nullptr;
+        }
+
+        const auto it = display_targets.find(address);
+        if (it != display_targets.end() && it->second.ready) {
+            return &it->second;
+        }
+
+        return nullptr;
+    }
+
     bool BindTexturesForBatch(const std::array<PresentTextureConfig, PicaTextureUnitCount>& textures,
-                              RasterizerDeko3D& rasterizer) {
+                              RasterizerDeko3D& rasterizer, u32 frame_count) {
         std::array<DkResHandle, TextureDescriptorSlots> handles{};
         for (std::size_t slot = 0; slot < textures.size(); ++slot) {
-            const TextureBinding binding = rasterizer.GetTextureBinding(textures[slot]);
+            TextureBinding binding = rasterizer.GetTextureBinding(textures[slot]);
+            if (DekoRenderTarget* materialized_target =
+                    FindMaterializedTextureTarget(textures[slot])) {
+                binding.image_view = dk::ImageView{materialized_target->image};
+                binding.valid = true;
+#ifdef __SWITCH__
+                static std::atomic_uint materialized_texture_log_count{0};
+                if (materialized_texture_log_count.fetch_add(1, std::memory_order_relaxed) < 128 ||
+                    ShouldTraceDekoFrameSummary(frame_count)) {
+                    Azahar::Switch::AppendLogFormat(
+                        nullptr,
+                        "android-flow stage=deko3d.texture-bind.materialized frame=%u "
+                        "slot=%u addr=%08X texture-size=%ux%u texture-format=%u "
+                        "target-size=%ux%u target-format=%u",
+                        frame_count, static_cast<u32>(slot), TextureAddress(textures[slot]),
+                        TextureWidth(textures[slot]), TextureHeight(textures[slot]),
+                        static_cast<u32>(textures[slot].format), materialized_target->width,
+                        materialized_target->height,
+                        static_cast<u32>(materialized_target->color_format));
+                }
+#endif
+            }
             if (!binding.valid) {
 #ifdef __SWITCH__
                 const auto& texture = textures[slot];
@@ -1591,10 +1687,11 @@ void main() {
         return true;
     }
 
-    bool BindTextureForBatch(const PresentTextureConfig& texture, RasterizerDeko3D& rasterizer) {
+    bool BindTextureForBatch(const PresentTextureConfig& texture, RasterizerDeko3D& rasterizer,
+                             u32 frame_count) {
         std::array<PresentTextureConfig, PicaTextureUnitCount> textures{};
         textures[0] = texture;
-        return BindTexturesForBatch(textures, rasterizer);
+        return BindTexturesForBatch(textures, rasterizer, frame_count);
     }
 
     void BindRenderTargetTexture(DekoRenderTarget& source) {
@@ -1777,8 +1874,12 @@ void main() {
                 .setCullMode(PicaToDeko::CullMode(cull_mode, rs.flip_viewport))
                 .setFrontFace(PicaToDeko::FrontFace(cull_mode));
             color_state.setBlendEnable(0, rs.blend_enable);
-            color_state.setLogicOp(PicaToDeko::LogicOp(
-                static_cast<Pica::FramebufferRegs::LogicOp>(rs.logic_op)));
+            // Vulkan only enables PICA logic-op when blending is off. Deko has
+            // no separate logic-op enable bit, so keep blended draws on Copy.
+            color_state.setLogicOp(
+                rs.blend_enable ? DkLogicOp_Copy
+                                : PicaToDeko::LogicOp(static_cast<Pica::FramebufferRegs::LogicOp>(
+                                      rs.logic_op)));
             color_write_state.setMask(0, rs.color_write_mask);
             blend_state.setOps(
                 PicaToDeko::BlendEquation(
@@ -1800,21 +1901,16 @@ void main() {
         } else {
             color_state.setBlendEnable(0, blend_enabled);
         }
-        // Stencil-state path temporarily disabled (v89 bisect). Ryujinx
-        // crashes the same way in v87/v88; we keep depth on Z24S8 and the
-        // capture in render_state lives so we can flip this back once we
-        // identify which deko3d state call goes wrong. For now stencil
-        // test stays off, mirroring v86's behavior.
-        constexpr bool kStencilStateLive = false;
         if (use_pica_render_state && EnableDepthAttachment) {
             const auto& rs = *pica_render_state;
+            const bool stencil_live = EnableStencilState && rs.stencil_enable;
             depth_stencil_state
                 .setDepthTestEnable(rs.depth_test_enable)
                 .setDepthWriteEnable(rs.depth_write_enable)
                 .setDepthCompareOp(PicaToDeko::CompareFunc(
                     static_cast<Pica::FramebufferRegs::CompareFunc>(rs.depth_test_func)))
-                .setStencilTestEnable(kStencilStateLive && rs.stencil_enable);
-            if (kStencilStateLive && rs.stencil_enable) {
+                .setStencilTestEnable(stencil_live);
+            if (stencil_live) {
                 depth_stencil_state.setStencilFrontCompareOp(PicaToDeko::CompareFunc(
                     static_cast<Pica::FramebufferRegs::CompareFunc>(rs.stencil_test_func)));
                 depth_stencil_state.setStencilFrontFailOp(PicaToDeko::StencilOp(
@@ -1839,6 +1935,25 @@ void main() {
                 command_buffer.setStencil(DkFace_FrontAndBack, rs.stencil_write_mask,
                                           rs.stencil_ref, rs.stencil_input_mask);
             }
+#ifdef __SWITCH__
+            if (stencil_live &&
+                (stencil_state_log_count < 64 || ShouldTraceDekoFrameSummary(frame_count))) {
+                Azahar::Switch::AppendLogFormat(
+                    nullptr,
+                    "android-flow stage=deko3d.stencil-state func=DrawPresentVertices "
+                    "line=%u pass=%s frame=%u enabled=%u write-mask=%02X ref=%02X "
+                    "input-mask=%02X func=%u fail=%u depth-fail=%u depth-pass=%u "
+                    "depth-test=%u depth-write=%u color-mask=%X",
+                    static_cast<u32>(__LINE__), pass_name, frame_count, stencil_live ? 1 : 0,
+                    rs.stencil_write_mask, rs.stencil_ref, rs.stencil_input_mask,
+                    rs.stencil_test_func, rs.stencil_action_fail, rs.stencil_action_depth_fail,
+                    rs.stencil_action_depth_pass, rs.depth_test_enable ? 1 : 0,
+                    rs.depth_write_enable ? 1 : 0, rs.color_write_mask);
+                if (stencil_state_log_count < 64) {
+                    ++stencil_state_log_count;
+                }
+            }
+#endif
         } else {
             depth_stencil_state.setDepthTestEnable(false).setDepthWriteEnable(false);
         }
@@ -1970,6 +2085,8 @@ void main() {
             profile.has_clip_planes = 1;
             profile.has_geometry_shader = 1;
             profile.has_custom_border_color = 1;
+            // Match the runtime Deko profile: fixed-function min/max blend, GL-style bindings.
+            profile.has_blend_minmax_factor = 1;
             profile.has_logic_op = 1;
             // deko3d uses Vulkan-style [0,1] depth range; with =1 the FS would
         // assume OpenGL [-1,1] and compute gl_FragDepth values outside the
@@ -2100,11 +2217,12 @@ void main() {
         bool depth_ready = false;
         DekoRenderTarget* depth_target = nullptr;
         if (EnableDepthAttachment) {
-            auto [depth_it, depth_inserted] =
-                pica_depth_targets.try_emplace(pica_target.color_address);
+            const PAddr depth_key =
+                pica_target.depth_address != 0 ? pica_target.depth_address : pica_target.color_address;
+            auto [depth_it, depth_inserted] = pica_depth_targets.try_emplace(depth_key);
             depth_target = &depth_it->second;
-            depth_ready = depth_target->EnsureDepth(device, queue, pica_target.color_address,
-                                                    pica_target.width, pica_target.height);
+            depth_ready =
+                depth_target->EnsureDepth(device, queue, depth_key, pica_target.width, pica_target.height);
             if (!depth_ready) {
                 LOG_ERROR(Render, "Deko3D PICA depth target creation failed");
 #ifdef __SWITCH__
@@ -2113,8 +2231,8 @@ void main() {
                     "android-flow stage=deko3d.pica-target.return-false "
                     "func=DrawPicaColorTarget line=%u reason=depth-target-ensure "
                     "frame=%u address=%08X size=%ux%u",
-                    static_cast<u32>(__LINE__), frame_count, pica_target.color_address,
-                    pica_target.width, pica_target.height);
+                    static_cast<u32>(__LINE__), frame_count, depth_key, pica_target.width,
+                    pica_target.height);
 #endif
                 if (depth_inserted) {
                     pica_depth_targets.erase(depth_it);
@@ -2132,7 +2250,38 @@ void main() {
             command_buffer.bindRenderTargets(render_targets);
         }
         if (clear_target) {
-            command_buffer.clearColor(0, DkColorMask_RGBA, 0.0f, 0.0f, 0.0f, 1.0f);
+            Common::Vec4f clear_color{0.0f, 0.0f, 0.0f, 1.0f};
+            if (const MemoryFillRecord* fill = FindFullMemoryFillForPicaTarget(pica_target)) {
+                const Common::Vec4f fill_color =
+                    DecodeMemoryFillColor(*fill, pica_target.color_address, pica_target.color_format);
+                if (EnableMemoryFillTargetClear) {
+                    clear_color = fill_color;
+                }
+#ifdef __SWITCH__
+                static std::atomic_uint memory_fill_clear_log_count{0};
+                if (memory_fill_clear_log_count.fetch_add(1, std::memory_order_relaxed) < 64 ||
+                    ShouldTraceDekoFrameSummary(frame_count)) {
+                    const std::array<u8, 4> bytes =
+                        MakeMemoryFillBuffer(*fill, pica_target.color_address);
+                    Azahar::Switch::AppendLogFormat(
+                        nullptr,
+                        "android-flow stage=deko3d.memory-fill.clear-target frame=%u "
+                        "target=%08X size=%ux%u format=%u fill=%08X-%08X value=%08X bits=%u "
+                        "bytes=%02X%02X%02X%02X rgba=%u,%u,%u,%u mode=%s",
+                        frame_count, static_cast<u32>(pica_target.color_address), pica_target.width,
+                        pica_target.height, pica_target.color_format, fill->start_address,
+                        fill->end_address, fill->value, fill->width_bits, bytes[0], bytes[1],
+                        bytes[2], bytes[3],
+                        static_cast<u32>(std::clamp(fill_color.r(), 0.0f, 1.0f) * 255.0f),
+                        static_cast<u32>(std::clamp(fill_color.g(), 0.0f, 1.0f) * 255.0f),
+                        static_cast<u32>(std::clamp(fill_color.b(), 0.0f, 1.0f) * 255.0f),
+                        static_cast<u32>(std::clamp(fill_color.a(), 0.0f, 1.0f) * 255.0f),
+                        EnableMemoryFillTargetClear ? "apply" : "diagnostic");
+                }
+#endif
+            }
+            command_buffer.clearColor(0, DkColorMask_RGBA, clear_color.r(), clear_color.g(),
+                                      clear_color.b(), clear_color.a());
             if (depth_ready) {
                 command_buffer.clearDepthStencil(true, 1.0f, 0xFF, 0);
             }
@@ -2242,7 +2391,7 @@ void main() {
             if (enabled_texture_units != 0) {
                 ++textured_batches;
             }
-            if (!BindTexturesForBatch(batch.texture_configs, rasterizer)) {
+            if (!BindTexturesForBatch(batch.texture_configs, rasterizer, frame_count)) {
                 ++skipped_texture_batches;
 #ifdef __SWITCH__
                 if (trace_batch_stack) {
@@ -2351,6 +2500,24 @@ void main() {
                 auto it = pica_shader_cache.find(batch.fs_config_hash);
                 if (it != pica_shader_cache.end()) {
                     override_fragment_shader = &it->second.fs;
+                } else if (IsQuarantinedPicaShaderHash(batch.fs_config_hash)) {
+                    override_fragment_shader = &pica_runtime_fs;
+                    ++cache_misses_this_frame;
+                    ++compile_cap_fallbacks_this_frame;
+#ifdef __SWITCH__
+                    static std::atomic_uint quarantine_log_count{0};
+                    if (quarantine_log_count.fetch_add(1, std::memory_order_relaxed) < 64 ||
+                        ShouldTraceDekoFrameSummary(frame_count)) {
+                        Azahar::Switch::AppendLogFormat(
+                            nullptr,
+                            "android-flow stage=deko3d.pica-shader-cache.fallback "
+                            "func=DrawPicaColorTarget line=%u reason=hash-quarantine "
+                            "frame=%u batch=%u hash=%016llX cache-size=%zu",
+                            static_cast<u32>(__LINE__), frame_count, current_batch,
+                            static_cast<unsigned long long>(batch.fs_config_hash),
+                            pica_shader_cache.size());
+                    }
+#endif
                 } else if (pica_compiles_this_frame < MaxCompilesPerFrame) {
                     ++cache_misses_this_frame;
 #ifdef __SWITCH__
@@ -2390,6 +2557,9 @@ void main() {
 #endif
                     }
                     ++pica_compiles_this_frame;
+                    pica_shader_sync_until_frame =
+                        std::max(pica_shader_sync_until_frame,
+                                 frame_count + PicaShaderCompileSyncFrames);
                 } else {
                     override_fragment_shader = &pica_runtime_fs;
                     ++cache_misses_this_frame;
@@ -2575,7 +2745,7 @@ void main() {
         const PresentVertex bottom_left{{-1.0f, -1.0f, 0.0f, 1.0f},
                                         {1.0f, 1.0f, 1.0f, 1.0f}, {u0, v0}};
         const PresentVertex bottom_right{{1.0f, -1.0f, 0.0f, 1.0f},
-                                         {1.0f, 1.0f, 1.0f, 1.0f}, {u0, v1}};
+                                          {1.0f, 1.0f, 1.0f, 1.0f}, {u0, v1}};
         const std::vector<PresentVertex> vertices{
             top_left, bottom_left, top_right, top_right, bottom_left, bottom_right,
         };
@@ -2587,17 +2757,82 @@ void main() {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.target-draw pass=%s frame=%u src=%u,%u,%u,%u "
-                "uv=%f,%f,%f,%f dst=%u,%u,%u,%u",
+                "uv=%f,%f,%f,%f dst=%u,%u,%u,%u source-size=%ux%u source-format=%u",
                 pass_name, frame_count, source_left, source_top, source_width, source_height, u0,
-                v0, u1, v1, screen.dst.left, screen.dst.top, screen.dst.right, screen.dst.bottom);
+                v0, u1, v1, screen.dst.left, screen.dst.top, screen.dst.right, screen.dst.bottom,
+                source.width, source.height, static_cast<u32>(source.color_format));
         }
 #endif
+    }
+
+    void DrawRenderTargetToTarget(DekoRenderTarget& source, DekoRenderTarget& target,
+                                  u32 frame_count, u32 source_left, u32 source_top,
+                                  u32 source_width, u32 source_height, bool flip_source_y,
+                                  const char* pass_name) {
+        if (!source.ready || !target.ready) {
+            return;
+        }
+
+        source_left = std::min(source_left, source.width - 1);
+        source_top = std::min(source_top, source.height - 1);
+        source_width = std::min(source_width, source.width - source_left);
+        source_height = std::min(source_height, source.height - source_top);
+        if (source_width == 0 || source_height == 0) {
+            return;
+        }
+
+        dk::ImageView target_view{target.image};
+        const std::array<DkImageView const*, 1> render_targets{&target_view};
+        command_buffer.bindRenderTargets(render_targets);
+
+        const float u0 = static_cast<float>(source_left) / static_cast<float>(source.width);
+        const float u1 =
+            static_cast<float>(source_left + source_width) / static_cast<float>(source.width);
+        const float v0 = static_cast<float>(source_top) / static_cast<float>(source.height);
+        const float v1 =
+            static_cast<float>(source_top + source_height) / static_cast<float>(source.height);
+        const float top_v = flip_source_y ? v1 : v0;
+        const float bottom_v = flip_source_y ? v0 : v1;
+
+        BindRenderTargetTexture(source);
+
+        const PresentVertex top_left{{-1.0f, 1.0f, 0.0f, 1.0f},
+                                     {1.0f, 1.0f, 1.0f, 1.0f},
+                                     {u0, top_v}};
+        const PresentVertex top_right{{1.0f, 1.0f, 0.0f, 1.0f},
+                                      {1.0f, 1.0f, 1.0f, 1.0f},
+                                      {u1, top_v}};
+        const PresentVertex bottom_left{{-1.0f, -1.0f, 0.0f, 1.0f},
+                                        {1.0f, 1.0f, 1.0f, 1.0f},
+                                        {u0, bottom_v}};
+        const PresentVertex bottom_right{{1.0f, -1.0f, 0.0f, 1.0f},
+                                         {1.0f, 1.0f, 1.0f, 1.0f},
+                                         {u1, bottom_v}};
+        const std::vector<PresentVertex> vertices{
+            top_left, bottom_left, top_right, top_right, bottom_left, bottom_right,
+        };
+        const Common::Rectangle<u32> target_rect{0, 0, target.width, target.height};
+        DrawPresentVertices(vertices, target_rect, frame_count, false, 1.0f, false, false,
+                            pass_name);
+        command_buffer.barrier(DkBarrier_Tiles, DkInvalidateFlags_Image);
     }
 
     static bool TransferMatchesScreen(const DisplayTransferRecord& transfer,
                                       const DekoScreenFrame& screen) {
         return screen.enabled && transfer.output_width == screen.height &&
                transfer.output_height == screen.width;
+    }
+
+    static bool DisplayTransferNeedsSourceYFlip(const DisplayTransferRecord& transfer) {
+        const bool input_linear = (transfer.flags & DisplayTransferInputLinearFlag) != 0;
+        const bool dont_swizzle = (transfer.flags & DisplayTransferDontSwizzleFlag) != 0;
+        const bool src_tiled = !input_linear;
+        const bool dst_tiled = input_linear != dont_swizzle;
+        bool flip = src_tiled != dst_tiled;
+        if ((transfer.flags & DisplayTransferFlipVerticallyFlag) != 0) {
+            flip = !flip;
+        }
+        return flip;
     }
 
     static bool DisplayTargetMatchesScreen(const DekoRenderTarget* target,
@@ -2629,14 +2864,11 @@ void main() {
         }
 
         // Dimension fallback: when LCD addr is in a different memory region
-        // (VRAM vs FCRAM mismatch we see in practice), match by physical
-        // screen dims. Use FORWARD iteration here so we pick the OLDEST
-        // matching transfer in the frame — for stereo 3D the game emits
-        // left-eye first, right-eye second; both are 240×400 and the
-        // reverse-pick was returning the right eye (wrong for mono present).
-        // Also honour `skip` so a second screen looking up later doesn't
-        // re-claim the transfer the first screen already got.
-        for (auto it = transfers.begin(); it != transfers.end(); ++it) {
+        // (VRAM vs FCRAM mismatch we see in practice), match by physical screen dims.
+        // The same PICA target can emit multiple top-sized snapshots before the bottom
+        // crop. Use the latest matching snapshot so interleaved bottom-viewport draws
+        // do not leak into an older top transfer.
+        for (auto it = transfers.rbegin(); it != transfers.rend(); ++it) {
             if (&*it == skip) continue;
             if (TransferMatchesScreen(*it, screen)) {
                 return &*it;
@@ -2686,6 +2918,118 @@ void main() {
             height /= 2;
         }
         return {width, height};
+    }
+
+    static bool GetTransferSourceRect(const DisplayTransferRecord& transfer, u32& source_left,
+                                      u32& source_top, u32& source_width, u32& source_height) {
+        if (transfer.target_address == 0 || transfer.input_address < transfer.target_address ||
+            transfer.input_width == 0 || transfer.output_width == 0 || transfer.output_height == 0) {
+            return false;
+        }
+
+        const auto input_format = static_cast<Pica::PixelFormat>(transfer.input_format);
+        const u32 input_bpp = Pica::BytesPerPixel(input_format);
+        const u32 row_bytes = transfer.input_width * input_bpp;
+        if (row_bytes == 0) {
+            return false;
+        }
+
+        const u64 source_offset = transfer.input_address - transfer.target_address;
+        source_left = static_cast<u32>((source_offset % row_bytes) / input_bpp);
+        source_top = static_cast<u32>(source_offset / row_bytes);
+        source_width = transfer.output_width;
+        source_height = transfer.output_height;
+        return source_width != 0 && source_height != 0;
+    }
+
+    struct TransferCropMatch {
+        bool matches = false;
+        bool exact_viewport = false;
+    };
+
+    static bool BatchProjectedInsideTransferCrop(const PresentBatch& batch, u32 source_left,
+                                                 u32 source_top, u32 source_width,
+                                                 u32 source_height) {
+        const auto& rs = batch.render_state;
+        if (!rs.viewport_valid || batch.vertices.empty() || rs.viewport_width <= 0 ||
+            rs.viewport_height <= 0) {
+            return false;
+        }
+
+        float min_x = std::numeric_limits<float>::max();
+        float max_x = std::numeric_limits<float>::lowest();
+        float min_y = std::numeric_limits<float>::max();
+        float max_y = std::numeric_limits<float>::lowest();
+        bool valid = false;
+        for (const PresentVertex& vertex : batch.vertices) {
+            if (!IsFiniteVertex(vertex) || std::abs(vertex.position[3]) < 0.000001f) {
+                continue;
+            }
+
+            const float ndc_x = vertex.position[0] / vertex.position[3];
+            const float ndc_y = vertex.position[1] / vertex.position[3];
+            if (!std::isfinite(ndc_x) || !std::isfinite(ndc_y)) {
+                continue;
+            }
+
+            const float x = static_cast<float>(rs.viewport_x) +
+                            (ndc_x + 1.0f) * 0.5f * static_cast<float>(rs.viewport_width);
+            const float y = static_cast<float>(rs.viewport_y) +
+                            (1.0f - ndc_y) * 0.5f * static_cast<float>(rs.viewport_height);
+            min_x = std::min(min_x, x);
+            max_x = std::max(max_x, x);
+            min_y = std::min(min_y, y);
+            max_y = std::max(max_y, y);
+            valid = true;
+        }
+
+        if (!valid || max_x <= min_x || max_y <= min_y) {
+            return false;
+        }
+
+        constexpr float CropPadding = 1.0f;
+        const float crop_left = static_cast<float>(source_left) - CropPadding;
+        const float crop_top = static_cast<float>(source_top) - CropPadding;
+        const float crop_right = static_cast<float>(source_left + source_width) + CropPadding;
+        const float crop_bottom = static_cast<float>(source_top + source_height) + CropPadding;
+
+        return min_x >= crop_left && min_y >= crop_top && max_x <= crop_right &&
+               max_y <= crop_bottom;
+    }
+
+    static TransferCropMatch BatchMatchesTransferCrop(const PresentBatch& batch,
+                                                      const DisplayTransferRecord& transfer) {
+        if ((transfer.flags & DisplayTransferCropInputLinesFlag) == 0) {
+            return {};
+        }
+
+        u32 source_left = 0;
+        u32 source_top = 0;
+        u32 source_width = 0;
+        u32 source_height = 0;
+        if (!GetTransferSourceRect(transfer, source_left, source_top, source_width,
+                                   source_height)) {
+            return {};
+        }
+
+        const auto& rs = batch.render_state;
+        const bool exact_viewport =
+            rs.viewport_valid && rs.viewport_x == static_cast<s32>(source_left) &&
+            rs.viewport_y == static_cast<s32>(source_top) && rs.viewport_width == source_width &&
+            rs.viewport_height == source_height && rs.scissor_x == source_left &&
+            rs.scissor_y == source_top && rs.scissor_width == source_width &&
+            rs.scissor_height == source_height;
+        if (exact_viewport) {
+            return {true, true};
+        }
+
+        if (EnableProjectedTransferCrop &&
+            BatchProjectedInsideTransferCrop(batch, source_left, source_top, source_width,
+                                             source_height)) {
+            return {true, false};
+        }
+
+        return {};
     }
 
     DekoRenderTarget* FindPicaTarget(PAddr address) {
@@ -2760,6 +3104,150 @@ void main() {
         return target;
     }
 
+    static bool RangesOverlap(PAddr start, PAddr end, PAddr target_start, u64 target_size) {
+        if (start >= end || target_start == 0 || target_size == 0) {
+            return false;
+        }
+        const u64 fill_start = start;
+        const u64 fill_end = end;
+        const u64 target_end = static_cast<u64>(target_start) + target_size;
+        return fill_start < target_end && static_cast<u64>(target_start) < fill_end;
+    }
+
+    static u32 MemoryFillSizeBytes(u32 width_bits) {
+        if (width_bits == 24) {
+            return 3;
+        }
+        if (width_bits == 32) {
+            return 4;
+        }
+        return 2;
+    }
+
+    static std::array<u8, 4> MakeMemoryFillBuffer(const MemoryFillRecord& fill, PAddr copy_addr) {
+        const u32 fill_size = MemoryFillSizeBytes(fill.width_bits);
+        const std::array<u8, 4> fill_data{
+            static_cast<u8>(fill.value & 0xFF),
+            static_cast<u8>((fill.value >> 8) & 0xFF),
+            static_cast<u8>((fill.value >> 16) & 0xFF),
+            static_cast<u8>((fill.value >> 24) & 0xFF),
+        };
+
+        std::array<u8, 4> fill_buffer{};
+        const u32 fill_offset = static_cast<u32>((copy_addr - fill.start_address) % fill_size);
+        for (u32 i = 0; i < fill_buffer.size(); ++i) {
+            fill_buffer[i] = fill_data[(fill_offset + i) % fill_size];
+        }
+        return fill_buffer;
+    }
+
+    static u32 BytesPerPicaColorFormat(u32 pica_color_format) {
+        using P = Pica::FramebufferRegs::ColorFormat;
+        switch (static_cast<P>(pica_color_format)) {
+        case P::RGB8:
+            return 3;
+        case P::RGB5A1:
+        case P::RGB565:
+        case P::RGBA4:
+            return 2;
+        case P::RGBA8:
+        default:
+            return 4;
+        }
+    }
+
+    static Common::Vec4f DecodeMemoryFillColor(const MemoryFillRecord& fill, PAddr copy_addr,
+                                               u32 pica_color_format) {
+        const std::array<u8, 4> bytes = MakeMemoryFillBuffer(fill, copy_addr);
+        const auto to_float = [](const Common::Vec4<u8>& color) {
+            return Common::Vec4f{color.r() / 255.0f, color.g() / 255.0f,
+                                 color.b() / 255.0f, color.a() / 255.0f};
+        };
+
+        using P = Pica::FramebufferRegs::ColorFormat;
+        switch (static_cast<P>(pica_color_format)) {
+        case P::RGB8:
+            return to_float(Common::Color::DecodeRGB8(bytes.data()));
+        case P::RGB5A1:
+            return to_float(Common::Color::DecodeRGB5A1(bytes.data()));
+        case P::RGB565:
+            return to_float(Common::Color::DecodeRGB565(bytes.data()));
+        case P::RGBA4:
+            return to_float(Common::Color::DecodeRGBA4(bytes.data()));
+        case P::RGBA8:
+        default:
+            return to_float(Common::Color::DecodeRGBA8(bytes.data()));
+        }
+    }
+
+    const MemoryFillRecord* FindFullMemoryFillForPicaTarget(
+        const DekoPicaTargetInfo& target) const {
+        if (!target.enabled || target.color_address == 0 || target.width == 0 || target.height == 0) {
+            return nullptr;
+        }
+
+        const u64 target_start = target.color_address;
+        const u64 target_size =
+            static_cast<u64>(target.width) * target.height * BytesPerPicaColorFormat(target.color_format);
+        const u64 target_end = target_start + target_size;
+        for (auto it = last_memory_fills.rbegin(); it != last_memory_fills.rend(); ++it) {
+            const u64 fill_start = it->start_address;
+            const u64 fill_end = it->end_address;
+            if (fill_start <= target_start && fill_end >= target_end) {
+                return &*it;
+            }
+        }
+        return nullptr;
+    }
+
+    u32 CountFilledTargets(const std::unordered_map<PAddr, DekoRenderTarget>& targets,
+                           const MemoryFillRecord& fill) const {
+        u32 overlapping = 0;
+        for (const auto& [address, target] : targets) {
+            if (!target.ready) {
+                continue;
+            }
+            if (RangesOverlap(fill.start_address, fill.end_address, address, target.ByteSize())) {
+                ++overlapping;
+            }
+        }
+        return overlapping;
+    }
+
+    void ApplyMemoryFills(const std::vector<MemoryFillRecord>& fills, u32 frame_count) {
+        if (fills.empty()) {
+            return;
+        }
+        last_memory_fills = fills;
+
+        u32 pica_overlaps = 0;
+        u32 depth_overlaps = 0;
+        u32 display_overlaps = 0;
+        for (const MemoryFillRecord& fill : fills) {
+            pica_overlaps += CountFilledTargets(pica_color_targets, fill);
+            // Depth targets are keyed by color address in this prototype, so this is diagnostic
+            // only until real depth-buffer addresses are tracked.
+            depth_overlaps += CountFilledTargets(pica_depth_targets, fill);
+            display_overlaps += CountFilledTargets(display_targets, fill);
+        }
+
+#ifdef __SWITCH__
+        static std::atomic_uint memory_fill_apply_log_count{0};
+        if (memory_fill_apply_log_count.fetch_add(1, std::memory_order_relaxed) < 64 ||
+            ShouldTraceDekoFrameSummary(frame_count)) {
+            const MemoryFillRecord& first = fills.front();
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=deko3d.memory-fill.apply frame=%u fills=%u "
+                "first=%08X-%08X value=%08X bits=%u pica-overlap=%u "
+                "depth-overlap=%u display-overlap=%u mode=diagnostic",
+                frame_count, static_cast<u32>(fills.size()), first.start_address,
+                first.end_address, first.value, first.width_bits, pica_overlaps,
+                depth_overlaps, display_overlaps);
+        }
+#endif
+    }
+
     bool MaterializeDisplayTransfer(const DisplayTransferRecord& transfer, u32 frame_count,
                                     const std::unordered_set<PAddr>& rendered_pica_targets) {
         DekoRenderTarget* source_target = FindPicaTargetForTransfer(transfer);
@@ -2812,7 +3300,9 @@ void main() {
             return false;
         }
         const auto output_pixel_format = static_cast<Pica::PixelFormat>(transfer.output_format);
-        const DkImageFormat output_format = DekoRenderTarget::MapPixelFormat(output_pixel_format);
+        const DkImageFormat output_format = ForceDisplayTransferTargetsRGBA8
+                                                ? DkImageFormat_RGBA8_Unorm
+                                                : DekoRenderTarget::MapPixelFormat(output_pixel_format);
 
         auto [it, inserted] = display_targets.try_emplace(transfer.output_address);
         DekoRenderTarget& target = it->second;
@@ -2824,12 +3314,20 @@ void main() {
             return false;
         }
 
-        dk::ImageView source_view{source_target->image};
-        dk::ImageView target_view{target.image};
-        const DkImageRect source_rect{source_left, source_top, 0, source_width, source_height, 1};
-        const DkImageRect target_rect{0, 0, 0, output_width, output_height, 1};
-        command_buffer.blitImage(source_view, source_rect, target_view, target_rect,
-                                 DkBlitFlag_FilterNearest | DkBlitFlag_ModeBlit);
+        const bool flip_source_y = DisplayTransferNeedsSourceYFlip(transfer);
+        if (UseShaderDisplayTransferMaterialize) {
+            DrawRenderTargetToTarget(*source_target, target, frame_count, source_left, source_top,
+                                     source_width, source_height, flip_source_y,
+                                     "display-transfer-materialize");
+        } else {
+            dk::ImageView source_view{source_target->image};
+            dk::ImageView target_view{target.image};
+            const DkImageRect source_rect{source_left, source_top, 0, source_width, source_height,
+                                          1};
+            const DkImageRect target_rect{0, 0, 0, output_width, output_height, 1};
+            command_buffer.blitImage(source_view, source_rect, target_view, target_rect,
+                                     DkBlitFlag_FilterNearest | DkBlitFlag_ModeBlit);
+        }
         command_buffer.barrier(DkBarrier_Full, DkInvalidateFlags_Image);
 
 #ifdef __SWITCH__
@@ -2838,11 +3336,17 @@ void main() {
                 nullptr,
                 "android-flow stage=deko3d.display-materialize frame=%u out=%08X "
                 "source-pica=%08X in=%08X src=%u,%u,%u,%u dst=%ux%u "
-                "input-format=%u output-format=%u targets=%u",
+                "input-format=%u output-format=%u flags=%08X scaling=%u source-flip-y=%u "
+                "mode=%s forced-rgba8=%u target-format=%u target-size=%ux%u batch-count=%u "
+                "targets=%u",
                 frame_count, static_cast<u32>(transfer.output_address),
                 static_cast<u32>(source_target->address), static_cast<u32>(transfer.input_address),
-                source_rect.x, source_rect.y, source_rect.width, source_rect.height, output_width,
-                output_height, transfer.input_format, transfer.output_format,
+                source_left, source_top, source_width, source_height, output_width,
+                output_height, transfer.input_format, transfer.output_format, transfer.flags,
+                transfer.scaling, flip_source_y ? 1U : 0U,
+                UseShaderDisplayTransferMaterialize ? "shader" : "blit",
+                ForceDisplayTransferTargetsRGBA8 ? 1U : 0U, transfer.target_color_format,
+                transfer.target_width, transfer.target_height, transfer.batch_count,
                 static_cast<u32>(display_targets.size()));
         }
 #endif
@@ -2852,6 +3356,7 @@ void main() {
     bool PresentLcdFrame(const DekoScreenFrame& top, const DekoScreenFrame& bottom, u32 frame_count,
                          const std::vector<PresentBatch>& batches,
                          const std::vector<DisplayTransferRecord>& display_transfers,
+                         const std::vector<MemoryFillRecord>& memory_fills,
                          Memory::MemorySystem& memory, RasterizerDeko3D& rasterizer,
                          Pica::PicaCore& pica,
                          const DekoPicaTargetInfo& pica_target, const Pica::RegsInternal& live_regs,
@@ -2867,6 +3372,8 @@ void main() {
             using_cached_transfers = true;
             ++cached_display_transfer_age;
         }
+
+        ApplyMemoryFills(memory_fills, frame_count);
 
         bool using_cached_batches = false;
         const std::vector<PresentBatch>* draw_batches = &batches;
@@ -2905,8 +3412,9 @@ void main() {
                 nullptr,
                 "android-flow stage=deko3d.transfer-pick frame=%u top-out=%08X "
                 "top-in=%08X top-target=%08X top-dims=%ux%u top-batches=%u "
+                "top-flags=%08X top-format=%u "
                 "bottom-out=%08X bottom-in=%08X bottom-target=%08X bottom-dims=%ux%u "
-                "bottom-batches=%u transfers=%zu "
+                "bottom-batches=%u bottom-flags=%08X bottom-format=%u transfers=%zu "
                 "cached-transfers=%u dim-fallback=%u top-fb=%08X bottom-fb=%08X "
                 "top-dst=%u,%u,%u,%u "
                 "bottom-dst=%u,%u,%u,%u",
@@ -2917,12 +3425,16 @@ void main() {
                 top_transfer ? top_transfer->output_width : 0,
                 top_transfer ? top_transfer->output_height : 0,
                 top_transfer ? top_transfer->batch_count : 0,
+                top_transfer ? top_transfer->flags : 0,
+                top_transfer ? top_transfer->output_format : 0,
                 bottom_transfer ? bottom_transfer->output_address : 0,
                 bottom_transfer ? bottom_transfer->input_address : 0,
                 bottom_transfer ? bottom_transfer->target_address : 0,
                 bottom_transfer ? bottom_transfer->output_width : 0,
                 bottom_transfer ? bottom_transfer->output_height : 0,
                 bottom_transfer ? bottom_transfer->batch_count : 0,
+                bottom_transfer ? bottom_transfer->flags : 0,
+                bottom_transfer ? bottom_transfer->output_format : 0,
                 active_transfers->size(), using_cached_transfers ? 1 : 0,
                 allow_transfer_dimension_fallback ? 1 : 0,
                 top.framebuffer_addr, bottom.framebuffer_addr,
@@ -2957,6 +3469,7 @@ void main() {
             DekoPicaTargetInfo batch_target = pica_target;
             if (batch.target_enabled) {
                 batch_target.color_address = batch.target_color_address;
+                batch_target.depth_address = batch.target_depth_address;
                 batch_target.width = batch.target_width;
                 batch_target.height = batch.target_height;
                 batch_target.color_format = batch.target_color_format;
@@ -2991,18 +3504,88 @@ void main() {
                 bool target_ready = false;
                 u32 staged_segment_clears = 0;
 
+                std::vector<const DisplayTransferRecord*> staged_transfers;
+                staged_transfers.reserve(active_transfers->size());
                 for (const auto& transfer : *active_transfers) {
+                    if (transfer.target_address == target_address) {
+                        staged_transfers.push_back(&transfer);
+                    }
+                }
+                std::stable_sort(staged_transfers.begin(), staged_transfers.end(),
+                                 [](const DisplayTransferRecord* lhs,
+                                    const DisplayTransferRecord* rhs) {
+                                     return lhs->batch_count < rhs->batch_count;
+                                 });
+
+                for (const DisplayTransferRecord* transfer_ptr : staged_transfers) {
+                    const auto& transfer = *transfer_ptr;
                     if (transfer.target_address != target_address) {
                         continue;
                     }
 
                     const std::size_t transfer_count =
                         std::min<std::size_t>(transfer.batch_count, group.size());
-                    if (transfer_count > rendered_count) {
+                    bool rendered_crop_filter = false;
+                    if ((transfer.flags & DisplayTransferCropInputLinesFlag) != 0 &&
+                        transfer_count != 0) {
+                        std::vector<PresentBatch> crop_segment;
+                        crop_segment.reserve(transfer_count);
+                        u32 exact_crop_matches = 0;
+                        u32 projected_crop_matches = 0;
+                        for (std::size_t batch_index = 0; batch_index < transfer_count;
+                             ++batch_index) {
+                            const PresentBatch& batch = group[batch_index];
+                            const TransferCropMatch match = BatchMatchesTransferCrop(batch, transfer);
+                            if (match.matches) {
+                                if (match.exact_viewport) {
+                                    ++exact_crop_matches;
+                                } else {
+                                    ++projected_crop_matches;
+                                }
+                                crop_segment.push_back(batch);
+                            }
+                        }
+
+                        if (!crop_segment.empty()) {
+                            ++staged_segment_clears;
+                            if (DrawPicaColorTarget(crop_segment, top, frame_count,
+                                                    using_cached_batches, rasterizer, pica,
+                                                    info_it->second, live_regs, fsu, vsu, true)) {
+                                target_ready = true;
+                                rendered_crop_filter = true;
+                                rendered_pica_target = true;
+                                rendered_pica_targets.insert(target_address);
+                                rendered_count = transfer_count;
+                            }
+#ifdef __SWITCH__
+                            if (ShouldTraceDekoFrameSummary(frame_count)) {
+                                u32 source_left = 0;
+                                u32 source_top = 0;
+                                u32 source_width = 0;
+                                u32 source_height = 0;
+                                GetTransferSourceRect(transfer, source_left, source_top,
+                                                      source_width, source_height);
+                                Azahar::Switch::AppendLogFormat(
+                                    nullptr,
+                                    "android-flow stage=deko3d.transfer-crop-filter frame=%u "
+                                    "target=%08X out=%08X considered=%u kept=%u "
+                                    "exact=%u projected=%u src=%u,%u,%u,%u rendered=%u",
+                                    frame_count, static_cast<u32>(target_address),
+                                    static_cast<u32>(transfer.output_address),
+                                    static_cast<u32>(transfer_count),
+                                    static_cast<u32>(crop_segment.size()), exact_crop_matches,
+                                    projected_crop_matches, source_left, source_top, source_width,
+                                    source_height, rendered_crop_filter ? 1U : 0U);
+                            }
+#endif
+                        }
+                    }
+
+                    if (!rendered_crop_filter && transfer_count > rendered_count) {
                         std::vector<PresentBatch> segment(group.begin() + rendered_count,
                                                           group.begin() + transfer_count);
                         const bool clear_segment =
-                            !target_ready || transfer.input_address != transfer.target_address;
+                            !target_ready || ClearEachStagedTransferSegment;
                         if (clear_segment) {
                             ++staged_segment_clears;
                         }
@@ -3037,10 +3620,12 @@ void main() {
                     Azahar::Switch::AppendLogFormat(
                         nullptr,
                         "android-flow stage=deko3d.transfer-stage frame=%u target=%08X "
-                        "batches=%u transfers=%u materialized=%u segment-clears=%u",
+                        "batches=%u transfers=%u materialized=%u segment-clears=%u "
+                        "ordered=1 clear-each=%u",
                         frame_count, static_cast<u32>(target_address),
                         static_cast<u32>(group.size()), static_cast<u32>(active_transfers->size()),
-                        materialized_transfers, staged_segment_clears);
+                        materialized_transfers, staged_segment_clears,
+                        ClearEachStagedTransferSegment ? 1U : 0U);
                 }
 #endif
             }
@@ -3107,18 +3692,18 @@ void main() {
 
         u32 top_present_path = 0;
         u32 bottom_present_path = 0;
-        if (DisplayTargetMatchesScreen(top_output, top)) {
-            // Match Vulkan semantics: present the framebuffer address selected by the LCD regs.
-            // That target can be older than this frame's transfers because games double-buffer.
-            DrawRenderTargetToScreen(*top_output, top, frame_count, 0, 0, 0, 0,
-                                     top_output_fresh ? "top-output-fresh" : "top-output-cache");
-            top_present_path = 2;
-        } else if (top_transfer_output != nullptr && top_transfer_output_fresh) {
-            // Display transfers are snapshots. Prefer them over the live PICA target because games
-            // often draw another screen into the same source target after the transfer.
+        if (top_transfer_output != nullptr && top_transfer_output_fresh &&
+            DisplayTargetMatchesScreen(top_transfer_output, top)) {
+            // Deko materializes display transfers into GPU images instead of writing the emulated
+            // LCD memory address. Prefer the fresh selected transfer over an older exact-address
+            // target that may still match the LCD register but contain stale/mixed content.
             DrawRenderTargetToScreen(*top_transfer_output, top, frame_count, 0, 0, 0, 0,
                                      "top-transfer-output");
             top_present_path = 1;
+        } else if (DisplayTargetMatchesScreen(top_output, top)) {
+            DrawRenderTargetToScreen(*top_output, top, frame_count, 0, 0, 0, 0,
+                                     "top-output-lcd");
+            top_present_path = 2;
         } else if (top_pica_source_rendered) {
             u32 source_left = 0;
             u32 source_top = 0;
@@ -3137,17 +3722,23 @@ void main() {
             BlitSource(top_source, top, framebuffer_view);
             top_present_path = 4;
         }
-        if (DisplayTargetMatchesScreen(bottom_output, bottom)) {
-            DrawRenderTargetToScreen(
-                *bottom_output, bottom, frame_count, 0, 0, 0, 0,
-                bottom_output_fresh ? "bottom-output-fresh" : "bottom-output-cache");
+        const bool bottom_transfer_writes_lcd =
+            bottom_transfer != nullptr && bottom_transfer->output_address == bottom.framebuffer_addr;
+        if (DisplayTargetMatchesScreen(bottom_output, bottom) && !bottom_transfer_writes_lcd) {
+            DrawRenderTargetToScreen(*bottom_output, bottom, frame_count, 0, 0, 0, 0,
+                                     "bottom-output-lcd");
             bottom_present_path = 2;
-        } else if (bottom_transfer_output != nullptr && bottom_transfer_output_fresh) {
+        } else if (bottom_transfer_output != nullptr && bottom_transfer_output_fresh &&
+                   DisplayTargetMatchesScreen(bottom_transfer_output, bottom)) {
             // Use the transfer snapshot, not the final PICA target, to avoid showing whatever the
             // game drew into the shared source after this bottom-screen transfer.
             DrawRenderTargetToScreen(*bottom_transfer_output, bottom, frame_count, 0, 0, 0, 0,
                                      "bottom-transfer-output");
             bottom_present_path = 1;
+        } else if (DisplayTargetMatchesScreen(bottom_output, bottom)) {
+            DrawRenderTargetToScreen(*bottom_output, bottom, frame_count, 0, 0, 0, 0,
+                                     "bottom-output-lcd");
+            bottom_present_path = 2;
         } else if (bottom_pica_source_rendered && bottom_transfer != nullptr) {
             u32 source_left = 0;
             u32 source_top = 0;
@@ -3196,7 +3787,7 @@ void main() {
 
         if (PresentDebugOverlay) {
             for (const auto& batch : *draw_batches) {
-                BindTextureForBatch(batch.texture_configs[0], rasterizer);
+                BindTextureForBatch(batch.texture_configs[0], rasterizer, frame_count);
                 DrawPresentVertices(batch.vertices, top.dst, frame_count, using_cached_batches,
                                     PresentOverlayAlpha, true, false, "overlay");
                 if (PresentDebugMirrorBottom) {
@@ -3223,30 +3814,40 @@ void main() {
             static_cast<unsigned long long>(command_list));
 #endif
         queue.submitCommands(command_list);
+        const bool wait_after_recent_pica_shader =
+            DebugWaitIdleAfterPicaShaderCompile && frame_count <= pica_shader_sync_until_frame;
+        const bool wait_after_submit =
+            DebugWaitIdleAfterFrameSubmit || wait_after_recent_pica_shader;
 #ifdef __SWITCH__
         Azahar::Switch::AppendLogFormat(
             nullptr,
             "android-flow stage=deko3d.frame-submit step=submit.end "
             "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
             static_cast<u32>(__LINE__), frame_count, slot);
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.frame-submit step=submit-wait.begin "
-                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
-                static_cast<u32>(__LINE__), frame_count, slot);
+                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u "
+                "reason=%s pica-compiles=%u pica-wait-until=%u",
+                static_cast<u32>(__LINE__), frame_count, slot,
+                wait_after_recent_pica_shader ? "pica-shader-window" : "forced",
+                pica_compiles_this_frame, pica_shader_sync_until_frame);
         }
 #endif
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             queue.waitIdle();
         }
 #ifdef __SWITCH__
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.frame-submit step=submit-wait.end "
-                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
-                static_cast<u32>(__LINE__), frame_count, slot);
+                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u "
+                "reason=%s pica-compiles=%u pica-wait-until=%u",
+                static_cast<u32>(__LINE__), frame_count, slot,
+                wait_after_recent_pica_shader ? "pica-shader-window" : "forced",
+                pica_compiles_this_frame, pica_shader_sync_until_frame);
         }
         Azahar::Switch::AppendLogFormat(
             nullptr,
@@ -3261,24 +3862,30 @@ void main() {
             "android-flow stage=deko3d.frame-submit step=present.end "
             "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
             static_cast<u32>(__LINE__), frame_count, slot);
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.frame-submit step=present-wait.begin "
-                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
-                static_cast<u32>(__LINE__), frame_count, slot);
+                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u "
+                "reason=%s pica-compiles=%u pica-wait-until=%u",
+                static_cast<u32>(__LINE__), frame_count, slot,
+                wait_after_recent_pica_shader ? "pica-shader-window" : "forced",
+                pica_compiles_this_frame, pica_shader_sync_until_frame);
         }
 #endif
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             queue.waitIdle();
         }
 #ifdef __SWITCH__
-        if (DebugWaitIdleAfterFrameSubmit) {
+        if (wait_after_submit) {
             Azahar::Switch::AppendLogFormat(
                 nullptr,
                 "android-flow stage=deko3d.frame-submit step=present-wait.end "
-                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u",
-                static_cast<u32>(__LINE__), frame_count, slot);
+                "func=RendererDeko3D::Context::Present line=%u frame=%u slot=%u "
+                "reason=%s pica-compiles=%u pica-wait-until=%u",
+                static_cast<u32>(__LINE__), frame_count, slot,
+                wait_after_recent_pica_shader ? "pica-shader-window" : "forced",
+                pica_compiles_this_frame, pica_shader_sync_until_frame);
         }
 #endif
         return true;
@@ -3395,7 +4002,9 @@ void RasterizerDeko3D::DrawTriangles() {
         rs.stencil_test_func = static_cast<u32>(om.stencil_test.func.Value());
         rs.stencil_ref = static_cast<u8>(om.stencil_test.reference_value.Value());
         rs.stencil_input_mask = static_cast<u8>(om.stencil_test.input_mask.Value());
-        rs.stencil_write_mask = static_cast<u8>(om.stencil_test.write_mask.Value());
+        rs.stencil_write_mask = framebuffer.allow_depth_stencil_write != 0
+                                    ? static_cast<u8>(om.stencil_test.write_mask.Value())
+                                    : 0;
         rs.stencil_action_fail =
             static_cast<u32>(om.stencil_test.action_stencil_fail.Value());
         rs.stencil_action_depth_fail =
@@ -3449,6 +4058,26 @@ void RasterizerDeko3D::DrawTriangles() {
         batch.vertices.emplace_back(present);
     }
 #ifdef __SWITCH__
+    if (render_target_log_count < 64) {
+        const auto& rs = batch.render_state;
+        Azahar::Switch::AppendLogFormat(
+            nullptr,
+            "android-flow stage=deko3d.output-merger func=RasterizerDeko3D::DrawTriangles "
+            "line=%d draw=%u target=%08X blend=%u logic=%u color-mask=%X "
+            "depth-test=%u depth-func=%u depth-write=%u stencil=%u stencil-func=%u "
+            "stencil-ref=%02X stencil-input-mask=%02X stencil-write-mask=%02X "
+            "stencil-ops=%u,%u,%u cull=%u flip=%u viewport=%d,%d,%d,%d "
+            "scissor=%u,%u,%u,%u",
+            __LINE__, render_target_log_count, static_cast<u32>(batch.target_color_address),
+            rs.blend_enable ? 1 : 0, rs.logic_op, rs.color_write_mask,
+            rs.depth_test_enable ? 1 : 0, rs.depth_test_func,
+            rs.depth_write_enable ? 1 : 0, rs.stencil_enable ? 1 : 0,
+            rs.stencil_test_func, rs.stencil_ref, rs.stencil_input_mask, rs.stencil_write_mask,
+            rs.stencil_action_fail, rs.stencil_action_depth_fail, rs.stencil_action_depth_pass,
+            rs.cull_mode, rs.flip_viewport ? 1 : 0, rs.viewport_x, rs.viewport_y,
+            rs.viewport_width, rs.viewport_height, rs.scissor_x, rs.scissor_y,
+            rs.scissor_width, rs.scissor_height);
+    }
     const bool trace_render_target =
         DekoHotTrace && (render_target_log_count < 128 || render_target_log_count == 240 ||
                          (render_target_log_count % 480) == 0);
@@ -3806,8 +4435,33 @@ bool RasterizerDeko3D::AccelerateTextureCopy(const Pica::DisplayTransferConfig& 
 }
 
 bool RasterizerDeko3D::AccelerateFill(const Pica::MemoryFillConfig& config) {
-    // Keep fills on the CPU path until Deko render-target ownership, clears, and invalidation are
-    // handled together through RasterizerCache.
+    const PAddr start = config.GetStartAddress();
+    const PAddr end = config.GetEndAddress();
+    if (start < end) {
+        const u32 width_bits = config.fill_32bit ? 32U : (config.fill_24bit ? 24U : 16U);
+        if (memory_fills.size() >= 128) {
+            memory_fills.erase(memory_fills.begin());
+        }
+        memory_fills.push_back(MemoryFillRecord{
+            start,
+            end,
+            config.value_32bit,
+            width_bits,
+        });
+#ifdef __SWITCH__
+        static std::atomic_uint memory_fill_log_count{0};
+        if (memory_fill_log_count.fetch_add(1, std::memory_order_relaxed) < 128) {
+            Azahar::Switch::AppendLogFormat(
+                nullptr,
+                "android-flow stage=deko3d.memory-fill.record start=%08X end=%08X "
+                "value=%08X bits=%u",
+                start, end, config.value_32bit, width_bits);
+        }
+#endif
+    }
+
+    // Keep the actual write on the CPU path. Deko consumes the record above to invalidate any
+    // GPU-side target image that would otherwise keep stale pixels after the CPU fill.
     return false;
 }
 
@@ -3815,6 +4469,12 @@ std::vector<DisplayTransferRecord> RasterizerDeko3D::ConsumeDisplayTransfers() {
     std::vector<DisplayTransferRecord> transfers;
     transfers.swap(display_transfers);
     return transfers;
+}
+
+std::vector<MemoryFillRecord> RasterizerDeko3D::ConsumeMemoryFills() {
+    std::vector<MemoryFillRecord> fills;
+    fills.swap(memory_fills);
+    return fills;
 }
 
 std::vector<PresentBatch> RasterizerDeko3D::ConsumePresentBatches() {
@@ -4046,6 +4706,7 @@ void RendererDeko3D::SwapBuffers() {
                                                    layout.bottom_screen,
                                                    layout.bottom_screen_enabled);
         auto display_transfers = rasterizer.ConsumeDisplayTransfers();
+        auto memory_fills = rasterizer.ConsumeMemoryFills();
         // With Phase 1 plumbing, the rasterizer pushes batches into
         // Context via SubmitBatch. The legacy ConsumePresentBatches()
         // returns an empty vector now; we drain Context's queue instead.
@@ -4062,6 +4723,7 @@ void RendererDeko3D::SwapBuffers() {
         const auto& pica_framebuffer = pica.regs.internal.framebuffer.framebuffer;
         const DekoPicaTargetInfo pica_target{
             pica_framebuffer.GetColorBufferPhysicalAddress(),
+            pica_framebuffer.GetDepthBufferPhysicalAddress(),
             pica_framebuffer.GetWidth(),
             pica_framebuffer.GetHeight(),
             static_cast<u32>(pica_framebuffer.color_format.Value()),
@@ -4100,8 +4762,8 @@ void RendererDeko3D::SwapBuffers() {
         rasterizer.RuntimeSyncUniforms();
         const bool presented =
             context->PresentLcdFrame(top, bottom, frame_count, present_batches, display_transfers,
-                                     memory, rasterizer, pica, pica_target, pica.regs.internal,
-                                     rasterizer.GetFSUniformData(),
+                                     memory_fills, memory, rasterizer, pica, pica_target,
+                                     pica.regs.internal, rasterizer.GetFSUniformData(),
                                      rasterizer.GetVSUniformData());
         if (presented) {
             render_window.SwapBuffers();
