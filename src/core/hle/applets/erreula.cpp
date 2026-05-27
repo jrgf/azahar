@@ -9,7 +9,7 @@
 
 namespace HLE::Applets {
 
-Result ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
+HLE::Result ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
     if (parameter.signal != Service::APT::SignalType::Request) {
         LOG_ERROR(Service_APT, "unsupported signal {}", parameter.signal);
         UNIMPLEMENTED();
@@ -43,7 +43,7 @@ Result ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& param
     return ResultSuccess;
 }
 
-Result ErrEula::Start(const Service::APT::MessageParameter& parameter) {
+HLE::Result ErrEula::Start(const Service::APT::MessageParameter& parameter) {
     memcpy(&param, parameter.buffer.data(), std::min(parameter.buffer.size(), sizeof(param)));
 
     // Do something here, like showing error codes, or prompting for EULA agreement.
@@ -56,7 +56,7 @@ Result ErrEula::Start(const Service::APT::MessageParameter& parameter) {
     return ResultSuccess;
 }
 
-Result ErrEula::Finalize() {
+HLE::Result ErrEula::Finalize() {
     std::vector<u8> buffer(sizeof(param));
     memcpy(buffer.data(), &param, buffer.size());
     CloseApplet(nullptr, buffer);

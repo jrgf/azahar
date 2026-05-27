@@ -46,16 +46,16 @@ public:
         return mount_point;
     }
 
-    Result Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info, u64 program_id,
+    HLE::Result Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info, u64 program_id,
                   u32 directory_buckets, u32 file_buckets) override {
         return UnimplementedFunction(ErrorModule::FS);
     };
 
-    Result FormatAsExtData(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
+    HLE::Result FormatAsExtData(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
                            u8 unknown, u64 program_id, u64 total_size,
                            std::optional<std::span<const u8>> icon);
 
-    Result DeleteExtData(Service::FS::MediaType media_type, u8 unknown, u32 high, u32 low);
+    HLE::Result DeleteExtData(Service::FS::MediaType media_type, u8 unknown, u32 high, u32 low);
 
     void RegisterArtic(std::shared_ptr<Network::ArticBase::Client>& client) {
         artic_client = client;

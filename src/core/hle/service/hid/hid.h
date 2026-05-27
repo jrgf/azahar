@@ -251,7 +251,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : IPC Command Structure translate-header
          *      3 : Handle to HID shared memory
          *      4 : Event signaled by HID
@@ -267,7 +267,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void EnableAccelerometer(Kernel::HLERequestContext& ctx);
 
@@ -276,7 +276,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DisableAccelerometer(Kernel::HLERequestContext& ctx);
 
@@ -285,7 +285,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void EnableGyroscopeLow(Kernel::HLERequestContext& ctx);
 
@@ -294,7 +294,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DisableGyroscopeLow(Kernel::HLERequestContext& ctx);
 
@@ -303,7 +303,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 output value
          */
         void GetSoundVolume(Kernel::HLERequestContext& ctx);
@@ -313,7 +313,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : float output value
          */
         void GetGyroscopeLowRawToDpsCoefficient(Kernel::HLERequestContext& ctx);
@@ -323,7 +323,7 @@ public:
          *  Inputs:
          *      None
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2~6 (18 bytes) : struct GyroscopeCalibrateParam
          */
         void GetGyroscopeLowCalibrateParam(Kernel::HLERequestContext& ctx);

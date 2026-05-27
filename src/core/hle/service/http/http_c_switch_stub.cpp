@@ -15,10 +15,10 @@ SERIALIZE_EXPORT_IMPL(Service::HTTP::SessionData)
 namespace Service::HTTP {
 
 namespace {
-constexpr Result ErrorNetworkUnavailable =
-    Result(1012, ErrorModule::HTTP, ErrorSummary::Internal, ErrorLevel::Permanent);
+constexpr HLE::Result ErrorNetworkUnavailable =
+    HLE::Result(1012, ErrorModule::HTTP, ErrorSummary::Internal, ErrorLevel::Permanent);
 
-void PushResult(Kernel::HLERequestContext& ctx, Result result) {
+void PushResult(Kernel::HLERequestContext& ctx, HLE::Result result) {
     IPC::RequestBuilder rb(ctx, 1, 0);
     rb.Push(result);
 }

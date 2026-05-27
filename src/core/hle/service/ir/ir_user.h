@@ -79,7 +79,7 @@ private:
      *      7 : 0 (Handle descriptor)
      *      8 : Handle of shared memory
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void InitializeIrNopShared(Kernel::HLERequestContext& ctx);
 
@@ -93,7 +93,7 @@ private:
      *  Inputs:
      *      1 : device ID? always 1 for circle pad pro
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void RequireConnection(Kernel::HLERequestContext& ctx);
 
@@ -101,7 +101,7 @@ private:
      * GetReceiveEvent service function
      * Gets an event that is signaled when a packet is received from the IR device.
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : 0 (Handle descriptor)
      *      3 : Receive event handle
      */
@@ -111,7 +111,7 @@ private:
      * GetSendEvent service function
      * Gets an event that is signaled when the sending of a packet is complete
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : 0 (Handle descriptor)
      *      3 : Send event handle
      */
@@ -121,7 +121,7 @@ private:
      * Disconnect service function
      * Disconnects from the current connected IR device.
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Disconnect(Kernel::HLERequestContext& ctx);
 
@@ -129,7 +129,7 @@ private:
      * GetConnectionStatusEvent service function
      * Gets an event that is signaled when the connection status is changed
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : 0 (Handle descriptor)
      *      3 : Connection Status Event handle
      */
@@ -139,7 +139,7 @@ private:
      * FinalizeIrNop service function
      * Finalize ir:USER service.
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void FinalizeIrNop(Kernel::HLERequestContext& ctx);
 
@@ -151,7 +151,7 @@ private:
      *      2 : 2 + (size << 14) (Static buffer descriptor)
      *      3 : Data buffer address
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendIrNop(Kernel::HLERequestContext& ctx);
 
@@ -163,7 +163,7 @@ private:
      *  Inpus:
      *      1 : Number of packets to release
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReleaseReceivedData(Kernel::HLERequestContext& ctx);
 

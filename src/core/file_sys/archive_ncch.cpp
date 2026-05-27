@@ -216,47 +216,47 @@ ResultVal<std::unique_ptr<FileBackend>> NCCHArchive::OpenFile(const Path& path, 
     return file;
 }
 
-Result NCCHArchive::DeleteFile(const Path& path) const {
+HLE::Result NCCHArchive::DeleteFile(const Path& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a file from an NCCH archive ({}).", GetName());
     // TODO(Subv): Verify error code
-    return Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
                   ErrorLevel::Status);
 }
 
-Result NCCHArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
+HLE::Result NCCHArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
     LOG_CRITICAL(Service_FS, "Attempted to rename a file within an NCCH archive ({}).", GetName());
     // TODO(wwylele): Use correct error code
     return ResultUnknown;
 }
 
-Result NCCHArchive::DeleteDirectory(const Path& path) const {
+HLE::Result NCCHArchive::DeleteDirectory(const Path& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a directory from an NCCH archive ({}).",
                  GetName());
     // TODO(wwylele): Use correct error code
     return ResultUnknown;
 }
 
-Result NCCHArchive::DeleteDirectoryRecursively(const Path& path) const {
+HLE::Result NCCHArchive::DeleteDirectoryRecursively(const Path& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a directory from an NCCH archive ({}).",
                  GetName());
     // TODO(wwylele): Use correct error code
     return ResultUnknown;
 }
 
-Result NCCHArchive::CreateFile(const Path& path, u64 size, u32 attributes) const {
+HLE::Result NCCHArchive::CreateFile(const Path& path, u64 size, u32 attributes) const {
     LOG_CRITICAL(Service_FS, "Attempted to create a file in an NCCH archive ({}).", GetName());
     // TODO: Verify error code
-    return Result(ErrorDescription::NotAuthorized, ErrorModule::FS, ErrorSummary::NotSupported,
+    return HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::FS, ErrorSummary::NotSupported,
                   ErrorLevel::Permanent);
 }
 
-Result NCCHArchive::CreateDirectory(const Path& path, u32 attributes) const {
+HLE::Result NCCHArchive::CreateDirectory(const Path& path, u32 attributes) const {
     LOG_CRITICAL(Service_FS, "Attempted to create a directory in an NCCH archive ({}).", GetName());
     // TODO(wwylele): Use correct error code
     return ResultUnknown;
 }
 
-Result NCCHArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
+HLE::Result NCCHArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
     LOG_CRITICAL(Service_FS, "Attempted to rename a file within an NCCH archive ({}).", GetName());
     // TODO(wwylele): Use correct error code
     return ResultUnknown;
@@ -335,11 +335,11 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_NCCH::Open(const Path&
         open_path.tid, static_cast<Service::FS::MediaType>(open_path.media_type & 0xFF));
 }
 
-Result ArchiveFactory_NCCH::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
+HLE::Result ArchiveFactory_NCCH::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
                                    u64 program_id, u32 directory_buckets, u32 file_buckets) {
     LOG_ERROR(Service_FS, "Attempted to format a NCCH archive.");
     // TODO: Verify error code
-    return Result(ErrorDescription::NotAuthorized, ErrorModule::FS, ErrorSummary::NotSupported,
+    return HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::FS, ErrorSummary::NotSupported,
                   ErrorLevel::Permanent);
 }
 

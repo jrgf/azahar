@@ -40,7 +40,7 @@ void Module::Interface::Initialize(Kernel::HLERequestContext& ctx) {
 
 void Module::Interface::GetErrorCode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
-    const auto result = rp.Pop<Result>();
+    const auto result = rp.Pop<HLE::Result>();
 
     LOG_DEBUG(Service_ACT, "called result={:08X}", result.raw);
 

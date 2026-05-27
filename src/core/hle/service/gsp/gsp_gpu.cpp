@@ -49,15 +49,15 @@ enum {
 };
 }
 
-constexpr Result ResultFirstInitialization(ErrCodes::FirstInitialization, ErrorModule::GX,
+constexpr HLE::Result ResultFirstInitialization(ErrCodes::FirstInitialization, ErrorModule::GX,
                                            ErrorSummary::Success, ErrorLevel::Success);
-constexpr Result ResultRegsOutOfRangeOrMisaligned(ErrCodes::OutofRangeOrMisalignedAddress,
+constexpr HLE::Result ResultRegsOutOfRangeOrMisaligned(ErrCodes::OutofRangeOrMisalignedAddress,
                                                   ErrorModule::GX, ErrorSummary::InvalidArgument,
                                                   ErrorLevel::Usage); // 0xE0E02A01
-constexpr Result ResultRegsMisaligned(ErrorDescription::MisalignedSize, ErrorModule::GX,
+constexpr HLE::Result ResultRegsMisaligned(ErrorDescription::MisalignedSize, ErrorModule::GX,
                                       ErrorSummary::InvalidArgument,
                                       ErrorLevel::Usage); // 0xE0E02BF2
-constexpr Result ResultRegsInvalidSize(ErrorDescription::InvalidSize, ErrorModule::GX,
+constexpr HLE::Result ResultRegsInvalidSize(ErrorDescription::InvalidSize, ErrorModule::GX,
                                        ErrorSummary::InvalidArgument,
                                        ErrorLevel::Usage); // 0xE0E02BEC
 
@@ -141,7 +141,7 @@ void GSP_GPU::ClientDisconnected(std::shared_ptr<Kernel::ServerSession> server_s
  * @param data A vector containing the source data
  * @return ResultSuccess if the parameters are valid, error code otherwise
  */
-static Result WriteHWRegs(u32 base_address, u32 size_in_bytes, std::span<const u8> data,
+static HLE::Result WriteHWRegs(u32 base_address, u32 size_in_bytes, std::span<const u8> data,
                           VideoCore::GPU& gpu) {
     // This magic number is verified to be done by the gsp module
     const u32 max_size_in_bytes = 0x80;
@@ -187,7 +187,7 @@ static Result WriteHWRegs(u32 base_address, u32 size_in_bytes, std::span<const u
  * @param masks   A vector containing the masks
  * @return ResultSuccess if the parameters are valid, error code otherwise
  */
-static Result WriteHWRegsWithMask(u32 base_address, u32 size_in_bytes, std::span<const u8> data,
+static HLE::Result WriteHWRegsWithMask(u32 base_address, u32 size_in_bytes, std::span<const u8> data,
                                   std::span<const u8> masks, VideoCore::GPU& gpu) {
     // This magic number is verified to be done by the gsp module
     const u32 max_size_in_bytes = 0x80;
@@ -922,7 +922,7 @@ void GSP_GPU::RestoreVramSysArea(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-Result GSP_GPU::AcquireGpuRight(const Kernel::HLERequestContext& ctx,
+HLE::Result GSP_GPU::AcquireGpuRight(const Kernel::HLERequestContext& ctx,
                                 const std::shared_ptr<Kernel::Process>& process, u32 flag,
                                 bool blocking) {
     const auto session_data = GetSessionData(ctx.Session());

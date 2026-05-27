@@ -134,15 +134,15 @@ ResultVal<size_t> ArticCache::Write(s32 file_handle, std::size_t offset, std::si
         req.AddParameterBuffer(buffer + written_amount, to_write);
         auto resp = client->Send(req);
         if (!resp.has_value() || !resp->Succeeded())
-            return Result(-1);
+            return HLE::Result(-1);
 
-        auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+        auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
         if (res.IsError())
             return res;
 
         auto actually_written_opt = resp->GetResponseS32(0);
         if (!actually_written_opt.has_value())
-            return Result(-1);
+            return HLE::Result(-1);
 
         size_t actually_written = static_cast<size_t>(actually_written_opt.value());
 
@@ -165,15 +165,15 @@ ResultVal<size_t> ArticCache::GetSize(s32 file_handle) {
 
     auto resp = client->Send(req);
     if (!resp.has_value() || !resp->Succeeded())
-        return Result(-1);
+        return HLE::Result(-1);
 
-    auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+    auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
     if (res.IsError())
         return res;
 
     auto size_buf = resp->GetResponseS64(0);
     if (!size_buf) {
-        return Result(-1);
+        return HLE::Result(-1);
     }
 
     data_size = static_cast<size_t>(*size_buf);
@@ -193,9 +193,9 @@ ResultVal<size_t> ArticCache::ReadFromArtic(s32 file_handle, u8* buffer, size_t 
         req.AddParameterS32(static_cast<s32>(to_read));
         auto resp = client->Send(req);
         if (!resp.has_value() || !resp->Succeeded())
-            return Result(-1);
+            return HLE::Result(-1);
 
-        auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+        auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
         if (res.IsError())
             return res;
 

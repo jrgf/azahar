@@ -107,9 +107,9 @@ public:
      * Closes an archive
      * @param handle Handle to the archive to close
      */
-    Result CloseArchive(ArchiveHandle handle);
+    HLE::Result CloseArchive(ArchiveHandle handle);
 
-    Result ControlArchive(ArchiveHandle handle, u32 action, u8* input, size_t input_size,
+    HLE::Result ControlArchive(ArchiveHandle handle, u32 action, u8* input, size_t input_size,
                           u8* output, size_t output_size);
 
     /**
@@ -129,7 +129,7 @@ public:
      * @param path Path to the File inside of the Archive
      * @return Whether deletion succeeded
      */
-    Result DeleteFileFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path);
+    HLE::Result DeleteFileFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path);
 
     /**
      * Rename a File between two Archives
@@ -139,7 +139,7 @@ public:
      * @param dest_path Path to the File inside of the destination Archive
      * @return Whether rename succeeded
      */
-    Result RenameFileBetweenArchives(ArchiveHandle src_archive_handle,
+    HLE::Result RenameFileBetweenArchives(ArchiveHandle src_archive_handle,
                                      const FileSys::Path& src_path,
                                      ArchiveHandle dest_archive_handle,
                                      const FileSys::Path& dest_path);
@@ -150,7 +150,7 @@ public:
      * @param path Path to the Directory inside of the Archive
      * @return Whether deletion succeeded
      */
-    Result DeleteDirectoryFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path);
+    HLE::Result DeleteDirectoryFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path);
 
     /**
      * Delete a Directory and anything under it from an Archive
@@ -158,7 +158,7 @@ public:
      * @param path Path to the Directory inside of the Archive
      * @return Whether deletion succeeded
      */
-    Result DeleteDirectoryRecursivelyFromArchive(ArchiveHandle archive_handle,
+    HLE::Result DeleteDirectoryRecursivelyFromArchive(ArchiveHandle archive_handle,
                                                  const FileSys::Path& path);
 
     /**
@@ -168,7 +168,7 @@ public:
      * @param file_size The size of the new file, filled with zeroes
      * @return File creation result code
      */
-    Result CreateFileInArchive(ArchiveHandle archive_handle, const FileSys::Path& path,
+    HLE::Result CreateFileInArchive(ArchiveHandle archive_handle, const FileSys::Path& path,
                                u64 file_size, u32 attributes);
 
     /**
@@ -177,7 +177,7 @@ public:
      * @param path Path to the Directory inside of the Archive
      * @return Whether creation of directory succeeded
      */
-    Result CreateDirectoryFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path,
+    HLE::Result CreateDirectoryFromArchive(ArchiveHandle archive_handle, const FileSys::Path& path,
                                       u32 attributes);
 
     /**
@@ -188,7 +188,7 @@ public:
      * @param dest_path Path to the Directory inside of the destination Archive
      * @return Whether rename succeeded
      */
-    Result RenameDirectoryBetweenArchives(ArchiveHandle src_archive_handle,
+    HLE::Result RenameDirectoryBetweenArchives(ArchiveHandle src_archive_handle,
                                           const FileSys::Path& src_path,
                                           ArchiveHandle dest_archive_handle,
                                           const FileSys::Path& dest_path);
@@ -216,9 +216,9 @@ public:
      * @param format_info Format information about the new archive
      * @param path The path to the archive, if relevant.
      * @param program_id the program ID of the client that requests the operation
-     * @return Result 0 on success or the corresponding code on error
+     * @return HLE::Result 0 on success or the corresponding code on error
      */
-    Result FormatArchive(ArchiveIdCode id_code, const FileSys::ArchiveFormatInfo& format_info,
+    HLE::Result FormatArchive(ArchiveIdCode id_code, const FileSys::ArchiveFormatInfo& format_info,
                          const FileSys::Path& path, u64 program_id, u32 directory_buckets,
                          u32 file_buckets);
 
@@ -242,9 +242,9 @@ public:
      * @param smdh_icon the SMDH icon for this ExtSaveData
      * @param format_info Format information about the new archive
      * @param program_id the program ID of the client that requests the operation
-     * @return Result 0 on success or the corresponding code on error
+     * @return HLE::Result 0 on success or the corresponding code on error
      */
-    Result CreateExtSaveData(MediaType media_type, u8 unknown, u32 high, u32 low,
+    HLE::Result CreateExtSaveData(MediaType media_type, u8 unknown, u32 high, u32 low,
                              std::span<const u8> smdh_icon,
                              const FileSys::ArchiveFormatInfo& format_info, u64 program_id,
                              u64 total_size);
@@ -254,23 +254,23 @@ public:
      * @param media_type The media type of the archive to delete (NAND / SDMC)
      * @param high The high word of the extdata id to delete
      * @param low The low word of the extdata id to delete
-     * @return Result 0 on success or the corresponding code on error
+     * @return HLE::Result 0 on success or the corresponding code on error
      */
-    Result DeleteExtSaveData(MediaType media_type, u8 unknown, u32 high, u32 low);
+    HLE::Result DeleteExtSaveData(MediaType media_type, u8 unknown, u32 high, u32 low);
 
     /**
      * Deletes the SystemSaveData archive folder for the specified save data id
      * @param high The high word of the SystemSaveData archive to delete
      * @param low The low word of the SystemSaveData archive to delete
-     * @return Result 0 on success or the corresponding code on error
+     * @return HLE::Result 0 on success or the corresponding code on error
      */
-    Result DeleteSystemSaveData(u32 high, u32 low);
+    HLE::Result DeleteSystemSaveData(u32 high, u32 low);
 
     /**
      * Creates the SystemSaveData archive folder for the specified save data id
-     * @return Result 0 on success or the corresponding code on error
+     * @return HLE::Result 0 on success or the corresponding code on error
      */
-    Result CreateSystemSaveData(u32 high, u32 low, u32 total_size, u32 block_size,
+    HLE::Result CreateSystemSaveData(u32 high, u32 low, u32 total_size, u32 block_size,
                                 u32 number_directories, u32 number_files,
                                 u32 number_directory_buckets, u32 number_file_buckets,
                                 u8 duplicate_data);
@@ -282,7 +282,7 @@ public:
      */
     ResultVal<ArchiveResource> GetArchiveResource(MediaType media_type) const;
 
-    Result SetSaveDataSecureValue(ArchiveHandle archive_handle, u32 secure_value_slot,
+    HLE::Result SetSaveDataSecureValue(ArchiveHandle archive_handle, u32 secure_value_slot,
                                   u64 secure_value, bool flush);
 
     ResultVal<std::tuple<bool, bool, u64>> GetSaveDataSecureValue(ArchiveHandle archive_handle,
@@ -311,7 +311,7 @@ private:
      * @param factory File system backend interface to the archive
      * @param id_code Id code used to access this type of archive
      */
-    Result RegisterArchiveType(std::unique_ptr<FileSys::ArchiveFactory>&& factory,
+    HLE::Result RegisterArchiveType(std::unique_ptr<FileSys::ArchiveFactory>&& factory,
                                ArchiveIdCode id_code);
 
     /// Register all archive types

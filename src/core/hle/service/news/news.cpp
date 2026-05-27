@@ -35,8 +35,8 @@ enum {
 };
 }
 
-constexpr Result ErrorInvalidHeader = // 0xC8A12805
-    Result(ErrCodes::InvalidHeader, ErrorModule::News, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorInvalidHeader = // 0xC8A12805
+    HLE::Result(ErrCodes::InvalidHeader, ErrorModule::News, ErrorSummary::InvalidState,
            ErrorLevel::Status);
 
 constexpr std::array<u8, 8> news_system_savedata_id{
@@ -492,13 +492,13 @@ ResultVal<std::size_t> Module::GetNotificationImage(const u32 notification_index
     return result.Unwrap();
 }
 
-Result Module::SetNewsDBHeader(const NewsDBHeader* header, const std::size_t size) {
+HLE::Result Module::SetNewsDBHeader(const NewsDBHeader* header, const std::size_t size) {
     const std::size_t copy_size = std::min(sizeof(NewsDBHeader), static_cast<std::size_t>(size));
     std::memcpy(&db.header, header, copy_size);
     return SaveNewsDBSavedata();
 }
 
-Result Module::SetNotificationHeader(const u32 notification_index, const NotificationHeader* header,
+HLE::Result Module::SetNotificationHeader(const u32 notification_index, const NotificationHeader* header,
                                      const std::size_t size) {
     if (notification_index >= MAX_NOTIFICATIONS) {
         return ErrorInvalidHeader;
@@ -510,7 +510,7 @@ Result Module::SetNotificationHeader(const u32 notification_index, const Notific
     return SaveNewsDBSavedata();
 }
 
-Result Module::SetNotificationHeaderOther(const u32 notification_index,
+HLE::Result Module::SetNotificationHeaderOther(const u32 notification_index,
                                           const NotificationHeader* header,
                                           const std::size_t size) {
     if (notification_index >= MAX_NOTIFICATIONS) {
@@ -523,7 +523,7 @@ Result Module::SetNotificationHeaderOther(const u32 notification_index,
     return ResultSuccess;
 }
 
-Result Module::SetNotificationMessage(const u32 notification_index, std::span<const u8> message) {
+HLE::Result Module::SetNotificationMessage(const u32 notification_index, std::span<const u8> message) {
     if (notification_index >= MAX_NOTIFICATIONS) {
         return ErrorInvalidHeader;
     }
@@ -533,7 +533,7 @@ Result Module::SetNotificationMessage(const u32 notification_index, std::span<co
     return SaveFileToSavedata(message_file, message);
 }
 
-Result Module::SetNotificationImage(const u32 notification_index, std::span<const u8> image) {
+HLE::Result Module::SetNotificationImage(const u32 notification_index, std::span<const u8> image) {
     if (notification_index >= MAX_NOTIFICATIONS) {
         return ErrorInvalidHeader;
     }
@@ -543,7 +543,7 @@ Result Module::SetNotificationImage(const u32 notification_index, std::span<cons
     return SaveFileToSavedata(image_file, image);
 }
 
-Result Module::SaveNotification(const NotificationHeader* header, const std::size_t header_size,
+HLE::Result Module::SaveNotification(const NotificationHeader* header, const std::size_t header_size,
                                 std::span<const u8> message, std::span<const u8> image) {
     if (!db.header.IsValid()) {
         return ErrorInvalidHeader;
@@ -605,7 +605,7 @@ Result Module::SaveNotification(const NotificationHeader* header, const std::siz
     return ResultSuccess;
 }
 
-Result Module::DeleteNotification(const u32 notification_id) {
+HLE::Result Module::DeleteNotification(const u32 notification_id) {
     bool deleted = false;
 
     // Check if the input notification ID exists, and clear it
@@ -645,7 +645,7 @@ Result Module::DeleteNotification(const u32 notification_id) {
     return ResultSuccess;
 }
 
-Result Module::LoadNewsDBSavedata() {
+HLE::Result Module::LoadNewsDBSavedata() {
     const std::string& nand_directory = FileUtil::GetUserPath(FileUtil::UserPath::NANDDir);
     FileSys::ArchiveFactory_SystemSaveData systemsavedata_factory(nand_directory);
 
@@ -687,7 +687,7 @@ Result Module::LoadNewsDBSavedata() {
     return news_result.Code();
 }
 
-Result Module::SaveNewsDBSavedata() {
+HLE::Result Module::SaveNewsDBSavedata() {
     return SaveFileToSavedata("/news.db",
                               std::span{reinterpret_cast<const u8*>(&db), sizeof(NewsDB)});
 }
@@ -712,7 +712,7 @@ ResultVal<std::size_t> Module::LoadFileFromSavedata(std::string filename, std::s
     return bytes_read.Unwrap();
 }
 
-Result Module::SaveFileToSavedata(std::string filename, std::span<const u8> buffer) {
+HLE::Result Module::SaveFileToSavedata(std::string filename, std::span<const u8> buffer) {
     FileSys::Mode mode = {};
     mode.write_flag.Assign(1);
     mode.create_flag.Assign(1);

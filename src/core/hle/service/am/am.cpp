@@ -574,7 +574,7 @@ ResultVal<std::size_t> CIAFile::WriteContentData(u64 offset, std::size_t length,
                 if (!decryption_authorized) {
                     LOG_ERROR(Service_AM, "Blocked unauthorized encrypted CIA installation.");
                     current_content_install_result.result =
-                        Result(ErrorDescription::NotAuthorized, ErrorModule::AM,
+                        HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::AM,
                                ErrorSummary::InvalidState, ErrorLevel::Permanent);
                     install_results.push_back(current_content_install_result);
                     return current_content_install_result.result;
@@ -586,7 +586,7 @@ ResultVal<std::size_t> CIAFile::WriteContentData(u64 offset, std::size_t length,
             if (file.IsError()) {
                 // This can never happen in real HW
                 current_content_install_result.result =
-                    Result(ErrCodes::InvalidImportState, ErrorModule::AM,
+                    HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM,
                            ErrorSummary::InvalidState, ErrorLevel::Permanent);
                 install_results.push_back(current_content_install_result);
                 return current_content_install_result.result;
@@ -680,7 +680,7 @@ ResultVal<std::size_t> CIAFile::Write(u64 offset, std::size_t length, bool flush
     return length;
 }
 
-Result CIAFile::PrepareToImportContent(const FileSys::TitleMetadata& tmd) {
+HLE::Result CIAFile::PrepareToImportContent(const FileSys::TitleMetadata& tmd) {
 
     // Create any other .app folders which may not exist yet
     std::string app_folder;
@@ -730,7 +730,7 @@ Result CIAFile::PrepareToImportContent(const FileSys::TitleMetadata& tmd) {
     return ResultSuccess;
 }
 
-Result CIAFile::ProvideTicket(const FileSys::Ticket& ticket) {
+HLE::Result CIAFile::ProvideTicket(const FileSys::Ticket& ticket) {
     // There is no need to write the ticket to nand, as that will
     ASSERT_MSG(from_cdn, "This method should only be used when installing from CDN");
 
@@ -746,7 +746,7 @@ Result CIAFile::ProvideTicket(const FileSys::Ticket& ticket) {
     return ResultSuccess;
 }
 
-Result CIAFile::ProvideTMDForAdditionalContent(const FileSys::TitleMetadata& tmd) {
+HLE::Result CIAFile::ProvideTMDForAdditionalContent(const FileSys::TitleMetadata& tmd) {
     ASSERT_MSG(from_cdn, "This method should only be used when installing from CDN");
 
     if (install_state != CIAInstallState::TicketLoaded) {
@@ -810,7 +810,7 @@ ResultVal<std::size_t> CIAFile::WriteContentDataIndexed(u16 content_index, u64 o
         if (!decryption_authorized) {
             LOG_ERROR(Service_AM, "Blocked unauthorized encrypted CIA installation.");
             current_content_install_result.result =
-                Result(ErrorDescription::NotAuthorized, ErrorModule::AM, ErrorSummary::InvalidState,
+                HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent);
             install_results.push_back(current_content_install_result);
             return current_content_install_result.result;
@@ -822,7 +822,7 @@ ResultVal<std::size_t> CIAFile::WriteContentDataIndexed(u16 content_index, u64 o
     if (file.IsError()) {
         // This can never happen in real HW
         current_content_install_result.result =
-            Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+            HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                    ErrorLevel::Permanent);
         install_results.push_back(current_content_install_result);
         return current_content_install_result.result;
@@ -959,7 +959,7 @@ bool TicketFile::Close() {
 
 void TicketFile::Flush() const {}
 
-Result TicketFile::Commit() {
+HLE::Result TicketFile::Commit() {
     FileSys::Ticket ticket;
     if (ticket.Load(data, 0) == Loader::ResultStatus::Success) {
         if (ticket.DoTitlekeyFixup() != Loader::ResultStatus::Success) {
@@ -1014,7 +1014,7 @@ bool TMDFile::Close() {
 
 void TMDFile::Flush() const {}
 
-Result TMDFile::Commit() {
+HLE::Result TMDFile::Commit() {
     return importing_title->cia_file.WriteTitleMetadata(data, 0).result;
 }
 
@@ -1512,11 +1512,11 @@ void Module::Interface::GetNumPrograms(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -1524,7 +1524,7 @@ void Module::Interface::GetNumPrograms(Kernel::HLERequestContext& ctx) {
 
                 auto count = resp->GetResponseS32(0);
                 if (!count.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -1563,7 +1563,7 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
             u64 title_id;
             std::vector<u16> content_requested;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<u8> out;
             Kernel::MappedBuffer* content_info_out;
         };
@@ -1587,11 +1587,11 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -1599,7 +1599,7 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
 
                 auto content_info = resp->GetResponseBuffer(0);
                 if (!content_info.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -1623,7 +1623,7 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
             u64 title_id;
             std::vector<u16> content_requested;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<ContentInfo> out_vec;
             Kernel::MappedBuffer* content_info_out;
         };
@@ -1640,7 +1640,7 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
                 // Validate that only DLC TIDs are passed in
                 u32 tid_high = static_cast<u32>(async_data->title_id >> 32);
                 if (tid_high != TID_HIGH_DLC) {
-                    async_data->res = Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
+                    async_data->res = HLE::Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
                                              ErrorSummary::InvalidArgument, ErrorLevel::Usage);
                     return 0;
                 }
@@ -1672,7 +1672,7 @@ void Module::Interface::FindDLCContentInfos(Kernel::HLERequestContext& ctx) {
                                 "Attempted to get info for non-existent content index {:04x}.",
                                 index);
 
-                            async_data->res = Result(0xFFFFFFFF);
+                            async_data->res = HLE::Result(0xFFFFFFFF);
                             return 0;
                         }
 
@@ -1743,7 +1743,7 @@ void Module::Interface::ListDLCContentInfos(Kernel::HLERequestContext& ctx) {
             u32 content_count;
             u32 start_index;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<u8> out;
             Kernel::MappedBuffer* content_info_out;
         };
@@ -1766,11 +1766,11 @@ void Module::Interface::ListDLCContentInfos(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -1778,7 +1778,7 @@ void Module::Interface::ListDLCContentInfos(Kernel::HLERequestContext& ctx) {
 
                 auto content_info = resp->GetResponseBuffer(0);
                 if (!content_info.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -1804,7 +1804,7 @@ void Module::Interface::ListDLCContentInfos(Kernel::HLERequestContext& ctx) {
             u32 content_count;
             u32 start_index;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<ContentInfo> out_vec;
             Kernel::MappedBuffer* content_info_out;
         };
@@ -1820,7 +1820,7 @@ void Module::Interface::ListDLCContentInfos(Kernel::HLERequestContext& ctx) {
                 // Validate that only DLC TIDs are passed in
                 u32 tid_high = static_cast<u32>(async_data->title_id >> 32);
                 if (tid_high != TID_HIGH_DLC) {
-                    async_data->res = Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
+                    async_data->res = HLE::Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
                                              ErrorSummary::InvalidArgument, ErrorLevel::Usage);
                     return 0;
                 }
@@ -1923,7 +1923,7 @@ void Module::Interface::GetProgramList(Kernel::HLERequestContext& ctx) {
             u32 count;
             u8 media_type;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<u8> out;
             Kernel::MappedBuffer* title_ids_output;
         };
@@ -1942,11 +1942,11 @@ void Module::Interface::GetProgramList(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -1955,7 +1955,7 @@ void Module::Interface::GetProgramList(Kernel::HLERequestContext& ctx) {
 
                 auto title_ids = resp->GetResponseBuffer(0);
                 if (!title_ids.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2001,7 +2001,7 @@ void Module::Interface::GetProgramList(Kernel::HLERequestContext& ctx) {
     }
 }
 
-Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_list,
+HLE::Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_list,
                             Service::FS::MediaType media_type,
                             std::vector<TitleInfo>& title_info_out) {
     title_info_out.reserve(title_id_list.size());
@@ -2010,7 +2010,7 @@ Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_
             auto& cartridge = system.GetCartridge();
             if (cartridge.empty()) {
                 LOG_DEBUG(Service_AM, "cartridge not inserted");
-                return Result(ErrorDescription::NotFound, ErrorModule::AM,
+                return HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                               ErrorSummary::InvalidState, ErrorLevel::Permanent);
             }
 
@@ -2018,7 +2018,7 @@ Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_
             if (ncch_container.Load() != Loader::ResultStatus::Success ||
                 !ncch_container.IsNCSD()) {
                 LOG_ERROR(Service_AM, "failed to load cartridge card");
-                return Result(ErrorDescription::NotFound, ErrorModule::AM,
+                return HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                               ErrorSummary::InvalidState, ErrorLevel::Permanent);
             }
 
@@ -2031,7 +2031,7 @@ Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_
                           "cartridge_title_id={:016X}",
                           title_id_list[i],
                           ncch_container.exheader_header.arm11_system_local_caps.program_id);
-                return Result(ErrorDescription::NotFound, ErrorModule::AM,
+                return HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                               ErrorSummary::InvalidState, ErrorLevel::Permanent);
             }
 
@@ -2063,7 +2063,7 @@ Result GetTitleInfoFromList(Core::System& system, std::span<const u64> title_id_
                 title_info.type = tmd.GetTitleType();
             } else {
                 LOG_DEBUG(Service_AM, "not found title_id={:016X}", title_id_list[i]);
-                return Result(ErrorDescription::NotFound, ErrorModule::AM,
+                return HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                               ErrorSummary::InvalidState, ErrorLevel::Permanent);
             }
             LOG_DEBUG(Service_AM, "found title_id={:016X} version={:04X}", title_id_list[i],
@@ -2089,7 +2089,7 @@ void Module::Interface::GetProgramInfosImpl(Kernel::HLERequestContext& ctx, bool
             bool ignore_platform;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<TitleInfo> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2115,11 +2115,11 @@ void Module::Interface::GetProgramInfosImpl(Kernel::HLERequestContext& ctx, bool
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -2128,7 +2128,7 @@ void Module::Interface::GetProgramInfosImpl(Kernel::HLERequestContext& ctx, bool
 
                 auto title_infos = resp->GetResponseBuffer(0);
                 if (!title_infos.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2163,7 +2163,7 @@ void Module::Interface::GetProgramInfosImpl(Kernel::HLERequestContext& ctx, bool
             Service::FS::MediaType media_type;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<TitleInfo> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2194,7 +2194,7 @@ void Module::Interface::GetProgramInfosImpl(Kernel::HLERequestContext& ctx, bool
                              import_ctx.second.state == ImportTitleContextState::RESUMABLE)) {
                             LOG_DEBUG(Service_AM, "title pending commit title_id={:016X}", tid);
                             async_data->res =
-                                Result(ErrorDescription::NotFound, ErrorModule::AM,
+                                HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                                        ErrorSummary::InvalidState, ErrorLevel::Permanent);
                         }
                     }
@@ -2240,14 +2240,14 @@ void Module::Interface::DeleteUserProgram(Kernel::HLERequestContext& ctx) {
     u8 variation = static_cast<u8>(title_id & 0xFF);
     if (category & CATEGORY_SYSTEM || category & CATEGORY_DLP || variation & VARIATION_SYSTEM) {
         LOG_ERROR(Service_AM, "Trying to uninstall system app");
-        rb.Push(Result(ErrCodes::TryingToUninstallSystemApp, ErrorModule::AM,
+        rb.Push(HLE::Result(ErrCodes::TryingToUninstallSystemApp, ErrorModule::AM,
                        ErrorSummary::InvalidArgument, ErrorLevel::Usage));
         return;
     }
     LOG_INFO(Service_AM, "Deleting title 0x{:016x}", title_id);
     std::string path = GetTitlePath(media_type, title_id);
     if (!FileUtil::Exists(path)) {
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         LOG_ERROR(Service_AM, "Title not found");
         return;
@@ -2269,7 +2269,7 @@ void Module::Interface::GetProductCode(Kernel::HLERequestContext& ctx) {
 
     if (!FileUtil::Exists(path)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
     } else {
         struct ProductCode {
@@ -2300,7 +2300,7 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
             u8 media_type;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<u8> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2324,11 +2324,11 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -2337,7 +2337,7 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
 
                 auto title_infos = resp->GetResponseBuffer(0);
                 if (!title_infos.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2367,7 +2367,7 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
             Service::FS::MediaType media_type;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<TitleInfo> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2386,7 +2386,7 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
                 for (u32 i = 0; i < async_data->title_id_list.size(); i++) {
                     u32 tid_high = static_cast<u32>(async_data->title_id_list[i] >> 32);
                     if (tid_high != TID_HIGH_DLC) {
-                        async_data->res = Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
+                        async_data->res = HLE::Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
                                                  ErrorSummary::InvalidArgument, ErrorLevel::Usage);
                         break;
                     }
@@ -2408,7 +2408,7 @@ void Module::Interface::GetDLCTitleInfos(Kernel::HLERequestContext& ctx) {
                              import_ctx.second.state == ImportTitleContextState::RESUMABLE)) {
                             LOG_DEBUG(Service_AM, "title pending commit title_id={:016X}", tid);
                             async_data->res =
-                                Result(ErrorDescription::NotFound, ErrorModule::AM,
+                                HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                                        ErrorSummary::InvalidState, ErrorLevel::Permanent);
                         }
                     }
@@ -2447,7 +2447,7 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
             u8 media_type;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<TitleInfo> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2471,11 +2471,11 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -2484,7 +2484,7 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
 
                 auto title_infos = resp->GetResponseBuffer(0);
                 if (!title_infos.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2514,7 +2514,7 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
             Service::FS::MediaType media_type;
             std::vector<u64> title_id_list;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<TitleInfo> out;
             Kernel::MappedBuffer* title_id_list_buffer;
             Kernel::MappedBuffer* title_info_out;
@@ -2533,7 +2533,7 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
                 for (u32 i = 0; i < async_data->title_id_list.size(); i++) {
                     u32 tid_high = static_cast<u32>(async_data->title_id_list[i] >> 32);
                     if (tid_high != TID_HIGH_UPDATE) {
-                        async_data->res = Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
+                        async_data->res = HLE::Result(ErrCodes::InvalidTIDInList, ErrorModule::AM,
                                                  ErrorSummary::InvalidArgument, ErrorLevel::Usage);
                         break;
                     }
@@ -2555,7 +2555,7 @@ void Module::Interface::GetPatchTitleInfos(Kernel::HLERequestContext& ctx) {
                              import_ctx.second.state == ImportTitleContextState::RESUMABLE)) {
                             LOG_DEBUG(Service_AM, "title pending commit title_id={:016X}", tid);
                             async_data->res =
-                                Result(ErrorDescription::NotFound, ErrorModule::AM,
+                                HLE::Result(ErrorDescription::NotFound, ErrorModule::AM,
                                        ErrorSummary::InvalidState, ErrorLevel::Permanent);
                         }
                     }
@@ -2593,7 +2593,7 @@ void Module::Interface::ListDataTitleTicketInfos(Kernel::HLERequestContext& ctx)
             u32 ticket_count;
             u32 start_index;
 
-            Result res{0};
+            HLE::Result res{0};
             std::vector<u8> out;
             Kernel::MappedBuffer* ticket_info_out;
         };
@@ -2614,11 +2614,11 @@ void Module::Interface::ListDataTitleTicketInfos(Kernel::HLERequestContext& ctx)
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -2626,7 +2626,7 @@ void Module::Interface::ListDataTitleTicketInfos(Kernel::HLERequestContext& ctx)
 
                 auto content_info = resp->GetResponseBuffer(0);
                 if (!content_info.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2652,7 +2652,7 @@ void Module::Interface::ListDataTitleTicketInfos(Kernel::HLERequestContext& ctx)
             LOG_ERROR(Service_AM, "Tried to get infos for non-data title title_id={:016X}",
                       title_id);
             IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-            rb.Push(Result(60, ErrorModule::AM, ErrorSummary::InvalidArgument, ErrorLevel::Usage));
+            rb.Push(HLE::Result(60, ErrorModule::AM, ErrorSummary::InvalidArgument, ErrorLevel::Usage));
         }
 
         auto& out_buffer = rp.PopMappedBuffer();
@@ -2713,11 +2713,11 @@ void Module::Interface::GetDLCContentInfoCount(Kernel::HLERequestContext& ctx) {
                 auto resp = artic_client->Send(req);
 
                 if (!resp.has_value() || !resp->Succeeded()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
-                auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+                auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
                 if (res.IsError()) {
                     async_data->res = res;
                     return 0;
@@ -2725,7 +2725,7 @@ void Module::Interface::GetDLCContentInfoCount(Kernel::HLERequestContext& ctx) {
 
                 auto count = resp->GetResponseS32(0);
                 if (!count.has_value()) {
-                    async_data->res = Result(-1);
+                    async_data->res = HLE::Result(-1);
                     return 0;
                 }
 
@@ -2746,7 +2746,7 @@ void Module::Interface::GetDLCContentInfoCount(Kernel::HLERequestContext& ctx) {
         u32 tid_high = static_cast<u32>(title_id >> 32);
         if (tid_high != TID_HIGH_DLC) {
             IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
-            rb.Push(Result(ErrCodes::InvalidTID, ErrorModule::AM, ErrorSummary::InvalidArgument,
+            rb.Push(HLE::Result(ErrCodes::InvalidTID, ErrorModule::AM, ErrorSummary::InvalidArgument,
                            ErrorLevel::Usage));
             rb.Push<u32>(0);
             return;
@@ -2778,7 +2778,7 @@ void Module::Interface::DeleteTicket(Kernel::HLERequestContext& ctx) {
     std::scoped_lock lock(am->am_lists_mutex);
     auto range = am->am_ticket_list.equal_range(title_id);
     if (range.first == range.second) {
-        rb.Push(Result(ErrorDescription::AlreadyDone, ErrorModule::AM, ErrorSummary::Success,
+        rb.Push(HLE::Result(ErrorDescription::AlreadyDone, ErrorModule::AM, ErrorSummary::Success,
                        ErrorLevel::Success));
         return;
     }
@@ -2838,7 +2838,7 @@ void Module::Interface::GetDeviceID(Kernel::HLERequestContext& ctx) {
     const auto& otp = HW::UniqueData::GetOTP();
     if (!otp.Valid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
                        ErrorLevel::Permanent));
         return;
     }
@@ -2954,7 +2954,7 @@ void Module::Interface::GetImportTitleContexts(Kernel::HLERequestContext& ctx) {
 
         auto it = am->import_title_contexts.find(title_id);
         if (it == am->import_title_contexts.end()) {
-            rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+            rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                            ErrorLevel::Permanent));
             return;
         } else {
@@ -2977,7 +2977,7 @@ void Module::Interface::DeleteImportTitleContext(Kernel::HLERequestContext& ctx)
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
     auto range = am->import_title_contexts.equal_range(title_id);
     if (range.first == range.second) {
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3032,7 +3032,7 @@ void Module::Interface::GetImportContentContextsImpl(IPC::RequestParser& rp, u32
                 break;
 
         if (it == range.second) {
-            rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+            rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                            ErrorLevel::Permanent));
             return;
         }
@@ -3404,7 +3404,7 @@ void Module::Interface::BeginImportProgram(Kernel::HLERequestContext& ctx) {
 
     if (am->cia_installing) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3429,7 +3429,7 @@ void Module::Interface::BeginImportProgramTemporarily(Kernel::HLERequestContext&
 
     if (am->cia_installing) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3532,7 +3532,7 @@ void Module::Interface::GetProgramInfoFromCia(Kernel::HLERequestContext& ctx) {
     FileSys::CIAContainer container;
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3575,7 +3575,7 @@ void Module::Interface::GetSystemMenuDataFromCia(Kernel::HLERequestContext& ctx)
     FileSys::CIAContainer container;
     if (container.Load(*file) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 2);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         rb.PushMappedBuffer(output_buffer);
         return;
@@ -3587,7 +3587,7 @@ void Module::Interface::GetSystemMenuDataFromCia(Kernel::HLERequestContext& ctx)
                                   temp.size(), temp.data());
     if (read_result.Failed() || *read_result != temp.size()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 2);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         rb.PushMappedBuffer(output_buffer);
         return;
@@ -3616,7 +3616,7 @@ void Module::Interface::GetDependencyListFromCia(Kernel::HLERequestContext& ctx)
     FileSys::CIAContainer container;
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3645,7 +3645,7 @@ void Module::Interface::GetTransferSizeFromCia(Kernel::HLERequestContext& ctx) {
     FileSys::CIAContainer container;
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3671,7 +3671,7 @@ void Module::Interface::GetCoreVersionFromCia(Kernel::HLERequestContext& ctx) {
     FileSys::CIAContainer container;
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3698,7 +3698,7 @@ void Module::Interface::GetRequiredSizeFromCia(Kernel::HLERequestContext& ctx) {
     FileSys::CIAContainer container;
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3774,7 +3774,7 @@ void Module::Interface::CommitImportTitlesImpl(Kernel::HLERequestContext& ctx,
     rb.Push(ResultSuccess);
 }
 
-Result UninstallProgram(const FS::MediaType media_type, const u64 title_id) {
+HLE::Result UninstallProgram(const FS::MediaType media_type, const u64 title_id) {
     // Use the content folder so we don't delete the user's save data.
     const auto path = GetTitlePath(media_type, title_id) + "content/";
     if (!FileUtil::Exists(path)) {
@@ -3830,7 +3830,7 @@ void Module::Interface::GetMetaSizeFromCia(Kernel::HLERequestContext& ctx) {
     if (container.Load(*file_res.Unwrap()) != Loader::ResultStatus::Success) {
 
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3863,7 +3863,7 @@ void Module::Interface::GetMetaDataFromCia(Kernel::HLERequestContext& ctx) {
     FileSys::CIAContainer container;
     if (container.Load(*file) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 2);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         rb.PushMappedBuffer(output_buffer);
         return;
@@ -3874,7 +3874,7 @@ void Module::Interface::GetMetaDataFromCia(Kernel::HLERequestContext& ctx) {
     auto read_result = file->Read(container.GetMetadataOffset(), output_size, temp.data());
     if (read_result.Failed() || *read_result != output_size) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidCIAHeader, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Permanent));
         return;
     }
@@ -3908,7 +3908,7 @@ void Module::Interface::EndImportTicket(Kernel::HLERequestContext& ctx) {
         struct AsyncData {
             Service::AM::TicketFile* ticket_file;
 
-            Result res{0};
+            HLE::Result res{0};
         };
         std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
         async_data->ticket_file = ticket_file.Unwrap();
@@ -3964,7 +3964,7 @@ void Module::Interface::BeginImportTitle(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    Result res = am->importing_title->cia_file.ProvideTicket(ticket);
+    HLE::Result res = am->importing_title->cia_file.ProvideTicket(ticket);
     if (res.IsError()) {
         // Failed to load ticket
         rb.Push(res);
@@ -4106,7 +4106,7 @@ void Module::Interface::EndImportTmd(Kernel::HLERequestContext& ctx) {
 
     if (!am->importing_title) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4117,7 +4117,7 @@ void Module::Interface::EndImportTmd(Kernel::HLERequestContext& ctx) {
             Service::AM::TMDFile* tmd_file;
             [[maybe_unused]] bool create_context;
 
-            Result res{0};
+            HLE::Result res{0};
         };
         std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
         async_data->tmd_file = tmd_file.Unwrap();
@@ -4177,7 +4177,7 @@ void Module::Interface::CreateImportContentContexts(Kernel::HLERequestContext& c
 
     if (!am->importing_title) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4185,7 +4185,7 @@ void Module::Interface::CreateImportContentContexts(Kernel::HLERequestContext& c
     struct AsyncData {
         std::vector<u16> content_indices;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
     async_data->content_indices.resize(content_count);
@@ -4202,7 +4202,7 @@ void Module::Interface::CreateImportContentContexts(Kernel::HLERequestContext& c
                               am->importing_title->title_id, am->importing_title->media_type);
 
                     async_data->res =
-                        Result(0xFFFFFFFF); // TODO(PabloMK7): Find the right error code
+                        HLE::Result(0xFFFFFFFF); // TODO(PabloMK7): Find the right error code
                     return 0;
                 }
                 am->importing_title->cia_file.ProvideTMDForAdditionalContent(tmd);
@@ -4216,7 +4216,7 @@ void Module::Interface::CreateImportContentContexts(Kernel::HLERequestContext& c
                               "Tried to create context for invalid index title_id={:016x} index={}",
                               am->importing_title->title_id, index);
                     async_data->res =
-                        Result(0xFFFFFFFF); // TODO(PabloMK7): Find the right error code
+                        HLE::Result(0xFFFFFFFF); // TODO(PabloMK7): Find the right error code
                     return 0;
                 }
                 ImportContentContext content_context;
@@ -4396,7 +4396,7 @@ void Module::Interface::GetNumCurrentImportContentContexts(Kernel::HLERequestCon
 
     if (!am->importing_title) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4412,7 +4412,7 @@ void Module::Interface::GetCurrentImportContentContextList(Kernel::HLERequestCon
 
     if (!am->importing_title) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4430,7 +4430,7 @@ void Module::Interface::GetCurrentImportContentContexts(Kernel::HLERequestContex
 
     if (!am->importing_title) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::InvalidImportState, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4462,7 +4462,7 @@ void Module::Interface::Sign(Kernel::HLERequestContext& ctx) {
     FileSys::Certificate& ct_cert = HW::UniqueData::GetCTCert();
     if (!ct_cert.IsValid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4512,7 +4512,7 @@ void Module::Interface::GetDeviceCert(Kernel::HLERequestContext& ctx) {
     const auto& ct_cert = HW::UniqueData::GetCTCert();
     if (!ct_cert.IsValid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::NotFound,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4547,7 +4547,7 @@ void Module::Interface::DeleteTicketId(Kernel::HLERequestContext& ctx) {
         }
     }
     if (range.first == range.second) {
-        rb.Push(Result(ErrorDescription::AlreadyDone, ErrorModule::AM, ErrorSummary::Success,
+        rb.Push(HLE::Result(ErrorDescription::AlreadyDone, ErrorModule::AM, ErrorSummary::Success,
                        ErrorLevel::Success));
         return;
     }
@@ -4684,7 +4684,7 @@ void Module::Interface::FindCurrentContentInfos(Kernel::HLERequestContext& ctx) 
 
         std::vector<ContentInfo> out_vec;
         Kernel::MappedBuffer* content_info_out;
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->content_count = rp.Pop<u32>();
@@ -4707,7 +4707,7 @@ void Module::Interface::FindCurrentContentInfos(Kernel::HLERequestContext& ctx) 
                               "Attempted to get info for non-existent content index {:04x}.",
                               index);
 
-                    async_data->res = Result(0xFFFFFFFF);
+                    async_data->res = HLE::Result(0xFFFFFFFF);
                     return 0;
                 }
 
@@ -4772,7 +4772,7 @@ void Module::Interface::ListCurrentContentInfos(Kernel::HLERequestContext& ctx) 
 
         std::vector<ContentInfo> out_vec;
         Kernel::MappedBuffer* content_info_out;
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->content_count = rp.Pop<u32>();
@@ -4915,7 +4915,7 @@ void Module::Interface::ExportTicketWrapped(Kernel::HLERequestContext& ctx) {
     u32 tid_high = static_cast<u32>(title_id >> 32);
     if ((tid_high & 0x00048001) == 0x00048001 || tid_high == 0x00040001 || (tid_high & 0x10) != 0) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrCodes::InvalidTIDInList, ErrorModule::AM, ErrorSummary::InvalidArgument,
+        rb.Push(HLE::Result(ErrCodes::InvalidTIDInList, ErrorModule::AM, ErrorSummary::InvalidArgument,
                        ErrorLevel::Usage));
         return;
     }
@@ -4928,7 +4928,7 @@ void Module::Interface::ExportTicketWrapped(Kernel::HLERequestContext& ctx) {
             break;
     if (it == range.second) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }
@@ -4936,7 +4936,7 @@ void Module::Interface::ExportTicketWrapped(Kernel::HLERequestContext& ctx) {
     FileSys::Ticket ticket;
     if (ticket.Load(title_id, ticket_id) != Loader::ResultStatus::Success) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::AM, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
         return;
     }

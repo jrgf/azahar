@@ -100,7 +100,7 @@ ResultVal<VAddr> VMManager::MapBackingMemoryToBase(VAddr base, u32 region_size, 
     // Do not try to allocate the block if there are no available addresses within the desired
     // region.
     if (vma_handle == vma_map.end() || target + size > base + region_size) {
-        return Result(ErrorDescription::OutOfMemory, ErrorModule::Kernel,
+        return HLE::Result(ErrorDescription::OutOfMemory, ErrorModule::Kernel,
                       ErrorSummary::OutOfResource, ErrorLevel::Permanent);
     }
 
@@ -131,7 +131,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, Memory
     return MergeAdjacent(vma_handle);
 }
 
-Result VMManager::ChangeMemoryState(VAddr target, u32 size, MemoryState expected_state,
+HLE::Result VMManager::ChangeMemoryState(VAddr target, u32 size, MemoryState expected_state,
                                     VMAPermission expected_perms, MemoryState new_state,
                                     VMAPermission new_perms) {
     if (is_locked) {
@@ -185,7 +185,7 @@ VMManager::VMAIter VMManager::Unmap(VMAIter vma_handle) {
     return MergeAdjacent(vma_handle);
 }
 
-Result VMManager::UnmapRange(VAddr target, u32 size) {
+HLE::Result VMManager::UnmapRange(VAddr target, u32 size) {
     ASSERT(!is_locked);
 
     CASCADE_RESULT(VMAIter vma, CarveVMARange(target, size));
@@ -214,7 +214,7 @@ VMManager::VMAHandle VMManager::Reprotect(VMAHandle vma_handle, VMAPermission ne
     return MergeAdjacent(iter);
 }
 
-Result VMManager::ReprotectRange(VAddr target, u32 size, VMAPermission new_perms) {
+HLE::Result VMManager::ReprotectRange(VAddr target, u32 size, VMAPermission new_perms) {
     ASSERT(!is_locked);
 
     CASCADE_RESULT(VMAIter vma, CarveVMARange(target, size));

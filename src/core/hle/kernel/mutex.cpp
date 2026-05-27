@@ -69,7 +69,7 @@ void Mutex::Acquire(Thread* thread) {
     lock_count++;
 }
 
-Result Mutex::Release(Thread* thread) {
+HLE::Result Mutex::Release(Thread* thread) {
     // We can only release the mutex if it's held by the calling thread.
     if (thread != holding_thread.get()) {
         if (holding_thread) {
@@ -78,14 +78,14 @@ Result Mutex::Release(Thread* thread) {
                 "Tried to release a mutex (owned by thread id {}) from a different thread id {}",
                 holding_thread->thread_id, thread->thread_id);
         }
-        return Result(ErrCodes::WrongLockingThread, ErrorModule::Kernel,
+        return HLE::Result(ErrCodes::WrongLockingThread, ErrorModule::Kernel,
                       ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
     }
 
     // Note: It should not be possible for the situation where the mutex has a holding thread with a
     // zero lock count to occur. The real kernel still checks for this, so we do too.
     if (lock_count <= 0)
-        return Result(ErrorDescription::InvalidResultValue, ErrorModule::Kernel,
+        return HLE::Result(ErrorDescription::InvalidResultValue, ErrorModule::Kernel,
                       ErrorSummary::InvalidState, ErrorLevel::Permanent);
 
     lock_count--;

@@ -46,7 +46,7 @@ constexpr int MAX_PENDING_NOTIFICATIONS = 16;
  *      1: ProcessId Header (must be 0x20)
  *  Outputs:
  *      0: 0x00010040
- *      1: Result
+ *      1: HLE::Result
  */
 void SRV::RegisterClient(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
@@ -70,7 +70,7 @@ void SRV::RegisterClient(Kernel::HLERequestContext& ctx) {
  *      0: 0x00020000
  *  Outputs:
  *      0: 0x00020042
- *      1: Result
+ *      1: HLE::Result
  *      2: Translation descriptor: 0x20
  *      3: Handle to semaphore signaled on process notification
  */
@@ -137,7 +137,7 @@ private:
  *      3: Name length
  *      4: Flags (bit0: if not set, return port-handle if session-handle unavailable)
  *  Outputs:
- *      1: Result
+ *      1: HLE::Result
  *      3: Service handle
  */
 void SRV::GetServiceHandle(Kernel::HLERequestContext& ctx) {
@@ -202,7 +202,7 @@ void SRV::GetServiceHandle(Kernel::HLERequestContext& ctx) {
  *      1: Notification ID
  *  Outputs:
  *      0: 0x00090040
- *      1: Result
+ *      1: HLE::Result
  */
 void SRV::Subscribe(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
@@ -220,7 +220,7 @@ void SRV::Subscribe(Kernel::HLERequestContext& ctx) {
  *      1: Notification ID
  *  Outputs:
  *      0: 0x000A0040
- *      1: Result
+ *      1: HLE::Result
  */
 void SRV::Unsubscribe(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
@@ -239,7 +239,7 @@ void SRV::Unsubscribe(Kernel::HLERequestContext& ctx) {
  *      2: Flags (bit0: only fire if not fired, bit1: report errors)
  *  Outputs:
  *      0: 0x000C0040
- *      1: Result
+ *      1: HLE::Result
  */
 void SRV::PublishToSubscriber(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);

@@ -24,7 +24,7 @@ namespace Kernel {
 ServerPort::ServerPort(KernelSystem& kernel) : WaitObject(kernel) {}
 ServerPort::~ServerPort() {}
 
-Result ServerPort::Accept(std::shared_ptr<ServerSession>* out_server_session) {
+HLE::Result ServerPort::Accept(std::shared_ptr<ServerSession>* out_server_session) {
     R_UNLESS(!pending_sessions.empty(), ResultNoPendingSessions);
 
     *out_server_session = std::move(pending_sessions.back());

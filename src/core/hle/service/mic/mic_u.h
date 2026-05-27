@@ -30,7 +30,7 @@ private:
      *      2 : CopyHandleDesc
      *      3 : Shared-mem handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void MapSharedMem(Kernel::HLERequestContext& ctx);
 
@@ -39,7 +39,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00020000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnmapSharedMem(Kernel::HLERequestContext& ctx);
 
@@ -53,7 +53,7 @@ private:
      *      4 : Size of the audio data in sharedmem
      *      5 : Loop at end of buffer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StartSampling(Kernel::HLERequestContext& ctx);
 
@@ -63,7 +63,7 @@ private:
      *      0 : Header Code[0x00040040]
      *      1 : SampleRate
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AdjustSampling(Kernel::HLERequestContext& ctx);
 
@@ -72,7 +72,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00050000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StopSampling(Kernel::HLERequestContext& ctx);
 
@@ -81,7 +81,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00060000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : 0 = sampling, non-zero = sampling
      */
     void IsSampling(Kernel::HLERequestContext& ctx);
@@ -91,7 +91,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00070000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      3 : Event handle
      */
     void GetBufferFullEvent(Kernel::HLERequestContext& ctx);
@@ -102,7 +102,7 @@ private:
      *      0 : Header Code[0x00080040]
      *      1 : Gain
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetGain(Kernel::HLERequestContext& ctx);
 
@@ -111,7 +111,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00090000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Gain
      */
     void GetGain(Kernel::HLERequestContext& ctx);
@@ -122,7 +122,7 @@ private:
      *      0 : Header Code[0x000A0040]
      *      1 : Power (0 = off, 1 = on)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetPower(Kernel::HLERequestContext& ctx);
 
@@ -131,7 +131,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000B0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Power
      */
     void GetPower(Kernel::HLERequestContext& ctx);
@@ -144,7 +144,7 @@ private:
      *      2 : (Size << 4) | 0xA
      *      3 : Pointer to IIR Filter Data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetIirFilterMic(Kernel::HLERequestContext& ctx);
 
@@ -154,7 +154,7 @@ private:
      *      0 : Header Code[0x000D0040]
      *      1 : Clamp (0 = don't clamp, non-zero = clamp)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetClamp(Kernel::HLERequestContext& ctx);
 
@@ -163,7 +163,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000E0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Clamp (0 = don't clamp, non-zero = clamp)
      */
     void GetClamp(Kernel::HLERequestContext& ctx);
@@ -174,7 +174,7 @@ private:
      *      0 : Header Code[0x000F0040]
      *      1 : Sampling allowed while shell closed (0 = disallow, non-zero = allow)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetAllowShellClosed(Kernel::HLERequestContext& ctx);
 
@@ -184,7 +184,7 @@ private:
      *      0 : Header Code[0x00100040]
      *      1 : Used SDK Version
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetClientVersion(Kernel::HLERequestContext& ctx);
 

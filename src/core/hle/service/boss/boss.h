@@ -49,7 +49,7 @@ public:
          *    1-2 : programID, normally zero for using the programID determined from the input PID
          *      3 : 0x20, ARM11-kernel processID translate-header.
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void InitializeSession(Kernel::HLERequestContext& ctx);
 
@@ -61,7 +61,7 @@ public:
          *      3 : u32 boss_size
          *      4 : u8 extdata_type: 0 = NAND, 1 = SD
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetStorageInfo(Kernel::HLERequestContext& ctx);
 
@@ -70,7 +70,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00030000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void UnregisterStorage(Kernel::HLERequestContext& ctx);
 
@@ -79,7 +79,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00040000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          */
         void GetStorageInfo(Kernel::HLERequestContext& ctx);
@@ -92,7 +92,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -109,7 +109,7 @@ public:
          *      5 : MappedBufferDesc2(permission = R)
          *      6 : u32 buff_addr2
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff1_size << 4 | 0xA
          *      3 : u32 buff_addr1
          *      4 : buff2_size << 4 | 0xA
@@ -122,7 +122,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00070000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 flag
          */
         void GetNewArrivalFlag(Kernel::HLERequestContext& ctx);
@@ -134,7 +134,7 @@ public:
          *      1 : u32 unknown1
          *      2 : u32 unknown2
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void RegisterNewArrivalEvent(Kernel::HLERequestContext& ctx);
 
@@ -144,7 +144,7 @@ public:
          *      0 : Header Code[0x00090040]
          *      1 : u8 output_flag
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetOptoutFlag(Kernel::HLERequestContext& ctx);
 
@@ -153,7 +153,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x000A0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 output_flag
          */
         void GetOptoutFlag(Kernel::HLERequestContext& ctx);
@@ -168,7 +168,7 @@ public:
          *      4 : MappedBufferDesc1(permission = R)
          *      5 : buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -183,7 +183,7 @@ public:
          *      3 : MappedBufferDesc1(permission = R)
          *      4 : buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -198,7 +198,7 @@ public:
          *      3 : MappedBufferDesc1(permission = R)
          *      4 : buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -209,7 +209,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x000E0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetTaskIdList(Kernel::HLERequestContext& ctx);
 
@@ -222,7 +222,7 @@ public:
          *      3 : u32 buff_addr
          *
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -239,7 +239,7 @@ public:
          *      5 : MappedBufferDesc(permission = W)
          *      6 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -258,7 +258,7 @@ public:
          *      5 : MappedBufferDesc(permission = W)
          *      6 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -277,7 +277,7 @@ public:
          *      5 : MappedBufferDesc(permission = W)
          *      6 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -296,7 +296,7 @@ public:
          *      5 : MappedBufferDesc(permission = W)
          *      6 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -314,7 +314,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -328,7 +328,7 @@ public:
          *      3 : 0x0
          *      4 : Handle
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SendPropertyHandle(Kernel::HLERequestContext& ctx);
 
@@ -341,7 +341,7 @@ public:
          *      3 : MappedBufferDesc(permission = W)
          *      4 : u32 buff addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Actual read size
          *      4 : buff_size << 4 | 0xC
          *      5 : u32 buff_addr
@@ -357,7 +357,7 @@ public:
          *      3 : MappedBufferDesc1(permission = R)
          *      4 : buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -372,7 +372,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -386,7 +386,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -401,7 +401,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -416,7 +416,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 unknown value
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -431,7 +431,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -445,7 +445,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -459,7 +459,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -470,7 +470,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x001F0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : 0x0
          *      3 : Task Finish Handle
          */
@@ -485,7 +485,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 TaskStatus
          *      3 : u32 Current state value for task PropertyID 0x4
          *      4 : u8 unknown value
@@ -502,7 +502,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 unknown value
          *      3 : u32 unknown value
          *      4 : u8 unknown value
@@ -519,7 +519,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          *      3 : u32 unknown value
          *      4 : u8 unknown value
@@ -538,7 +538,7 @@ public:
          *      4 : MappedBufferDesc(permission = R)
          *      5 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 unknown value
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -554,7 +554,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 unknown value
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -570,7 +570,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -582,7 +582,7 @@ public:
          *      0 : Header Code[0x00260040]
          *      1 : u32 NsDataID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DeleteNsData(Kernel::HLERequestContext& ctx);
 
@@ -596,7 +596,7 @@ public:
          *      4 : MappedBufferDesc(permission = W)
          *      5 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xC
          *      3 : u32, buff_addr
          */
@@ -612,7 +612,7 @@ public:
          *      5 : MappedBufferDesc(permission = W)
          *      6 : u32, buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 Actual read size
          *      3 : u32, unknown value
          *      4 : buff_size << 4 | 0xC
@@ -627,7 +627,7 @@ public:
          *      1 : u32 unknown value
          *      2 : u32 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNsDataAdditionalInfo(Kernel::HLERequestContext& ctx);
 
@@ -637,7 +637,7 @@ public:
          *      0 : Header Code[0x002A0040]
          *      1 : u32 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          */
         void GetNsDataAdditionalInfo(Kernel::HLERequestContext& ctx);
@@ -649,7 +649,7 @@ public:
          *      1 : u32 unknown value
          *      2 : u8 flag
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNsDataNewFlag(Kernel::HLERequestContext& ctx);
 
@@ -659,7 +659,7 @@ public:
          *      0 : Header Code[0x002C0040]
          *      1 : u32 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 flag
          */
         void GetNsDataNewFlag(Kernel::HLERequestContext& ctx);
@@ -670,7 +670,7 @@ public:
          *      0 : Header Code[0x002D0040]
          *      1 : u32 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          *      3 : u32 unknown value
          */
@@ -682,7 +682,7 @@ public:
          *      0 : Header Code[0x002E0040]
          *      1 : u8 input
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          */
         void GetErrorCode(Kernel::HLERequestContext& ctx);
@@ -697,7 +697,7 @@ public:
          *      4 : u16 unknown value
          *      5 : u8 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void RegisterStorageEntry(Kernel::HLERequestContext& ctx);
 
@@ -706,7 +706,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00300000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 unknown value
          *      3 : u16 unknown value
          */
@@ -721,7 +721,7 @@ public:
          *      3 : u16 unknown value
          *      4 : u16 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetStorageOption(Kernel::HLERequestContext& ctx);
 
@@ -730,7 +730,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00320000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 unknown value
          *      3 : u32 unknown value
          *      4 : u16 unknown value
@@ -746,7 +746,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32, buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32, buff_addr
          */
@@ -760,7 +760,7 @@ public:
          *      2 : MappedBufferDesc(permission = R)
          *      3 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 current state
          *      3 : buff_size << 4 | 0xA
          *      4 : u32 buff_addr
@@ -777,7 +777,7 @@ public:
          *      4 : MappedBufferDesc(permission = R)
          *      5 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -794,7 +794,7 @@ public:
          *      5 : MappedBufferDesc2(permission = R)
          *      6 : u32 buff2_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff1_size << 4 | 0xA
          *      3 : u32 buff1_addr
          *      4 : buff2_size << 4 | 0xA
@@ -813,7 +813,7 @@ public:
          *      5 : MappedBufferDesc2(permission = W)
          *      6 : u32 buff2_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff1_size << 4 | 0xA
          *      3 : u32 buff1_addr
          *      4 : buff2_size << 4 | 0xC
@@ -828,7 +828,7 @@ public:
          *    1-2 : programID, normally zero for using the programID determined from the input PID
          *      3 : 0x20, ARM11-kernel processID translate-header.
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void InitializeSessionPrivileged(Kernel::HLERequestContext& ctx);
 
@@ -838,7 +838,7 @@ public:
          *      0 : Header Code[0x04040080]
          *    1-2 : u64 ProgramID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 flag, 0 = nothing new, 1 = new content
          */
         void GetAppNewFlag(Kernel::HLERequestContext& ctx);
@@ -855,7 +855,7 @@ public:
          *      7 : MappedBufferDesc(permission = W)
          *      8 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -875,7 +875,7 @@ public:
          *      7 : MappedBufferDesc(permission = W)
          *      8 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u16 Actual number of output entries
          *      3 : u16 Last word-index copied to output in the internal NsDataId list
          *      4 : buff_size << 4 | 0xC
@@ -892,7 +892,7 @@ public:
          *      3 : MappedBufferDesc(permission = R)
          *      4 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xA
          *      3 : u32 buff_addr
          */
@@ -905,7 +905,7 @@ public:
          *    1-2 : u64 ProgramID
          *      3 : u32 NsDataID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DeleteNsDataPrivileged(Kernel::HLERequestContext& ctx);
 
@@ -920,7 +920,7 @@ public:
          *      6 : MappedBufferDesc(permission = W)
          *      7 : u32 buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : buff_size << 4 | 0xC
          *      3 : u32, buff_addr
          */
@@ -937,7 +937,7 @@ public:
          *      7 : MappedBufferDesc(permission = W)
          *      8 : u32, buff_addr
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u32 Actual read size
          *      3 : u32, unknown value
          *      4 : buff_size << 4 | 0xC
@@ -953,7 +953,7 @@ public:
          *      3 : u32 unknown value
          *      4 : u8 flag
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNsDataNewFlagPrivileged(Kernel::HLERequestContext& ctx);
 
@@ -964,7 +964,7 @@ public:
          *    1-2 : u64 ProgramID
          *      3 : u32 unknown value
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 flag
          */
         void GetNsDataNewFlagPrivileged(Kernel::HLERequestContext& ctx);

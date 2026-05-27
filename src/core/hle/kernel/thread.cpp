@@ -399,7 +399,7 @@ ResultVal<std::shared_ptr<Thread>> KernelSystem::CreateThread(
     if (!memory.IsValidVirtualAddress(*owner_process, entry_point)) {
         LOG_ERROR(Kernel_SVC, "(name={}): invalid entry {:08x}", name, entry_point);
         // TODO: Verify error
-        return Result(ErrorDescription::InvalidAddress, ErrorModule::Kernel,
+        return HLE::Result(ErrorDescription::InvalidAddress, ErrorModule::Kernel,
                       ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
     }
 
@@ -524,7 +524,7 @@ void ThreadManager::Reschedule() {
     SwitchContext(next);
 }
 
-void Thread::SetWaitSynchronizationResult(Result result) {
+void Thread::SetWaitSynchronizationResult(HLE::Result result) {
     context.cpu_registers[0] = result.raw;
 }
 

@@ -39,9 +39,9 @@ public:
     /**
      * Sends an SyncRequest from the current emulated thread.
      * @param thread Thread that initiated the request.
-     * @return Result of the operation.
+     * @return HLE::Result of the operation.
      */
-    Result SendSyncRequest(std::shared_ptr<Thread> thread);
+    HLE::Result SendSyncRequest(std::shared_ptr<Thread> thread);
 
     std::string name; ///< Name of client port (optional)
 

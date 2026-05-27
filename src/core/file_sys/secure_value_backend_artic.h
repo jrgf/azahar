@@ -18,16 +18,16 @@ public:
     ArticSecureValueBackend(const std::shared_ptr<Network::ArticBase::Client>& _client)
         : client(_client) {}
 
-    Result ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation, u32 secure_value_slot,
+    HLE::Result ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation, u32 secure_value_slot,
                                            u64 secure_value) override;
 
     ResultVal<std::tuple<bool, u64>> ObsoletedGetSaveDataSecureValue(
         u32 unique_id, u8 title_variation, u32 secure_value_slot) override;
 
-    Result ControlSecureSave(u32 action, u8* input, size_t input_size, u8* output,
+    HLE::Result ControlSecureSave(u32 action, u8* input, size_t input_size, u8* output,
                              size_t output_size) override;
 
-    Result SetThisSaveDataSecureValue(u32 secure_value_slot, u64 secure_value) override;
+    HLE::Result SetThisSaveDataSecureValue(u32 secure_value_slot, u64 secure_value) override;
 
     ResultVal<std::tuple<bool, bool, u64>> GetThisSaveDataSecureValue(
         u32 secure_value_slot) override;

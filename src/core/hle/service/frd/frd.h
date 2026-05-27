@@ -90,7 +90,7 @@ public:
          *      64 : sizeof (MyPresence) << 14 | 2
          *      65 : Address of MyPresence structure
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetMyPresence(Kernel::HLERequestContext& ctx);
 
@@ -101,7 +101,7 @@ public:
          *      2 : Max friends count
          *      65 : Address of FriendKey List
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : FriendKey count filled
          */
         void GetFriendKeyList(Kernel::HLERequestContext& ctx);
@@ -115,7 +115,7 @@ public:
          *      64 : (count * sizeof (Profile)) << 10 | 2
          *      65 : Address of Profiles List
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetFriendProfile(Kernel::HLERequestContext& ctx);
 
@@ -127,7 +127,7 @@ public:
          *      3 : Address of FriendKey List
          *      65 : Address of AttributeFlags
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetFriendAttributeFlags(Kernel::HLERequestContext& ctx);
 
@@ -136,7 +136,7 @@ public:
          *  Inputs:
          *      none
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2-5 : FriendKey
          */
         void GetMyFriendKey(Kernel::HLERequestContext& ctx);
@@ -144,7 +144,7 @@ public:
         /**
          * FRD::GetMyScreenName service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : UTF16 encoded name (max 11 symbols)
          */
         void GetMyScreenName(Kernel::HLERequestContext& ctx);
@@ -152,7 +152,7 @@ public:
         /**
          * FRD::GetMyMii service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : MiiStoreData structure
          */
         void GetMyMii(Kernel::HLERequestContext& ctx);
@@ -160,7 +160,7 @@ public:
         /**
          * FRD::GetMyProfile service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : Profile structure
          */
         void GetMyProfile(Kernel::HLERequestContext& ctx);
@@ -168,7 +168,7 @@ public:
         /**
          * FRD::GetMyComment service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : UTF16 encoded comment (max 16 symbols)
          */
         void GetMyComment(Kernel::HLERequestContext& ctx);
@@ -176,7 +176,7 @@ public:
         /**
          * FRD::GetMyFavoriteGame service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : Game structure
          */
         void GetMyFavoriteGame(Kernel::HLERequestContext& ctx);
@@ -184,7 +184,7 @@ public:
         /**
          * FRD::GetMyPlayingGame service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : Game structure
          */
         void GetMyPlayingGame(Kernel::HLERequestContext& ctx);
@@ -192,7 +192,7 @@ public:
         /**
          * FRD::GetMyPreference service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Public mode (byte, 0 = private, non-zero = public)
          *      3 : Show current game (byte, 0 = don't show, non-zero = show)
          *      4 : Show game history (byte, 0 = don't show, non-zero = show)
@@ -208,7 +208,7 @@ public:
          *      64 : ((count * 8) << 14) | 2
          *      65 : Pointer to write decoded local friend codes to. Each is 8 bytes large.
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void UnscrambleLocalFriendCode(Kernel::HLERequestContext& ctx);
 
@@ -217,7 +217,7 @@ public:
          *  Inputs:
          *      1 : Used SDK Version
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetClientSdkVersion(Kernel::HLERequestContext& ctx);
 
@@ -226,7 +226,7 @@ public:
          *  Inputs:
          *      65 : Address of unknown event
          *  Outputs:
-         *      1  : Result of function, 0 on success, otherwise error code
+         *      1  : HLE::Result of function, 0 on success, otherwise error code
          */
         void Login(Kernel::HLERequestContext& ctx);
 
@@ -235,7 +235,7 @@ public:
          *  Inputs:
          *      none
          *  Outputs:
-         *      1  : Result of function, 0 on success, otherwise error code
+         *      1  : HLE::Result of function, 0 on success, otherwise error code
          *      2  : Online state (8-bit, 0 = not online, non-zero = online)
          */
         void IsOnline(Kernel::HLERequestContext& ctx);
@@ -243,7 +243,7 @@ public:
         /**
          * FRD::HasLoggedIn service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : If the user has logged in 1, otherwise 0
          */
         void HasLoggedIn(Kernel::HLERequestContext& ctx);
@@ -253,7 +253,7 @@ public:
          *  Inputs:
          *      none
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetLastResponseResult(Kernel::HLERequestContext& ctx);
 

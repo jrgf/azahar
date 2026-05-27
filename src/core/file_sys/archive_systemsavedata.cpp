@@ -80,7 +80,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SystemSaveData::Open(c
     }
 }
 
-Result ArchiveFactory_SystemSaveData::Format(const Path& path,
+HLE::Result ArchiveFactory_SystemSaveData::Format(const Path& path,
                                              const FileSys::ArchiveFormatInfo& format_info,
                                              u64 program_id, u32 directory_buckets,
                                              u32 file_buckets) {
@@ -101,7 +101,7 @@ ResultVal<ArchiveFormatInfo> ArchiveFactory_SystemSaveData::GetFormatInfo(const 
     return ResultUnknown;
 }
 
-Result ArchiveFactory_SystemSaveData::FormatAsSysData(u32 high, u32 low, u32 total_size,
+HLE::Result ArchiveFactory_SystemSaveData::FormatAsSysData(u32 high, u32 low, u32 total_size,
                                                       u32 block_size, u32 number_directories,
                                                       u32 number_files,
                                                       u32 number_directory_buckets,
@@ -125,7 +125,7 @@ Result ArchiveFactory_SystemSaveData::FormatAsSysData(u32 high, u32 low, u32 tot
             return ResultUnknown;
         }
 
-        Result res(static_cast<u32>(resp->GetMethodResult()));
+        HLE::Result res(static_cast<u32>(resp->GetMethodResult()));
         return res;
 
     } else {

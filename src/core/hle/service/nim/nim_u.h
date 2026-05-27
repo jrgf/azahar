@@ -24,7 +24,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StartNetworkUpdate(Kernel::HLERequestContext& ctx);
 
@@ -33,7 +33,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-11 : SystemUpdateProgress structure for the foreground system update
      *      12: ?
      *      13: ?
@@ -45,7 +45,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Cancel(Kernel::HLERequestContext& ctx);
 
@@ -54,7 +54,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CommitSystemTitles(Kernel::HLERequestContext& ctx);
 
@@ -63,7 +63,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy handle IPC header
      *      3 : System update ready event handle for home menu
      */
@@ -74,7 +74,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy handle IPC header
      *      3 : System update ready event handle for news module
      */
@@ -85,7 +85,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void FormatSaveData(Kernel::HLERequestContext& ctx);
 
@@ -94,7 +94,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Customer support code for the last system update error
      */
     void GetCustomerSupportCode(Kernel::HLERequestContext& ctx);
@@ -104,7 +104,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Boolean indicating whether system titles are ready to commit
      */
     void IsCommittableAllSystemTitles(Kernel::HLERequestContext& ctx);
@@ -114,7 +114,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-11 : SystemUpdateProgress structure for the background system update
      *      12: ?
      *      13: ?
@@ -126,7 +126,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-10 : NUL-terminated saved system update hash
      */
     void GetSavedHash(Kernel::HLERequestContext& ctx);
@@ -138,7 +138,7 @@ private:
      *      3 : Process ID IPC Header
      *      4 : Process ID (Auto-filled by kernel)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnregisterTask(Kernel::HLERequestContext& ctx);
 
@@ -147,7 +147,7 @@ private:
      *  Inputs:
      *      1-2 : Title ID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Boolean indicating whether a download task is registered for the title ID
      */
     void IsRegistered(Kernel::HLERequestContext& ctx);
@@ -157,7 +157,7 @@ private:
      *  Inputs:
      *      1-2 : Title ID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Static Buffer IPC Header (ID = 0, Size = 0x120)
      *      3 : BackgroundTitleDownloadTaskInfo structure pointer
      */
@@ -170,7 +170,7 @@ private:
      *      2 : Mapped Output Buffer IPC Header
      *      3 : BackgroundTitleDownloadTaskInfos Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Number of BackgroundTitleDownloadTaskInfos Read
      *      3 : Mapped Output Buffer IPC Header
      *      4 : BackgroundTitleDownloadTaskInfos Output Buffer Pointer
@@ -182,7 +182,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void DeleteUnmanagedContexts(Kernel::HLERequestContext& ctx);
 
@@ -191,7 +191,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy Handle IPC Header
      *      3 : Event handle signaled when the operation completes
      */
@@ -202,7 +202,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy Handle IPC Header
      *      3 : Event handle signaled when the operation completes
      */
@@ -213,7 +213,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Async operation result code
      *      3 : Async operation customer support code
      */
@@ -224,7 +224,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CancelAsyncCall(Kernel::HLERequestContext& ctx);
 
@@ -233,7 +233,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Boolean indicating whether there are auto title downloads ready to start
      */
     void IsPendingAutoTitleDownloadTasks(Kernel::HLERequestContext& ctx);
@@ -243,7 +243,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Number of auto title download tasks
      */
     void GetNumAutoTitleDownloadTasks(Kernel::HLERequestContext& ctx);
@@ -255,7 +255,7 @@ private:
      *      2 : Mapped Output Buffer IPC Header
      *      3 : AutoTitleDownloadTaskInfos Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Number of AutoTitleDownloadTaskInfos Read
      *      3 : Mapped Output Buffer IPC Header
      *      4 : AutoTitleDownloadTaskInfos Output Buffer Pointer
@@ -267,7 +267,7 @@ private:
      *  Inputs:
      *      1-2 : Auto Title Download Task ID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CancelAutoTitleDownloadTask(Kernel::HLERequestContext& ctx);
 
@@ -277,7 +277,7 @@ private:
      *      1 : Mapped Input Buffer IPC Header
      *      2 : AutoDbgDat Input Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Input Buffer IPC Header
      *      3 : AutoDbgDat Input Buffer Pointer
      */
@@ -289,7 +289,7 @@ private:
      *      1 : Mapped Output Buffer IPC Header
      *      2 : AutoDbgDat Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Output Buffer IPC Header
      *      3 : AutoDbgDat Output Buffer Pointer
      */
@@ -302,7 +302,7 @@ private:
      *      2 : Mapped Input Buffer IPC Header
      *      3 : AutoTitleDownloadTaskInfos Input Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      3 : Mapped Input Buffer IPC Header
      *      4 : AutoTitleDownloadTaskInfos Input Buffer Pointer
      */
@@ -315,7 +315,7 @@ private:
      *      2 : Mapped Output Buffer IPC Header
      *      3 : AutoTitleDownloadTaskInfos Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Number of AutoTitleDownloadTaskInfos Read
      *      3 : Mapped Output Buffer IPC Header
      *      4 : AutoTitleDownloadTaskInfos Output Buffer Pointer
@@ -327,7 +327,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void DeleteDbgData(Kernel::HLERequestContext& ctx);
 
@@ -338,7 +338,7 @@ private:
      *      2 : Mapped Input Buffer IPC Header
      *      3 : XML Input Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Input Buffer IPC Header
      *      3 : XML Input Buffer Pointer
      */
@@ -349,7 +349,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3 : XML Size
      */
     void GetTslXmlSize(Kernel::HLERequestContext& ctx);
@@ -361,7 +361,7 @@ private:
      *      2 : Mapped Output Buffer IPC Header
      *      3 : XML Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Output Buffer IPC Header
      *      3 : XML Output Buffer Pointer
      */
@@ -372,7 +372,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void DeleteTslXml(Kernel::HLERequestContext& ctx);
 
@@ -383,7 +383,7 @@ private:
      *      2 : Mapped Input Buffer IPC Header
      *      3 : XML Input Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Input Buffer IPC Header
      *      3 : XML Input Buffer Pointer
      */
@@ -394,7 +394,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3 : XML Size
      */
     void GetDtlXmlSize(Kernel::HLERequestContext& ctx);
@@ -406,7 +406,7 @@ private:
      *      2 : Mapped Output Buffer IPC Header
      *      3 : XML Output Buffer Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Mapped Output Buffer IPC Header
      *      3 : XML Output Buffer Pointer
      */
@@ -417,8 +417,8 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
-     *      2 : Result of the actual operation
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
+     *      2 : HLE::Result of the actual operation
      *      3 : Customer support code of the actual operation
      */
     void UpdateAccountStatus(Kernel::HLERequestContext& ctx);
@@ -428,7 +428,7 @@ private:
      *  Inputs:
      *      1-6 : TitleDownloadConfig structure
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StartTitleDownload(Kernel::HLERequestContext& ctx);
 
@@ -437,7 +437,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StopTitleDownload(Kernel::HLERequestContext& ctx);
 
@@ -446,7 +446,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-7 : TitleDownloadProgress structure
      *      8: ?
      *      9: ?
@@ -467,7 +467,7 @@ private:
      *      14: Static Buffer IPC Header (ID = 1, Size = 0x48)
      *      15: Developer Name UTF-16 String Pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void RegisterTask(Kernel::HLERequestContext& ctx);
 
@@ -476,8 +476,8 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
-     *      2 : Result code from the actual operation
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
+     *      2 : HLE::Result code from the actual operation
      *      3 : Customer support code from the actual operation
      *      4 : Boolean indicating whether a system update is available
      */
@@ -488,7 +488,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Unknown2B(Kernel::HLERequestContext& ctx);
 
@@ -497,8 +497,8 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
-     *      2 : Result code from the actual operation
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
+     *      2 : HLE::Result code from the actual operation
      *      3 : Customer support code from the actual operation
      */
     void UpdateTickets(Kernel::HLERequestContext& ctx);
@@ -509,7 +509,7 @@ private:
      *      1-2 : Title ID
      *      3: u16 Country Code
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy Handle IPC Header
      *      3 : Event handle signaled when the operation completes
      */
@@ -520,7 +520,7 @@ private:
      *  Inputs:
      *      1 : None
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy Handle IPC Header
      *      3 : Event handle signaled when the operation completes
      */

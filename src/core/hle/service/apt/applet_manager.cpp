@@ -299,7 +299,7 @@ void AppletManager::CancelAndSendParameter(const MessageParameter& parameter) {
     }
 }
 
-Result AppletManager::SendParameter(const MessageParameter& parameter) {
+HLE::Result AppletManager::SendParameter(const MessageParameter& parameter) {
     // A new parameter can not be sent if the previous one hasn't been consumed yet
     if (next_parameter) {
         LOG_WARNING(Service_APT, "Parameter from {:03X} to {:03X} blocked by pending parameter.",
@@ -314,12 +314,12 @@ Result AppletManager::SendParameter(const MessageParameter& parameter) {
 
 ResultVal<MessageParameter> AppletManager::GlanceParameter(AppletId app_id) {
     if (!next_parameter) {
-        return Result(ErrorDescription::NoData, ErrorModule::Applet, ErrorSummary::InvalidState,
+        return HLE::Result(ErrorDescription::NoData, ErrorModule::Applet, ErrorSummary::InvalidState,
                       ErrorLevel::Status);
     }
 
     if (next_parameter->destination_id != app_id) {
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                       ErrorLevel::Status);
     }
 
@@ -386,7 +386,7 @@ ResultVal<AppletManager::InitializeResult> AppletManager::Initialize(AppletId ap
     auto slot_data = GetAppletSlot(slot);
     if (slot_data->registered) {
         LOG_WARNING(Service_APT, "Applet attempted to register in occupied slot {:02X}", slot);
-        return Result(ErrorDescription::AlreadyExists, ErrorModule::Applet,
+        return HLE::Result(ErrorDescription::AlreadyExists, ErrorModule::Applet,
                       ErrorSummary::InvalidState, ErrorLevel::Status);
     }
 
@@ -422,7 +422,7 @@ ResultVal<AppletManager::InitializeResult> AppletManager::Initialize(AppletId ap
     return InitializeResult{slot_data->notification_event, slot_data->parameter_event};
 }
 
-Result AppletManager::Enable(AppletAttributes attributes) {
+HLE::Result AppletManager::Enable(AppletAttributes attributes) {
     auto slot = GetAppletSlotFromAttributes(attributes);
     if (slot == AppletSlot::Error) {
         LOG_WARNING(Service_APT,
@@ -455,7 +455,7 @@ Result AppletManager::Enable(AppletAttributes attributes) {
     return ResultSuccess;
 }
 
-Result AppletManager::Finalize(AppletId app_id) {
+HLE::Result AppletManager::Finalize(AppletId app_id) {
     auto slot = GetAppletSlotFromId(app_id);
     if (slot == AppletSlot::Error) {
         return {ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
@@ -492,13 +492,13 @@ bool AppletManager::IsRegistered(AppletId app_id) {
 ResultVal<AppletAttributes> AppletManager::GetAttribute(AppletId app_id) {
     auto slot = GetAppletSlotFromId(app_id);
     if (slot == AppletSlot::Error) {
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                       ErrorLevel::Status);
     }
 
     auto slot_data = GetAppletSlot(slot);
     if (!slot_data->registered) {
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                       ErrorLevel::Status);
     }
 
@@ -516,11 +516,11 @@ ResultVal<Notification> AppletManager::InquireNotification(AppletId app_id) {
         }
     }
 
-    return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+    return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                   ErrorLevel::Status);
 }
 
-Result AppletManager::SendNotification(Notification notification) {
+HLE::Result AppletManager::SendNotification(Notification notification) {
     if (active_slot != AppletSlot::Error) {
         const auto slot_data = GetAppletSlot(active_slot);
         if (slot_data->registered) {
@@ -543,7 +543,7 @@ void AppletManager::SendNotificationToAll(Notification notification) {
     }
 }
 
-Result AppletManager::CreateHLEApplet(AppletId id, AppletId parent, bool preload) {
+HLE::Result AppletManager::CreateHLEApplet(AppletId id, AppletId parent, bool preload) {
     switch (id) {
     case AppletId::SoftwareKeyboard1:
     case AppletId::SoftwareKeyboard2:
@@ -568,7 +568,7 @@ Result AppletManager::CreateHLEApplet(AppletId id, AppletId parent, bool preload
     default:
         LOG_ERROR(Service_APT, "Could not create applet {}", id);
         // TODO(Subv): Find the right error code
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotSupported,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotSupported,
                       ErrorLevel::Permanent);
     }
 
@@ -589,7 +589,7 @@ Result AppletManager::CreateHLEApplet(AppletId id, AppletId parent, bool preload
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToStartLibraryApplet(AppletId applet_id) {
+HLE::Result AppletManager::PrepareToStartLibraryApplet(AppletId applet_id) {
     // The real APT service returns an error if there's a pending APT parameter when this function
     // is called.
     if (next_parameter) {
@@ -629,7 +629,7 @@ Result AppletManager::PrepareToStartLibraryApplet(AppletId applet_id) {
     }
 }
 
-Result AppletManager::PreloadLibraryApplet(AppletId applet_id) {
+HLE::Result AppletManager::PreloadLibraryApplet(AppletId applet_id) {
     if (GetAppletSlot(AppletSlot::LibraryApplet)->registered) {
         return {ErrorDescription::AlreadyExists, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -660,13 +660,13 @@ Result AppletManager::PreloadLibraryApplet(AppletId applet_id) {
     }
 }
 
-Result AppletManager::FinishPreloadingLibraryApplet(AppletId applet_id) {
+HLE::Result AppletManager::FinishPreloadingLibraryApplet(AppletId applet_id) {
     // TODO(Subv): This function should fail depending on the applet preparation state.
     GetAppletSlot(AppletSlot::LibraryApplet)->loaded = true;
     return ResultSuccess;
 }
 
-Result AppletManager::StartLibraryApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::StartLibraryApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
                                          const std::vector<u8>& buffer) {
     active_slot = AppletSlot::LibraryApplet;
 
@@ -685,7 +685,7 @@ Result AppletManager::StartLibraryApplet(AppletId applet_id, std::shared_ptr<Ker
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToCloseLibraryApplet(bool not_pause, bool exiting, bool jump_home) {
+HLE::Result AppletManager::PrepareToCloseLibraryApplet(bool not_pause, bool exiting, bool jump_home) {
     if (next_parameter) {
         return {ErrCodes::ParameterPresent, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -703,7 +703,7 @@ Result AppletManager::PrepareToCloseLibraryApplet(bool not_pause, bool exiting, 
     return ResultSuccess;
 }
 
-Result AppletManager::CloseLibraryApplet(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::CloseLibraryApplet(std::shared_ptr<Kernel::Object> object,
                                          const std::vector<u8>& buffer) {
     auto slot = GetAppletSlot(AppletSlot::LibraryApplet);
     auto destination_id = GetAppletSlotId(last_library_launcher_slot);
@@ -729,7 +729,7 @@ Result AppletManager::CloseLibraryApplet(std::shared_ptr<Kernel::Object> object,
     return ResultSuccess;
 }
 
-Result AppletManager::CancelLibraryApplet(bool app_exiting) {
+HLE::Result AppletManager::CancelLibraryApplet(bool app_exiting) {
     if (next_parameter) {
         return {ErrCodes::ParameterPresent, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -748,7 +748,7 @@ Result AppletManager::CancelLibraryApplet(bool app_exiting) {
     });
 }
 
-Result AppletManager::SendDspSleep(AppletId from_applet_id,
+HLE::Result AppletManager::SendDspSleep(AppletId from_applet_id,
                                    std::shared_ptr<Kernel::Object> object) {
     auto lib_slot = GetAppletSlotFromPos(AppletPos::Library);
     auto lib_app_id =
@@ -782,7 +782,7 @@ Result AppletManager::SendDspSleep(AppletId from_applet_id,
     return ResultSuccess;
 }
 
-Result AppletManager::SendDspWakeUp(AppletId from_applet_id,
+HLE::Result AppletManager::SendDspWakeUp(AppletId from_applet_id,
                                     std::shared_ptr<Kernel::Object> object) {
     auto lib_slot = GetAppletSlotFromPos(AppletPos::Library);
     auto lib_app_id =
@@ -815,7 +815,7 @@ Result AppletManager::SendDspWakeUp(AppletId from_applet_id,
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToStartSystemApplet(AppletId applet_id) {
+HLE::Result AppletManager::PrepareToStartSystemApplet(AppletId applet_id) {
     // The real APT service returns an error if there's a pending APT parameter when this function
     // is called.
     if (next_parameter) {
@@ -827,7 +827,7 @@ Result AppletManager::PrepareToStartSystemApplet(AppletId applet_id) {
     return ResultSuccess;
 }
 
-Result AppletManager::StartSystemApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::StartSystemApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
                                         const std::vector<u8>& buffer) {
     auto source_applet_id = AppletId::Application;
     if (last_system_launcher_slot != AppletSlot::Error) {
@@ -878,7 +878,7 @@ Result AppletManager::StartSystemApplet(AppletId applet_id, std::shared_ptr<Kern
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToCloseSystemApplet() {
+HLE::Result AppletManager::PrepareToCloseSystemApplet() {
     if (next_parameter) {
         return {ErrCodes::ParameterPresent, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -887,7 +887,7 @@ Result AppletManager::PrepareToCloseSystemApplet() {
     return ResultSuccess;
 }
 
-Result AppletManager::CloseSystemApplet(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::CloseSystemApplet(std::shared_ptr<Kernel::Object> object,
                                         const std::vector<u8>& buffer) {
     ASSERT_MSG(active_slot == AppletSlot::HomeMenu || active_slot == AppletSlot::SystemApplet,
                "Attempting to close a system applet from a non-system applet.");
@@ -915,7 +915,7 @@ Result AppletManager::CloseSystemApplet(std::shared_ptr<Kernel::Object> object,
     return ResultSuccess;
 }
 
-Result AppletManager::OrderToCloseSystemApplet() {
+HLE::Result AppletManager::OrderToCloseSystemApplet() {
     if (active_slot == AppletSlot::Error) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -952,7 +952,7 @@ Result AppletManager::OrderToCloseSystemApplet() {
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToJumpToHomeMenu() {
+HLE::Result AppletManager::PrepareToJumpToHomeMenu() {
     if (next_parameter) {
         return {ErrCodes::ParameterPresent, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -969,7 +969,7 @@ Result AppletManager::PrepareToJumpToHomeMenu() {
     return ResultSuccess;
 }
 
-Result AppletManager::JumpToHomeMenu(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::JumpToHomeMenu(std::shared_ptr<Kernel::Object> object,
                                      const std::vector<u8>& buffer) {
     if (last_jump_to_home_slot != AppletSlot::Error) {
         auto slot_data = GetAppletSlot(last_jump_to_home_slot);
@@ -1019,7 +1019,7 @@ Result AppletManager::JumpToHomeMenu(std::shared_ptr<Kernel::Object> object,
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToLeaveHomeMenu() {
+HLE::Result AppletManager::PrepareToLeaveHomeMenu() {
     if (!GetAppletSlot(AppletSlot::Application)->registered) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -1033,7 +1033,7 @@ Result AppletManager::PrepareToLeaveHomeMenu() {
     return ResultSuccess;
 }
 
-Result AppletManager::LeaveHomeMenu(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::LeaveHomeMenu(std::shared_ptr<Kernel::Object> object,
                                     const std::vector<u8>& buffer) {
     active_slot = AppletSlot::Application;
 
@@ -1048,7 +1048,7 @@ Result AppletManager::LeaveHomeMenu(std::shared_ptr<Kernel::Object> object,
     return ResultSuccess;
 }
 
-Result AppletManager::LoadSysMenuArg(std::vector<u8>& buffer) {
+HLE::Result AppletManager::LoadSysMenuArg(std::vector<u8>& buffer) {
     if (sys_menu_arg.has_value()) {
         std::memcpy(buffer.data(), sys_menu_arg.value().data(),
                     std::min(buffer.size(), sys_menu_arg.value().size()));
@@ -1057,14 +1057,14 @@ Result AppletManager::LoadSysMenuArg(std::vector<u8>& buffer) {
     return ResultSuccess;
 }
 
-Result AppletManager::StoreSysMenuArg(const std::vector<u8>& buffer) {
+HLE::Result AppletManager::StoreSysMenuArg(const std::vector<u8>& buffer) {
     sys_menu_arg = std::array<u8, SysMenuArgSize>();
     std::memcpy(sys_menu_arg.value().data(), buffer.data(),
                 std::min(buffer.size(), sys_menu_arg.value().size()));
     return ResultSuccess;
 }
 
-Result AppletManager::OrderToCloseApplication() {
+HLE::Result AppletManager::OrderToCloseApplication() {
     if (active_slot == AppletSlot::Error) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -1089,7 +1089,7 @@ Result AppletManager::OrderToCloseApplication() {
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToCloseApplication(bool return_to_sys) {
+HLE::Result AppletManager::PrepareToCloseApplication(bool return_to_sys) {
     if (active_slot == AppletSlot::Error) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
                 ErrorLevel::Status};
@@ -1140,7 +1140,7 @@ Result AppletManager::PrepareToCloseApplication(bool return_to_sys) {
     return ResultSuccess;
 }
 
-Result AppletManager::CloseApplication(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::CloseApplication(std::shared_ptr<Kernel::Object> object,
                                        const std::vector<u8>& buffer) {
     ordered_to_close_application = false;
     application_cancelled = false;
@@ -1201,13 +1201,13 @@ ResultVal<AppletManager::AppletManInfo> AppletManager::GetAppletManInfo(
 ResultVal<AppletManager::AppletInfo> AppletManager::GetAppletInfo(AppletId app_id) {
     auto slot = GetAppletSlotFromId(app_id);
     if (slot == AppletSlot::Error) {
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                       ErrorLevel::Status);
     }
 
     auto slot_data = GetAppletSlot(slot);
     if (!slot_data->registered) {
-        return Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+        return HLE::Result(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
                       ErrorLevel::Status);
     }
 
@@ -1231,13 +1231,13 @@ ResultVal<AppletManager::AppletInfo> AppletManager::GetAppletInfo(AppletId app_i
 ResultVal<Service::FS::MediaType> AppletManager::Unknown54(u32 in_param) {
     auto slot_data = GetAppletSlot(AppletSlot::Application);
     if (slot_data->applet_id == AppletId::None) {
-        return Result{ErrCodes::AppNotRunning, ErrorModule::Applet, ErrorSummary::InvalidState,
+        return HLE::Result{ErrCodes::AppNotRunning, ErrorModule::Applet, ErrorSummary::InvalidState,
                       ErrorLevel::Permanent};
     }
 
     if (in_param >= 0x80) {
         // TODO: Add error description name when the parameter is known.
-        return Result{10, ErrorModule::Applet, ErrorSummary::InvalidArgument, ErrorLevel::Usage};
+        return HLE::Result{10, ErrorModule::Applet, ErrorSummary::InvalidArgument, ErrorLevel::Usage};
     }
 
     // TODO: Figure out what this logic is actually for.
@@ -1288,7 +1288,7 @@ ApplicationRunningMode AppletManager::GetApplicationRunningMode() {
     }
 }
 
-Result AppletManager::PrepareToDoApplicationJump(u64 title_id, FS::MediaType media_type,
+HLE::Result AppletManager::PrepareToDoApplicationJump(u64 title_id, FS::MediaType media_type,
                                                  ApplicationJumpFlags flags) {
     // A running application can not launch another application directly because the applet state
     // for the Application slot is already in use. The way this is implemented in hardware is to
@@ -1325,7 +1325,7 @@ Result AppletManager::PrepareToDoApplicationJump(u64 title_id, FS::MediaType med
     return ResultSuccess;
 }
 
-Result AppletManager::DoApplicationJump(const DeliverArg& arg) {
+HLE::Result AppletManager::DoApplicationJump(const DeliverArg& arg) {
     // Note: The real console uses the Home Menu to perform the application jump, it goes
     // OldApplication->Home Menu->NewApplication. We do not need to use the Home Menu to do this so
     // we launch the new application directly. In the real APT service, the Home Menu must be
@@ -1378,7 +1378,7 @@ Result AppletManager::DoApplicationJump(const DeliverArg& arg) {
     }
 }
 
-Result AppletManager::PrepareToStartApplication(u64 title_id, FS::MediaType media_type) {
+HLE::Result AppletManager::PrepareToStartApplication(u64 title_id, FS::MediaType media_type) {
     if (active_slot == AppletSlot::Error ||
         GetAppletSlot(active_slot)->attributes.applet_pos != AppletPos::System) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
@@ -1461,7 +1461,7 @@ Result AppletManager::PrepareToStartApplication(u64 title_id, FS::MediaType medi
     return ResultSuccess;
 }
 
-Result AppletManager::StartApplication(const std::vector<u8>& parameter,
+HLE::Result AppletManager::StartApplication(const std::vector<u8>& parameter,
                                        const std::vector<u8>& hmac, bool paused) {
     // The delivery argument is always unconditionally set.
     deliver_arg.emplace(DeliverArg{parameter, hmac});
@@ -1497,7 +1497,7 @@ Result AppletManager::StartApplication(const std::vector<u8>& parameter,
     return ResultSuccess;
 }
 
-Result AppletManager::WakeupApplication(std::shared_ptr<Kernel::Object> object,
+HLE::Result AppletManager::WakeupApplication(std::shared_ptr<Kernel::Object> object,
                                         const std::vector<u8>& buffer) {
     // Send a Wakeup signal via the apt parameter to the application once it registers itself.
     // The real APT service does this by spin waiting on another thread until the application is
@@ -1513,7 +1513,7 @@ Result AppletManager::WakeupApplication(std::shared_ptr<Kernel::Object> object,
     return ResultSuccess;
 }
 
-Result AppletManager::CancelApplication() {
+HLE::Result AppletManager::CancelApplication() {
     auto application_slot_data = GetAppletSlot(AppletSlot::Application);
     if (application_slot_data->applet_id == AppletId::None) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
@@ -1532,7 +1532,7 @@ Result AppletManager::CancelApplication() {
     return ResultSuccess;
 }
 
-Result AppletManager::PrepareToStartNewestHomeMenu() {
+HLE::Result AppletManager::PrepareToStartNewestHomeMenu() {
     if (active_slot == AppletSlot::Error ||
         GetAppletSlot(active_slot)->attributes.applet_pos != AppletPos::System) {
         return {ErrCodes::InvalidAppletSlot, ErrorModule::Applet, ErrorSummary::InvalidState,
@@ -1549,7 +1549,7 @@ Result AppletManager::PrepareToStartNewestHomeMenu() {
     }
 
     if (is_standard) {
-        return Result{ErrorDescription::AlreadyExists, ErrorModule::Applet,
+        return HLE::Result{ErrorDescription::AlreadyExists, ErrorModule::Applet,
                       ErrorSummary::InvalidState, ErrorLevel::Status};
     }
 
@@ -1557,9 +1557,9 @@ Result AppletManager::PrepareToStartNewestHomeMenu() {
     return ResultSuccess;
 }
 
-Result AppletManager::StartNewestHomeMenu() {
+HLE::Result AppletManager::StartNewestHomeMenu() {
     if (!home_menu_tid_to_start) {
-        return Result{ErrorDescription::AlreadyExists, ErrorModule::Applet,
+        return HLE::Result{ErrorDescription::AlreadyExists, ErrorModule::Applet,
                       ErrorSummary::InvalidState, ErrorLevel::Status};
     }
 

@@ -202,7 +202,7 @@ public:
          *  Inputs:
          *      1 : Country Code ID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Country's 2-char string
          */
         void GetCountryCodeString(Kernel::HLERequestContext& ctx);
@@ -212,7 +212,7 @@ public:
          *  Inputs:
          *      1 : Country Code 2-char string
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Country Code ID
          */
         void GetCountryCodeID(Kernel::HLERequestContext& ctx);
@@ -222,8 +222,8 @@ public:
          *  Inputs:
          *      1 : None
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Region value loaded from SecureInfo offset 0x100
          */
         void GetRegion(Kernel::HLERequestContext& ctx);
@@ -233,8 +233,8 @@ public:
          *  Inputs:
          *      1 : None
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Value loaded from SecureInfo offset 0x101
          */
         void SecureInfoGetByte101(Kernel::HLERequestContext& ctx);
@@ -245,8 +245,8 @@ public:
          *      1 : Buffer Size
          *      2-3: Output mapped buffer
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2-3 : Output mapped buffer
          */
         void SecureInfoGetSerialNo(Kernel::HLERequestContext& ctx);
@@ -256,8 +256,8 @@ public:
          *  Inputs:
          *      1 : UUID Clock Sequence
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetUUIDClockSequence(Kernel::HLERequestContext& ctx);
 
@@ -266,8 +266,8 @@ public:
          *  Inputs:
          *      1 : None
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : UUID Clock Sequence
          */
         void GetUUIDClockSequence(Kernel::HLERequestContext& ctx);
@@ -277,8 +277,8 @@ public:
          *  Inputs:
          *      1 : 20 bit application ID salt
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Hash/"ID" lower word
          *      3 : Hash/"ID" upper word
          */
@@ -289,8 +289,8 @@ public:
          *  Inputs:
          *      1 : None
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : 1 if the system is a Canada or USA model, 0 otherwise
          */
         void IsCoppacsSupported(Kernel::HLERequestContext& ctx);
@@ -300,7 +300,7 @@ public:
          *  Inputs:
          *      0 : 0x00050000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Model of the console
          */
         void GetSystemModel(Kernel::HLERequestContext& ctx);
@@ -310,7 +310,7 @@ public:
          *  Inputs:
          *      0 : 0x00060000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : 0 if the system is a Nintendo 2DS, 1 otherwise
          */
         void GetModelNintendo2DS(Kernel::HLERequestContext& ctx);
@@ -324,7 +324,7 @@ public:
          *      3 : Descriptor for the output buffer
          *      4 : Output buffer pointer
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetConfig(Kernel::HLERequestContext& ctx);
 
@@ -337,7 +337,7 @@ public:
          *      3 : Descriptor for the output buffer
          *      4 : Output buffer pointer
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetSystemConfig(Kernel::HLERequestContext& ctx);
 
@@ -350,7 +350,7 @@ public:
          *      3 : Descriptor for the output buffer
          *      4 : Output buffer pointer
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *  Note:
          *      The parameters order is different from GetConfig/GetSystemConfig's,
          *      where Block ID and Size are switched.
@@ -362,7 +362,7 @@ public:
          *  Inputs:
          *      0 : 0x04030000 / 0x08030000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void UpdateConfigNANDSavegame(Kernel::HLERequestContext& ctx);
 
@@ -372,8 +372,8 @@ public:
          *      1 : Buffer Size
          *      2-3: Output mapped buffer
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetLocalFriendCodeSeedData(Kernel::HLERequestContext& ctx);
 
@@ -381,8 +381,8 @@ public:
          * CFG::GetLocalFriendCodeSeed service function
          *  Inputs:
          *  Outputs:
-         *      0 : Result Header code
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      0 : HLE::Result Header code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2-3 : Friend code seed
          */
         void GetLocalFriendCodeSeed(Kernel::HLERequestContext& ctx);
@@ -392,7 +392,7 @@ public:
          *  Inputs:
          *      0 : 0x08060000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void FormatConfig(Kernel::HLERequestContext& ctx);
 
@@ -431,9 +431,9 @@ private:
      * @param size The size of the block we want to read
      * @param accesss_flag The requested block must have this access flag set
      * @param output A pointer where we will write the read data
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, void* output);
+    HLE::Result GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, void* output);
 
     /**
      * Reads data from input and writes to a block with the specified id and flag
@@ -444,9 +444,9 @@ private:
      * @param size The size of the block we want to write
      * @param accesss_flag The target block must have this access flag set
      * @param input A pointer where we will read data and write to Config savegame buffer
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, const void* input);
+    HLE::Result SetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, const void* input);
 
     /**
      * Creates a block with the specified id and writes the input data to the cfg savegame buffer in
@@ -456,27 +456,27 @@ private:
      * @param size The size of the block we want to create
      * @param accesss_flags The access flags of the new block
      * @param data A pointer containing the data we will write to the new block
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result CreateConfigBlock(u32 block_id, u16 size, AccessFlag accesss_flags, const void* data);
+    HLE::Result CreateConfigBlock(u32 block_id, u16 size, AccessFlag accesss_flags, const void* data);
 
     /**
      * Deletes the config savegame file from the filesystem, the buffer in memory is not affected
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result DeleteConfigNANDSaveFile();
+    HLE::Result DeleteConfigNANDSaveFile();
 
     /**
      * Re-creates the config savegame file in memory and the filesystem with the default blocks
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result FormatConfig();
+    HLE::Result FormatConfig();
 
     /**
      * Open the config savegame file and load it to the memory buffer
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result LoadConfigNANDSaveFile();
+    HLE::Result LoadConfigNANDSaveFile();
 
     /**
      * Loads MCU specific data
@@ -581,7 +581,7 @@ public:
      * @param random_number the random_number to set
      * @param console_id the console id to set
      */
-    Result SetConsoleUniqueId(u32 random_number, u64 console_id);
+    HLE::Result SetConsoleUniqueId(u32 random_number, u64 console_id);
 
     /**
      * Gets the console unique id from config savegame.
@@ -615,9 +615,9 @@ public:
 
     /**
      * Writes the config savegame memory buffer to the config savegame file in the filesystem
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result UpdateConfigNANDSavegame();
+    HLE::Result UpdateConfigNANDSavegame();
 
     /**
      * Saves MCU specific data

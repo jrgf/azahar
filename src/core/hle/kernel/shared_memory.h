@@ -58,16 +58,16 @@ public:
      * @param permissions Memory block map permissions (specified by SVC field)
      * @param other_permissions Memory block map other permissions (specified by SVC field)
      */
-    Result Map(Process& target_process, VAddr address, MemoryPermission permissions,
+    HLE::Result Map(Process& target_process, VAddr address, MemoryPermission permissions,
                MemoryPermission other_permissions);
 
     /**
      * Unmaps a shared memory block from the specified address in system memory
      * @param target_process Process from which to unmap the memory block.
      * @param address Address in system memory where the shared memory block is mapped
-     * @return Result code of the unmap operation
+     * @return HLE::Result code of the unmap operation
      */
-    Result Unmap(Process& target_process, VAddr address);
+    HLE::Result Unmap(Process& target_process, VAddr address);
 
     /**
      * Gets a pointer to the shared memory block

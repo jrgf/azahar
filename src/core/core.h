@@ -122,13 +122,13 @@ public:
      * requested is not guaranteed to run, as this will be interrupted preemptively if a hardware
      * update is requested (e.g. on a thread switch).
      * @param tight_loop If false, the CPU single-steps.
-     * @return Result status, indicating whethor or not the operation succeeded.
+     * @return HLE::Result status, indicating whethor or not the operation succeeded.
      */
     [[nodiscard]] ResultStatus RunLoop(bool tight_loop = true);
 
     /**
      * Step the CPU one instruction
-     * @return Result status, indicating whethor or not the operation succeeded.
+     * @return HLE::Result status, indicating whethor or not the operation succeeded.
      */
     [[nodiscard]] ResultStatus SingleStep();
 

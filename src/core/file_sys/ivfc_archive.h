@@ -103,13 +103,13 @@ public:
 
     ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path, const Mode& mode,
                                                      u32 attributes) override;
-    Result DeleteFile(const Path& path) const override;
-    Result RenameFile(const Path& src_path, const Path& dest_path) const override;
-    Result DeleteDirectory(const Path& path) const override;
-    Result DeleteDirectoryRecursively(const Path& path) const override;
-    Result CreateFile(const Path& path, u64 size, u32 attributes) const override;
-    Result CreateDirectory(const Path& path, u32 attributes) const override;
-    Result RenameDirectory(const Path& src_path, const Path& dest_path) const override;
+    HLE::Result DeleteFile(const Path& path) const override;
+    HLE::Result RenameFile(const Path& src_path, const Path& dest_path) const override;
+    HLE::Result DeleteDirectory(const Path& path) const override;
+    HLE::Result DeleteDirectoryRecursively(const Path& path) const override;
+    HLE::Result CreateFile(const Path& path, u64 size, u32 attributes) const override;
+    HLE::Result CreateDirectory(const Path& path, u32 attributes) const override;
+    HLE::Result RenameDirectory(const Path& src_path, const Path& dest_path) const override;
     ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(const Path& path) override;
     u64 GetFreeBytes() const override;
 

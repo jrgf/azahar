@@ -79,7 +79,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_OtherSaveDataPermitted
                                     program_id);
 }
 
-Result ArchiveFactory_OtherSaveDataPermitted::Format(const Path& path,
+HLE::Result ArchiveFactory_OtherSaveDataPermitted::Format(const Path& path,
                                                      const FileSys::ArchiveFormatInfo& format_info,
                                                      u64 program_id, u32 directory_buckets,
                                                      u32 file_buckets) {
@@ -121,7 +121,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_OtherSaveDataGeneral::
                                     program_id);
 }
 
-Result ArchiveFactory_OtherSaveDataGeneral::Format(const Path& path,
+HLE::Result ArchiveFactory_OtherSaveDataGeneral::Format(const Path& path,
                                                    const FileSys::ArchiveFormatInfo& format_info,
                                                    u64 /*client_program_id*/, u32 directory_buckets,
                                                    u32 file_buckets) {

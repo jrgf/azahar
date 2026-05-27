@@ -103,7 +103,7 @@ private:
      *      4 : offset to capture state located in the shared-memory, region size=8*num_captures
      *      5 : offset to type 1 commands (?) located in the shared-memory.
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Handle-list header
      *      3 : Mutex handle
      *      4 : Shared memory block handle
@@ -115,7 +115,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00020000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Shutdown(Kernel::HLERequestContext& ctx);
 
@@ -125,7 +125,7 @@ private:
      *      0 : Header Code[0x00030040]
      *      1 : Command offset in shared memory.
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ExecuteCommands(Kernel::HLERequestContext& ctx);
 
@@ -136,7 +136,7 @@ private:
      *      1 : unknown
      *      2 : unknown
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ExecuteType1Commands(Kernel::HLERequestContext& ctx);
 
@@ -145,7 +145,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00050000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Available channel bit mask
      */
     void AcquireSoundChannels(Kernel::HLERequestContext& ctx);
@@ -155,7 +155,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00060000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReleaseSoundChannels(Kernel::HLERequestContext& ctx);
 
@@ -166,7 +166,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00070000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Capture Unit
      */
     void AcquireCapUnit(Kernel::HLERequestContext& ctx);
@@ -177,7 +177,7 @@ private:
      *      0 : Header Code[0x00080040]
      *      1 : Capture Unit
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReleaseCapUnit(Kernel::HLERequestContext& ctx);
 
@@ -193,7 +193,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void FlushDataCache(Kernel::HLERequestContext& ctx);
 
@@ -209,7 +209,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StoreDataCache(Kernel::HLERequestContext& ctx);
 
@@ -225,7 +225,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void InvalidateDataCache(Kernel::HLERequestContext& ctx);
 
@@ -234,7 +234,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000C0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Reset(Kernel::HLERequestContext& ctx);
 

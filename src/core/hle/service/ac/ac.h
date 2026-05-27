@@ -32,7 +32,7 @@ public:
          *      64 : ACConfig size << 14 | 2
          *      65 : pointer to ACConfig struct
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CreateDefaultConfig(Kernel::HLERequestContext& ctx);
 
@@ -45,7 +45,7 @@ public:
          *      5 : ACConfig size << 14 | 2
          *      6 : pointer to ACConfig struct
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void ConnectAsync(Kernel::HLERequestContext& ctx);
 
@@ -54,7 +54,7 @@ public:
          *  Inputs:
          *      1 : ProcessId Header
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetConnectResult(Kernel::HLERequestContext& ctx);
 
@@ -63,7 +63,7 @@ public:
          *  Inputs:
          *      1 : ProcessId Header
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CancelConnectAsync(Kernel::HLERequestContext& ctx);
 
@@ -74,7 +74,7 @@ public:
          *      3 : Copy Handle Header
          *      4 : Event handle, should be signaled when AC connection is closed
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CloseAsync(Kernel::HLERequestContext& ctx);
 
@@ -83,14 +83,14 @@ public:
          *  Inputs:
          *      1 : ProcessId Header
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetCloseResult(Kernel::HLERequestContext& ctx);
 
         /**
          * AC::GetWifiStatus service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Status
          */
         void GetStatus(Kernel::HLERequestContext& ctx);
@@ -98,7 +98,7 @@ public:
         /**
          * AC::GetWifiStatus service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : WifiStatus
          */
         void GetWifiStatus(Kernel::HLERequestContext& ctx);
@@ -109,7 +109,7 @@ public:
          *      1 : ACConfig size << 14 | 2
          *      2 : pointer to ACConfig struct
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Infra Priority
          */
         void GetInfraPriority(Kernel::HLERequestContext& ctx);
@@ -124,7 +124,7 @@ public:
          *      64 : ACConfig size << 14 | 2
          *      65 : Output pointer to ACConfig struct
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Infra Priority
          */
         void SetRequestEulaVersion(Kernel::HLERequestContext& ctx);
@@ -137,7 +137,7 @@ public:
          *      3 : Copy Handle Header
          *      4 : Event handle, should be signaled when a Nintendo Zone beacon is not found
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetNZoneBeaconNotFoundEvent(Kernel::HLERequestContext& ctx);
 
@@ -148,14 +148,14 @@ public:
          *      3 : Copy Handle Header
          *      4 : Event handle, should be signaled when AC connection is closed
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void RegisterDisconnectEvent(Kernel::HLERequestContext& ctx);
 
         /**
          * AC::GetConnectingProxyEnable service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : bool, is proxy enabled
          */
         void GetConnectingProxyEnable(Kernel::HLERequestContext& ctx);
@@ -163,7 +163,7 @@ public:
         /**
          * AC::IsConnected service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : bool, is connected
          */
         void IsConnected(Kernel::HLERequestContext& ctx);
@@ -173,7 +173,7 @@ public:
          *  Inputs:
          *      1 : Used SDK Version
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetClientVersion(Kernel::HLERequestContext& ctx);
 

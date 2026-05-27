@@ -271,7 +271,7 @@ void FS_USER::DeleteFile(Kernel::HLERequestContext& ctx) {
         ArchiveHandle archive_handle;
         FileSys::Path file_path;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;
@@ -328,7 +328,7 @@ void FS_USER::RenameFile(Kernel::HLERequestContext& ctx) {
         ArchiveHandle dest_archive_handle;
         FileSys::Path dest_file_path;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->src_archive_handle = src_archive_handle;
@@ -376,7 +376,7 @@ void FS_USER::DeleteDirectory(Kernel::HLERequestContext& ctx) {
         ArchiveHandle archive_handle;
         FileSys::Path dir_path;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;
@@ -421,7 +421,7 @@ void FS_USER::DeleteDirectoryRecursively(Kernel::HLERequestContext& ctx) {
         ArchiveHandle archive_handle;
         FileSys::Path dir_path;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;
@@ -470,7 +470,7 @@ void FS_USER::CreateFile(Kernel::HLERequestContext& ctx) {
         u64 file_size;
         u32 attributes;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;
@@ -518,7 +518,7 @@ void FS_USER::CreateDirectory(Kernel::HLERequestContext& ctx) {
         FileSys::Path dir_path;
         u32 attributes;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;
@@ -575,7 +575,7 @@ void FS_USER::RenameDirectory(Kernel::HLERequestContext& ctx) {
         ArchiveHandle dest_archive_handle;
         FileSys::Path dest_dir_path;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->src_archive_handle = src_archive_handle;
@@ -745,7 +745,7 @@ void FS_USER::ControlArchive(Kernel::HLERequestContext& ctx) {
         input.Read(in_data.data(), 0, in_data.size());
         std::vector<u8> out_data(output_size);
 
-        const Result res =
+        const HLE::Result res =
             archives.ControlArchive(archive_handle, action, in_data.data(), in_data.size(),
                                     out_data.data(), out_data.size());
 
@@ -764,7 +764,7 @@ void FS_USER::ControlArchive(Kernel::HLERequestContext& ctx) {
         u32 in_size;
         u32 out_size;
 
-        Result res{0};
+        HLE::Result res{0};
         std::vector<u8> out_data;
         Kernel::MappedBuffer* out_buffer;
     };
@@ -813,7 +813,7 @@ void FS_USER::CloseArchive(Kernel::HLERequestContext& ctx) {
     struct AsyncData {
         ArchiveHandle handle;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->handle = archive_handle;
@@ -1149,7 +1149,7 @@ void FS_USER::ExportIntegrityVerificationSeed(Kernel::HLERequestContext& ctx) {
 
     auto& movable_struct = HW::UniqueData::GetMovableSed();
     if (!movable_struct.IsValid()) {
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::FS, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::FS, ErrorSummary::NotFound,
                        ErrorLevel::Permanent));
         return;
     }
@@ -1218,7 +1218,7 @@ void FS_USER::GetProductInfo(Kernel::HLERequestContext& ctx) {
 
     const auto product_info = GetProductInfo(process_id);
     if (!product_info.has_value()) {
-        rb.Push(Result(FileSys::ErrCodes::ArchiveNotMounted, ErrorModule::FS,
+        rb.Push(HLE::Result(FileSys::ErrCodes::ArchiveNotMounted, ErrorModule::FS,
                        ErrorSummary::NotFound, ErrorLevel::Status));
         return;
     }
@@ -1353,7 +1353,7 @@ void FS_USER::DeleteSeed(Kernel::HLERequestContext& ctx) {
 
     IPC::RequestBuilder rb{rp.MakeBuilder(1, 0)};
     rb.Push(found ? ResultSuccess
-                  : Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS,
+                  : HLE::Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS,
                            ErrorSummary::NotFound, ErrorLevel::Status));
 }
 
@@ -1364,7 +1364,7 @@ void FS_USER::GetSeed(Kernel::HLERequestContext& ctx) {
     auto seed = FileSys::GetSeed(title_id);
     if (!seed.has_value()) {
         IPC::RequestBuilder rb{rp.MakeBuilder(1, 0)};
-        rb.Push(Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -1394,7 +1394,7 @@ void FS_USER::GetUnknown0x80Data(Kernel::HLERequestContext& ctx) {
     std::array<u8, 0x80> unknown_data = {0};
 
     IPC::RequestBuilder rb{rp.MakeBuilder(0x21, 0)};
-    rb.Push(Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS, ErrorSummary::NotFound,
+    rb.Push(HLE::Result(FileSys::ErrCodes::RomFSNotFound, ErrorModule::FS, ErrorSummary::NotFound,
                    ErrorLevel::Status));
     rb.PushRaw(unknown_data);
 
@@ -1421,7 +1421,7 @@ void FS_USER::ObsoletedSetSaveDataSecureValue(Kernel::HLERequestContext& ctx) {
         u32 unique_id;
         u8 title_variation;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->value = value;
@@ -1511,7 +1511,7 @@ void FS_USER::ControlSecureSave(Kernel::HLERequestContext& ctx) {
     input.Read(in_data.data(), 0, in_data.size());
     std::vector<u8> out_data(output_size);
 
-    Result res = secure_value_backend->ControlSecureSave(action, in_data.data(), in_data.size(),
+    HLE::Result res = secure_value_backend->ControlSecureSave(action, in_data.data(), in_data.size(),
                                                          out_data.data(), out_data.size());
 
     if (res.IsSuccess() && output_size != 0) {
@@ -1536,7 +1536,7 @@ void FS_USER::SetThisSaveDataSecureValue(Kernel::HLERequestContext& ctx) {
         u64 value;
         u32 secure_value_slot;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->value = value;
@@ -1629,7 +1629,7 @@ void FS_USER::SetSaveDataSecureValue(Kernel::HLERequestContext& ctx) {
         u32 secure_value_slot;
         bool flush;
 
-        Result res{0};
+        HLE::Result res{0};
     };
     auto async_data = std::make_shared<AsyncData>();
     async_data->archive_handle = archive_handle;

@@ -43,7 +43,7 @@ struct DebugData<true> {
             // Output address register value
             ADDR_REG_OUT = 0x80,
 
-            // Result of a comparison instruction
+            // Condition result from a comparison instruction
             CMP_RESULT = 0x100,
 
             // Input values for conditional flow control instructions

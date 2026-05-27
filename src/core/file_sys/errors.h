@@ -35,60 +35,60 @@ enum {
 };
 }
 
-constexpr Result ResultInvalidPath(ErrCodes::InvalidPath, ErrorModule::FS,
+constexpr HLE::Result ResultInvalidPath(ErrCodes::InvalidPath, ErrorModule::FS,
                                    ErrorSummary::InvalidArgument, ErrorLevel::Usage);
-constexpr Result ResultUnsupportedOpenFlags(ErrCodes::UnsupportedOpenFlags, ErrorModule::FS,
+constexpr HLE::Result ResultUnsupportedOpenFlags(ErrCodes::UnsupportedOpenFlags, ErrorModule::FS,
                                             ErrorSummary::NotSupported, ErrorLevel::Usage);
-constexpr Result ResultInvalidOpenFlags(ErrCodes::InvalidOpenFlags, ErrorModule::FS,
+constexpr HLE::Result ResultInvalidOpenFlags(ErrCodes::InvalidOpenFlags, ErrorModule::FS,
                                         ErrorSummary::Canceled, ErrorLevel::Status);
-constexpr Result ResultInvalidReadFlag(ErrCodes::InvalidReadFlag, ErrorModule::FS,
+constexpr HLE::Result ResultInvalidReadFlag(ErrCodes::InvalidReadFlag, ErrorModule::FS,
                                        ErrorSummary::InvalidArgument, ErrorLevel::Usage);
-constexpr Result ResultFileNotFound(ErrCodes::FileNotFound, ErrorModule::FS, ErrorSummary::NotFound,
+constexpr HLE::Result ResultFileNotFound(ErrCodes::FileNotFound, ErrorModule::FS, ErrorSummary::NotFound,
                                     ErrorLevel::Status);
-constexpr Result ResultPathNotFound(ErrCodes::PathNotFound, ErrorModule::FS, ErrorSummary::NotFound,
+constexpr HLE::Result ResultPathNotFound(ErrCodes::PathNotFound, ErrorModule::FS, ErrorSummary::NotFound,
                                     ErrorLevel::Status);
-constexpr Result ResultNotFound(ErrCodes::NotFound, ErrorModule::FS, ErrorSummary::NotFound,
+constexpr HLE::Result ResultNotFound(ErrCodes::NotFound, ErrorModule::FS, ErrorSummary::NotFound,
                                 ErrorLevel::Status);
-constexpr Result ResultUnexpectedFileOrDirectory(ErrCodes::UnexpectedFileOrDirectory,
+constexpr HLE::Result ResultUnexpectedFileOrDirectory(ErrCodes::UnexpectedFileOrDirectory,
                                                  ErrorModule::FS, ErrorSummary::NotSupported,
                                                  ErrorLevel::Usage);
-constexpr Result ResultUnexpectedFileOrDirectorySdmc(ErrCodes::NotAFile, ErrorModule::FS,
+constexpr HLE::Result ResultUnexpectedFileOrDirectorySdmc(ErrCodes::NotAFile, ErrorModule::FS,
                                                      ErrorSummary::Canceled, ErrorLevel::Status);
-constexpr Result ResultDirectoryAlreadyExists(ErrCodes::DirectoryAlreadyExists, ErrorModule::FS,
+constexpr HLE::Result ResultDirectoryAlreadyExists(ErrCodes::DirectoryAlreadyExists, ErrorModule::FS,
                                               ErrorSummary::NothingHappened, ErrorLevel::Status);
-constexpr Result ResultFileAlreadyExists(ErrCodes::FileAlreadyExists, ErrorModule::FS,
+constexpr HLE::Result ResultFileAlreadyExists(ErrCodes::FileAlreadyExists, ErrorModule::FS,
                                          ErrorSummary::NothingHappened, ErrorLevel::Status);
-constexpr Result ResultAlreadyExists(ErrCodes::AlreadyExists, ErrorModule::FS,
+constexpr HLE::Result ResultAlreadyExists(ErrCodes::AlreadyExists, ErrorModule::FS,
                                      ErrorSummary::NothingHappened, ErrorLevel::Status);
-constexpr Result ResultDirectoryNotEmpty(ErrCodes::DirectoryNotEmpty, ErrorModule::FS,
+constexpr HLE::Result ResultDirectoryNotEmpty(ErrCodes::DirectoryNotEmpty, ErrorModule::FS,
                                          ErrorSummary::Canceled, ErrorLevel::Status);
-constexpr Result ResultGamecardNotInserted(ErrCodes::GameCardNotInserted, ErrorModule::FS,
+constexpr HLE::Result ResultGamecardNotInserted(ErrCodes::GameCardNotInserted, ErrorModule::FS,
                                            ErrorSummary::NotFound, ErrorLevel::Status);
-constexpr Result ResultIncorrectExefsReadSize(ErrCodes::IncorrectExeFSReadSize, ErrorModule::FS,
+constexpr HLE::Result ResultIncorrectExefsReadSize(ErrCodes::IncorrectExeFSReadSize, ErrorModule::FS,
                                               ErrorSummary::NotSupported, ErrorLevel::Usage);
-constexpr Result ResultRomfsNotFound(ErrCodes::RomFSNotFound, ErrorModule::FS,
+constexpr HLE::Result ResultRomfsNotFound(ErrCodes::RomFSNotFound, ErrorModule::FS,
                                      ErrorSummary::NotFound, ErrorLevel::Status);
-constexpr Result ResultCommandNotAllowed(ErrCodes::CommandNotAllowed, ErrorModule::FS,
+constexpr HLE::Result ResultCommandNotAllowed(ErrCodes::CommandNotAllowed, ErrorModule::FS,
                                          ErrorSummary::WrongArgument, ErrorLevel::Permanent);
-constexpr Result ResultExefsSectionNotFound(ErrCodes::ExeFSSectionNotFound, ErrorModule::FS,
+constexpr HLE::Result ResultExefsSectionNotFound(ErrCodes::ExeFSSectionNotFound, ErrorModule::FS,
                                             ErrorSummary::NotFound, ErrorLevel::Status);
-constexpr Result ResultInsufficientSpace(ErrCodes::InsufficientSpace, ErrorModule::FS,
+constexpr HLE::Result ResultInsufficientSpace(ErrCodes::InsufficientSpace, ErrorModule::FS,
                                          ErrorSummary::OutOfResource, ErrorLevel::Status);
 
 /// Returned when a function is passed an invalid archive handle.
-constexpr Result ResultInvalidArchiveHandle(ErrCodes::ArchiveNotMounted, ErrorModule::FS,
+constexpr HLE::Result ResultInvalidArchiveHandle(ErrCodes::ArchiveNotMounted, ErrorModule::FS,
                                             ErrorSummary::NotFound,
                                             ErrorLevel::Status); // 0xC8804465
-constexpr Result ResultWriteBeyondEnd(ErrCodes::WriteBeyondEnd, ErrorModule::FS,
+constexpr HLE::Result ResultWriteBeyondEnd(ErrCodes::WriteBeyondEnd, ErrorModule::FS,
                                       ErrorSummary::InvalidArgument, ErrorLevel::Usage);
 
 /**
  * Variant of ResultNotFound returned in some places in the code. Unknown if these usages are
  * correct or a bug.
  */
-constexpr Result ResultNotFoundInvalidState(ErrCodes::NotFound, ErrorModule::FS,
+constexpr HLE::Result ResultNotFoundInvalidState(ErrCodes::NotFound, ErrorModule::FS,
                                             ErrorSummary::InvalidState, ErrorLevel::Status);
-constexpr Result ResultNotFormatted(ErrCodes::NotFormatted, ErrorModule::FS,
+constexpr HLE::Result ResultNotFormatted(ErrCodes::NotFormatted, ErrorModule::FS,
                                     ErrorSummary::InvalidState, ErrorLevel::Status);
 
 } // namespace FileSys

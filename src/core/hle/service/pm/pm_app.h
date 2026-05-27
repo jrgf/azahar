@@ -14,7 +14,7 @@ public:
     explicit PM_APP(Core::System& system);
     ~PM_APP() = default;
 
-    Result UpdateResourceLimit(Kernel::ResourceLimitType type, u32 value);
+    HLE::Result UpdateResourceLimit(Kernel::ResourceLimitType type, u32 value);
 
     ResultVal<u32> GetResourceLimit(Kernel::ResourceLimitType type);
 

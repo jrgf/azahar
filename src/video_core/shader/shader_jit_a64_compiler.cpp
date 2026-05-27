@@ -110,9 +110,9 @@ constexpr WReg LOOPCOUNT_REG = W12;
 constexpr WReg LOOPCOUNT = W6;
 /// Number to increment LOOPCOUNT_REG by on each loop iteration (Multiplied by 16)
 constexpr WReg LOOPINC = W7;
-/// Result of the previous CMP instruction for the X-component comparison
+/// Condition result from the previous CMP instruction for the X-component comparison
 constexpr XReg COND0 = X13;
-/// Result of the previous CMP instruction for the Y-component comparison
+/// Condition result from the previous CMP instruction for the Y-component comparison
 constexpr XReg COND1 = X14;
 /// Pointer to the UnitState instance for the current VS unit
 constexpr XReg STATE = X15;

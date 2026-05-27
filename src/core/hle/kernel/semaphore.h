@@ -45,7 +45,7 @@ public:
      * @param release_count The number of slots to release
      * @return The number of free slots the semaphore had before this call
      */
-    Result Release(s32* out_count, s32 release_count);
+    HLE::Result Release(s32* out_count, s32 release_count);
 
 private:
     friend class boost::serialization::access;

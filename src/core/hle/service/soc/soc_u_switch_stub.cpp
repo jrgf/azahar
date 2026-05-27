@@ -13,7 +13,7 @@ SERIALIZE_EXPORT_IMPL(Service::SOC::SOC_U)
 namespace Service::SOC {
 
 namespace {
-void PushResult(Kernel::HLERequestContext& ctx, Result result) {
+void PushResult(Kernel::HLERequestContext& ctx, HLE::Result result) {
     IPC::RequestBuilder rb(ctx, 1, 0);
     rb.Push(result);
 }

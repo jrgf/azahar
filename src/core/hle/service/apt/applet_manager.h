@@ -282,7 +282,7 @@ public:
      */
     void CancelAndSendParameter(const MessageParameter& parameter);
 
-    Result SendParameter(const MessageParameter& parameter);
+    HLE::Result SendParameter(const MessageParameter& parameter);
     ResultVal<MessageParameter> GlanceParameter(AppletId app_id);
     ResultVal<MessageParameter> ReceiveParameter(AppletId app_id);
     bool CancelParameter(bool check_sender, AppletId sender_appid, bool check_receiver,
@@ -301,42 +301,42 @@ public:
     };
     ResultVal<InitializeResult> Initialize(AppletId app_id, AppletAttributes attributes);
 
-    Result Enable(AppletAttributes attributes);
-    Result Finalize(AppletId app_id);
+    HLE::Result Enable(AppletAttributes attributes);
+    HLE::Result Finalize(AppletId app_id);
     u32 CountRegisteredApplet();
     bool IsRegistered(AppletId app_id);
     ResultVal<AppletAttributes> GetAttribute(AppletId app_id);
 
     ResultVal<Notification> InquireNotification(AppletId app_id);
-    Result SendNotification(Notification notification);
+    HLE::Result SendNotification(Notification notification);
 
-    Result PrepareToStartLibraryApplet(AppletId applet_id);
-    Result PreloadLibraryApplet(AppletId applet_id);
-    Result FinishPreloadingLibraryApplet(AppletId applet_id);
-    Result StartLibraryApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
+    HLE::Result PrepareToStartLibraryApplet(AppletId applet_id);
+    HLE::Result PreloadLibraryApplet(AppletId applet_id);
+    HLE::Result FinishPreloadingLibraryApplet(AppletId applet_id);
+    HLE::Result StartLibraryApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
                               const std::vector<u8>& buffer);
-    Result PrepareToCloseLibraryApplet(bool not_pause, bool exiting, bool jump_home);
-    Result CloseLibraryApplet(std::shared_ptr<Kernel::Object> object,
+    HLE::Result PrepareToCloseLibraryApplet(bool not_pause, bool exiting, bool jump_home);
+    HLE::Result CloseLibraryApplet(std::shared_ptr<Kernel::Object> object,
                               const std::vector<u8>& buffer);
-    Result CancelLibraryApplet(bool app_exiting);
+    HLE::Result CancelLibraryApplet(bool app_exiting);
 
-    Result SendDspSleep(AppletId from_applet_id, std::shared_ptr<Kernel::Object> object);
-    Result SendDspWakeUp(AppletId from_applet_id, std::shared_ptr<Kernel::Object> object);
+    HLE::Result SendDspSleep(AppletId from_applet_id, std::shared_ptr<Kernel::Object> object);
+    HLE::Result SendDspWakeUp(AppletId from_applet_id, std::shared_ptr<Kernel::Object> object);
 
-    Result PrepareToStartSystemApplet(AppletId applet_id);
-    Result StartSystemApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
+    HLE::Result PrepareToStartSystemApplet(AppletId applet_id);
+    HLE::Result StartSystemApplet(AppletId applet_id, std::shared_ptr<Kernel::Object> object,
                              const std::vector<u8>& buffer);
-    Result PrepareToCloseSystemApplet();
-    Result CloseSystemApplet(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
-    Result OrderToCloseSystemApplet();
+    HLE::Result PrepareToCloseSystemApplet();
+    HLE::Result CloseSystemApplet(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
+    HLE::Result OrderToCloseSystemApplet();
 
-    Result PrepareToJumpToHomeMenu();
-    Result JumpToHomeMenu(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
-    Result PrepareToLeaveHomeMenu();
-    Result LeaveHomeMenu(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
+    HLE::Result PrepareToJumpToHomeMenu();
+    HLE::Result JumpToHomeMenu(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
+    HLE::Result PrepareToLeaveHomeMenu();
+    HLE::Result LeaveHomeMenu(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
 
-    Result LoadSysMenuArg(std::vector<u8>& buffer);
-    Result StoreSysMenuArg(const std::vector<u8>& buffer);
+    HLE::Result LoadSysMenuArg(std::vector<u8>& buffer);
+    HLE::Result StoreSysMenuArg(const std::vector<u8>& buffer);
 
     boost::optional<SysMenuArg> GetSysMenuArg() {
         return sys_menu_arg;
@@ -345,13 +345,13 @@ public:
         sys_menu_arg = arg;
     }
 
-    Result OrderToCloseApplication();
-    Result PrepareToCloseApplication(bool return_to_sys);
-    Result CloseApplication(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
+    HLE::Result OrderToCloseApplication();
+    HLE::Result PrepareToCloseApplication(bool return_to_sys);
+    HLE::Result CloseApplication(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
 
-    Result PrepareToDoApplicationJump(u64 title_id, FS::MediaType media_type,
+    HLE::Result PrepareToDoApplicationJump(u64 title_id, FS::MediaType media_type,
                                       ApplicationJumpFlags flags);
-    Result DoApplicationJump(const DeliverArg& arg);
+    HLE::Result DoApplicationJump(const DeliverArg& arg);
 
     boost::optional<DeliverArg> ReceiveDeliverArg() {
         auto arg = deliver_arg;
@@ -393,14 +393,14 @@ public:
         std::memcpy(&capture_buffer_info.get(), buffer.data(), sizeof(CaptureBufferInfo));
     }
 
-    Result PrepareToStartApplication(u64 title_id, FS::MediaType media_type);
-    Result StartApplication(const std::vector<u8>& parameter, const std::vector<u8>& hmac,
+    HLE::Result PrepareToStartApplication(u64 title_id, FS::MediaType media_type);
+    HLE::Result StartApplication(const std::vector<u8>& parameter, const std::vector<u8>& hmac,
                             bool paused);
-    Result WakeupApplication(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
-    Result CancelApplication();
+    HLE::Result WakeupApplication(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
+    HLE::Result CancelApplication();
 
-    Result PrepareToStartNewestHomeMenu();
-    Result StartNewestHomeMenu();
+    HLE::Result PrepareToStartNewestHomeMenu();
+    HLE::Result StartNewestHomeMenu();
 
     struct AppletManInfo {
         AppletPos active_applet_pos;
@@ -551,7 +551,7 @@ private:
 
     void CaptureFrameBuffers();
 
-    Result CreateHLEApplet(AppletId id, AppletId parent, bool preload);
+    HLE::Result CreateHLEApplet(AppletId id, AppletId parent, bool preload);
     void HLEAppletUpdateEvent(std::uintptr_t user_data, s64 cycles_late);
 
     void LoadInputDevices();

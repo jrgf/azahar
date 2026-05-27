@@ -38,9 +38,9 @@ constexpr std::array<CoefficientSet, 4> standard_coefficients{{
     {{0x12A, 0x1CA, 0x88, 0x36, 0x21C, -0x1F04, 0x99C, -0x2421}},  // ITU_Rec709_Scaling
 }};
 
-Result ConversionConfiguration::SetInputLineWidth(u16 width) {
+HLE::Result ConversionConfiguration::SetInputLineWidth(u16 width) {
     if (width == 0 || width > 1024 || width % 8 != 0) {
-        return Result(ErrorDescription::OutOfRange, ErrorModule::CAM, ErrorSummary::InvalidArgument,
+        return HLE::Result(ErrorDescription::OutOfRange, ErrorModule::CAM, ErrorSummary::InvalidArgument,
                       ErrorLevel::Usage); // 0xE0E053FD
     }
 
@@ -51,9 +51,9 @@ Result ConversionConfiguration::SetInputLineWidth(u16 width) {
     return ResultSuccess;
 }
 
-Result ConversionConfiguration::SetInputLines(u16 lines) {
+HLE::Result ConversionConfiguration::SetInputLines(u16 lines) {
     if (lines == 0 || lines > 1024) {
-        return Result(ErrorDescription::OutOfRange, ErrorModule::CAM, ErrorSummary::InvalidArgument,
+        return HLE::Result(ErrorDescription::OutOfRange, ErrorModule::CAM, ErrorSummary::InvalidArgument,
                       ErrorLevel::Usage); // 0xE0E053FD
     }
 
@@ -66,10 +66,10 @@ Result ConversionConfiguration::SetInputLines(u16 lines) {
     return ResultSuccess;
 }
 
-Result ConversionConfiguration::SetStandardCoefficient(StandardCoefficient standard_coefficient) {
+HLE::Result ConversionConfiguration::SetStandardCoefficient(StandardCoefficient standard_coefficient) {
     const auto index = static_cast<std::size_t>(standard_coefficient);
     if (index >= standard_coefficients.size()) {
-        return Result(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
+        return HLE::Result(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
                       ErrorSummary::InvalidArgument, ErrorLevel::Usage); // 0xE0E053ED
     }
 
@@ -466,7 +466,7 @@ void Y2R_U::GetStandardCoefficient(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_Y2R, "called standard_coefficient={} ", index);
     } else {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
+        rb.Push(HLE::Result(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
                        ErrorSummary::InvalidArgument, ErrorLevel::Usage));
 
         LOG_ERROR(Service_Y2R, "called standard_coefficient={}  The argument is invalid!", index);

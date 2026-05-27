@@ -62,7 +62,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveSource_SDSaveData::Open(
     }
 }
 
-Result ArchiveSource_SDSaveData::Format(u64 program_id,
+HLE::Result ArchiveSource_SDSaveData::Format(u64 program_id,
                                         const FileSys::ArchiveFormatInfo& format_info,
                                         Service::FS::ArchiveIdCode archive_id, const Path& path,
                                         u32 directory_buckets, u32 file_buckets) {
@@ -109,7 +109,7 @@ ResultVal<ArchiveFormatInfo> ArchiveSource_SDSaveData::GetFormatInfo(
         req.AddParameterBuffer(path_artic.data(), path_artic.size());
 
         auto resp = artic_client->Send(req);
-        Result res = ArticArchive::RespResult(resp);
+        HLE::Result res = ArticArchive::RespResult(resp);
         if (R_FAILED(res)) {
             return res;
         }

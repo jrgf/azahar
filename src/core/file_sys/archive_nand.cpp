@@ -85,7 +85,7 @@ ResultVal<std::unique_ptr<FileBackend>> NANDArchive::OpenFile(const Path& path, 
     return std::make_unique<DiskFile>(std::move(file), mode, nullptr);
 }
 
-Result NANDArchive::DeleteFile(const Path& path) const {
+HLE::Result NANDArchive::DeleteFile(const Path& path) const {
 
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
@@ -124,7 +124,7 @@ Result NANDArchive::DeleteFile(const Path& path) const {
     return ResultNotFound;
 }
 
-Result NANDArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
+HLE::Result NANDArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
 
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
@@ -154,12 +154,12 @@ Result NANDArchive::RenameFile(const Path& src_path, const Path& dest_path) cons
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 
 template <typename T>
-static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
+static HLE::Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -196,7 +196,7 @@ static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_p
     return ResultUnexpectedFileOrDirectorySdmc;
 }
 
-Result NANDArchive::DeleteDirectory(const Path& path) const {
+HLE::Result NANDArchive::DeleteDirectory(const Path& path) const {
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
     }
@@ -204,7 +204,7 @@ Result NANDArchive::DeleteDirectory(const Path& path) const {
     return DeleteDirectoryHelper(path, mount_point, FileUtil::DeleteDir);
 }
 
-Result NANDArchive::DeleteDirectoryRecursively(const Path& path) const {
+HLE::Result NANDArchive::DeleteDirectoryRecursively(const Path& path) const {
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
     }
@@ -213,7 +213,7 @@ Result NANDArchive::DeleteDirectoryRecursively(const Path& path) const {
         path, mount_point, [](const std::string& p) { return FileUtil::DeleteDirRecursively(p); });
 }
 
-Result NANDArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
+HLE::Result NANDArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
     }
@@ -258,11 +258,11 @@ Result NANDArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attribut
     }
 
     LOG_ERROR(Service_FS, "Too large file");
-    return Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
+    return HLE::Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
                   ErrorLevel::Info);
 }
 
-Result NANDArchive::CreateDirectory(const Path& path, u32 attributes) const {
+HLE::Result NANDArchive::CreateDirectory(const Path& path, u32 attributes) const {
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
     }
@@ -297,11 +297,11 @@ Result NANDArchive::CreateDirectory(const Path& path, u32 attributes) const {
     }
 
     LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating {}", mount_point);
-    return Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
                   ErrorLevel::Status);
 }
 
-Result NANDArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
+HLE::Result NANDArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
     if (!AllowsWrite()) {
         return ResultInvalidOpenFlags;
     }
@@ -330,7 +330,7 @@ Result NANDArchive::RenameDirectory(const Path& src_path, const Path& dest_path)
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 
@@ -403,7 +403,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_NAND::Open(const Path&
     return std::make_unique<NANDArchive>(GetPath(), archive_type);
 }
 
-Result ArchiveFactory_NAND::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
+HLE::Result ArchiveFactory_NAND::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
                                    u64 program_id, u32 directory_buckets, u32 file_buckets) {
     // TODO(PabloMK7): Find proper error code
     LOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());

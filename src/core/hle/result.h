@@ -191,6 +191,8 @@ enum class ErrorLevel : u32 {
     Fatal = 31
 };
 
+namespace HLE {
+
 /// Encapsulates a CTR-OS error code, allowing it to be separated into its constituent fields.
 union Result {
     u32 raw;
@@ -261,8 +263,14 @@ constexpr Result UnimplementedFunction(ErrorModule module) {
  */
 constexpr Result ResultUnknown(std::numeric_limits<u32>::max());
 
+} // namespace HLE
+
+using HLE::ResultSuccess;
+using HLE::ResultUnknown;
+using HLE::UnimplementedFunction;
+
 /**
- * This is an optional value type. It holds a `Result` and, if that code is ResultSuccess, it
+ * This is an optional value type. It holds a `HLE::Result` and, if that code is ResultSuccess, it
  * also holds a result of type `T`. If the code is an error code (not ResultSuccess), then trying
  * to access the inner value with operator* is undefined behavior and will assert with Unwrap().
  * Users of this class must be cognizant to check the status of the ResultVal with operator bool(),
@@ -297,7 +305,7 @@ class ResultVal {
 public:
     constexpr ResultVal() : expected{} {}
 
-    constexpr ResultVal(Result code) : expected{Common::Unexpected(code)} {}
+    constexpr ResultVal(HLE::Result code) : expected{Common::Unexpected(code)} {}
 
     template <typename U>
     constexpr ResultVal(U&& val) : expected{std::forward<U>(val)} {}
@@ -317,7 +325,7 @@ public:
         return expected.has_value();
     }
 
-    [[nodiscard]] constexpr Result Code() const {
+    [[nodiscard]] constexpr HLE::Result Code() const {
         return expected.has_value() ? ResultSuccess : expected.error();
     }
 
@@ -385,7 +393,7 @@ public:
 
 private:
     // TODO: Replace this with std::expected once it is standardized in the STL.
-    Common::Expected<T, Result> expected;
+    Common::Expected<T, HLE::Result> expected;
 };
 
 /**
@@ -400,8 +408,8 @@ private:
         return CONCAT2(check_result_L, __LINE__).Code();                                           \
     target = std::move(*CONCAT2(check_result_L, __LINE__))
 
-#define R_SUCCEEDED(res) (static_cast<Result>(res).IsSuccess())
-#define R_FAILED(res) (static_cast<Result>(res).IsError())
+#define R_SUCCEEDED(res) (static_cast<HLE::Result>(res).IsSuccess())
+#define R_FAILED(res) (static_cast<HLE::Result>(res).IsError())
 
 /// Evaluates a boolean expression, and returns a result unless that expression is true.
 #define R_UNLESS(expr, res)                                                                        \

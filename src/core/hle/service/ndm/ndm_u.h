@@ -26,7 +26,7 @@ private:
      *      1 : Exclusive State
      *      2 : 0x20
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void EnterExclusiveState(Kernel::HLERequestContext& ctx);
 
@@ -36,7 +36,7 @@ private:
      *      0 : Header code [0x00020002]
      *      1 : 0x20
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void LeaveExclusiveState(Kernel::HLERequestContext& ctx);
 
@@ -45,7 +45,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00030000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Current Exclusive State
      */
     void QueryExclusiveMode(Kernel::HLERequestContext& ctx);
@@ -55,7 +55,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00040002]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void LockState(Kernel::HLERequestContext& ctx);
 
@@ -64,7 +64,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00050002]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void UnlockState(Kernel::HLERequestContext& ctx);
 
@@ -74,7 +74,7 @@ private:
      *      0 : Header code [0x00060040]
      *      1 : Daemon bit mask
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void SuspendDaemons(Kernel::HLERequestContext& ctx);
 
@@ -84,7 +84,7 @@ private:
      *      0 : Header code [0x00070040]
      *      1 : Daemon bit mask
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void ResumeDaemons(Kernel::HLERequestContext& ctx);
 
@@ -94,7 +94,7 @@ private:
      *      0 : Header code [0x00080040]
      *      1 : (u8/bool) 0 = Wait for completion, 1 = Perform in background
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void SuspendScheduler(Kernel::HLERequestContext& ctx);
 
@@ -103,7 +103,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00090000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void ResumeScheduler(Kernel::HLERequestContext& ctx);
 
@@ -113,7 +113,7 @@ private:
      *      0 : Header code [0x000D0040]
      *      1 : Daemon
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Daemon status
      */
     void QueryStatus(Kernel::HLERequestContext& ctx);
@@ -124,7 +124,7 @@ private:
      *      0 : Header code [0x000E0040]
      *      1 : Daemon
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Current process disable count
      *      3 : Total disable count
      */
@@ -135,7 +135,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x000F0000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Current process disable count
      *      3 : Total disable count
      */
@@ -147,7 +147,7 @@ private:
      *      0 : Header code [0x00100040]
      *      1 : Interval (default = 30)
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void SetScanInterval(Kernel::HLERequestContext& ctx);
 
@@ -156,7 +156,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00110000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Interval (default = 30)
      */
     void GetScanInterval(Kernel::HLERequestContext& ctx);
@@ -167,7 +167,7 @@ private:
      *      0 : Header code [0x00120040]
      *      1 : Interval (default = 10)
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void SetRetryInterval(Kernel::HLERequestContext& ctx);
 
@@ -176,7 +176,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00130000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Interval (default = 10)
      */
     void GetRetryInterval(Kernel::HLERequestContext& ctx);
@@ -187,7 +187,7 @@ private:
      *      0 : Header code [0x00140040]
      *      1 : Daemon bit mask
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void OverrideDefaultDaemons(Kernel::HLERequestContext& ctx);
 
@@ -196,7 +196,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00150000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void ResetDefaultDaemons(Kernel::HLERequestContext& ctx);
 
@@ -205,7 +205,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00160000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      *      2 : Daemon bit mask
      *  Note:
      *      Gets the current default daemon bit mask. The default value is (DAEMONMASK_CEC |
@@ -218,7 +218,7 @@ private:
      *  Inputs:
      *      0 : Header code [0x00170000]
      *  Outputs:
-     *      1 : Result, 0 on success, otherwise error code
+     *      1 : HLE::Result, 0 on success, otherwise error code
      */
     void ClearHalfAwakeMacFilter(Kernel::HLERequestContext& ctx);
 

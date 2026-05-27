@@ -358,7 +358,7 @@ void Module::Interface::GetCountryCodeString(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
     if (country_code_id >= country_codes.size() || 0 == country_codes[country_code_id]) {
         LOG_ERROR(Service_CFG, "requested country code id={} is invalid", country_code_id);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::WrongArgument,
                        ErrorLevel::Permanent));
         rb.Skip(1, false);
         return;
@@ -392,7 +392,7 @@ void Module::Interface::GetCountryCodeID(Kernel::HLERequestContext& ctx) {
     if (0 == country_code_id) {
         LOG_ERROR(Service_CFG, "requested country code name={}{} is invalid",
                   static_cast<char>(country_code & 0xff), static_cast<char>(country_code >> 8));
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::WrongArgument,
                        ErrorLevel::Permanent));
         rb.Push<u16>(0x00FF);
         return;
@@ -463,7 +463,7 @@ void Module::Interface::SecureInfoGetByte101(Kernel::HLERequestContext& ctx) {
     // Always make sure to have available both secure data kinds or error otherwise.
     if (!secure_info_a.IsValid() || !local_friend_code_seed_b.IsValid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
     }
 
@@ -481,7 +481,7 @@ void Module::Interface::SecureInfoGetSerialNo(Kernel::HLERequestContext& ctx) {
 
     if (out_buffer.GetSize() < sizeof(HW::UniqueData::SecureInfoA::body.serial_number)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::InvalidSize, ErrorModule::Config,
+        rb.Push(HLE::Result(ErrorDescription::InvalidSize, ErrorModule::Config,
                        ErrorSummary::WrongArgument, ErrorLevel::Permanent));
     }
 
@@ -492,7 +492,7 @@ void Module::Interface::SecureInfoGetSerialNo(Kernel::HLERequestContext& ctx) {
     // Always make sure to have available both secure data kinds or error otherwise.
     if (!secure_info_a.IsValid() || !local_friend_code_seed_b.IsValid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
     }
 
@@ -529,7 +529,7 @@ void Module::Interface::GetTransferableId(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb = rp.MakeBuilder(3, 0);
 
     std::array<u8, 12> buffer;
-    const Result result =
+    const HLE::Result result =
         cfg->GetConfigBlock(ConsoleUniqueID2BlockID, 8, AccessFlag::Global, buffer.data());
     rb.Push(result);
     if (result.IsSuccess()) {
@@ -655,7 +655,7 @@ void Module::Interface::GetLocalFriendCodeSeedData(Kernel::HLERequestContext& ct
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
 
     if (out_buffer.GetSize() < sizeof(HW::UniqueData::LocalFriendCodeSeedB)) {
-        rb.Push(Result(ErrorDescription::InvalidSize, ErrorModule::Config,
+        rb.Push(HLE::Result(ErrorDescription::InvalidSize, ErrorModule::Config,
                        ErrorSummary::WrongArgument, ErrorLevel::Permanent));
     }
 
@@ -665,7 +665,7 @@ void Module::Interface::GetLocalFriendCodeSeedData(Kernel::HLERequestContext& ct
     // Never happens on real hardware, but may happen if user didn't supply a dump.
     // Always make sure to have available both secure data kinds or error otherwise.
     if (!secure_info_a.IsValid() || !local_friend_code_seed_b.IsValid()) {
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
     }
 
@@ -683,7 +683,7 @@ void Module::Interface::GetLocalFriendCodeSeed(Kernel::HLERequestContext& ctx) {
     // Always make sure to have available both secure data kinds or error otherwise.
     if (!secure_info_a.IsValid() || !local_friend_code_seed_b.IsValid()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::Config, ErrorSummary::InvalidState,
                        ErrorLevel::Permanent));
     }
 
@@ -734,7 +734,7 @@ ResultVal<void*> Module::GetConfigBlockPointer(u32 block_id, u32 size, AccessFla
                       "Config block 0x{:X} with flags {} and size {} was not found, and no default "
                       "exists.",
                       block_id, accesss_flag, size);
-            return Result(ErrorDescription::NotFound, ErrorModule::Config,
+            return HLE::Result(ErrorDescription::NotFound, ErrorModule::Config,
                           ErrorSummary::WrongArgument, ErrorLevel::Permanent);
         }
     }
@@ -742,14 +742,14 @@ ResultVal<void*> Module::GetConfigBlockPointer(u32 block_id, u32 size, AccessFla
     if (False(itr->access_flags & accesss_flag)) {
         LOG_ERROR(Service_CFG, "Invalid access flag {:X} for config block 0x{:X} with size {}",
                   accesss_flag, block_id, size);
-        return Result(ErrorDescription::NotAuthorized, ErrorModule::Config,
+        return HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::Config,
                       ErrorSummary::WrongArgument, ErrorLevel::Permanent);
     }
 
     if (itr->size != size) {
         LOG_ERROR(Service_CFG, "Invalid size {} for config block 0x{:X} with flags {}", size,
                   block_id, accesss_flag);
-        return Result(ErrorDescription::InvalidSize, ErrorModule::Config,
+        return HLE::Result(ErrorDescription::InvalidSize, ErrorModule::Config,
                       ErrorSummary::WrongArgument, ErrorLevel::Permanent);
     }
 
@@ -764,7 +764,7 @@ ResultVal<void*> Module::GetConfigBlockPointer(u32 block_id, u32 size, AccessFla
     return pointer;
 }
 
-Result Module::GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, void* output) {
+HLE::Result Module::GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, void* output) {
     bool get_from_artic =
         block_id == ConsoleUniqueID2BlockID &&
         (static_cast<u16>(accesss_flag) & static_cast<u16>(AccessFlag::UserRead)) != 0;
@@ -778,18 +778,18 @@ Result Module::GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, v
         auto resp = artic_client->Send(req);
 
         if (!resp.has_value() || !resp->Succeeded())
-            return Result(-1);
+            return HLE::Result(-1);
 
-        auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+        auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
         if (res.IsError())
             return res;
 
         auto buff = resp->GetResponseBuffer(0);
         if (!buff.has_value())
-            return Result(-1);
+            return HLE::Result(-1);
         size_t actually_read = buff->second;
         if (actually_read > size)
-            return Result(-1);
+            return HLE::Result(-1);
 
         memcpy(output, buff->first, actually_read);
         return ResultSuccess;
@@ -803,14 +803,14 @@ Result Module::GetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, v
     }
 }
 
-Result Module::SetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, const void* input) {
+HLE::Result Module::SetConfigBlock(u32 block_id, u32 size, AccessFlag accesss_flag, const void* input) {
     void* pointer = nullptr;
     CASCADE_RESULT(pointer, GetConfigBlockPointer(block_id, size, accesss_flag));
     std::memcpy(pointer, input, size);
     return ResultSuccess;
 }
 
-Result Module::CreateConfigBlock(u32 block_id, u16 size, AccessFlag access_flags,
+HLE::Result Module::CreateConfigBlock(u32 block_id, u16 size, AccessFlag access_flags,
                                  const void* data) {
     SaveFileConfig* config = reinterpret_cast<SaveFileConfig*>(cfg_config_file_buffer.data());
     if (config->total_entries >= CONFIG_FILE_MAX_BLOCK_ENTRIES)
@@ -843,12 +843,12 @@ Result Module::CreateConfigBlock(u32 block_id, u16 size, AccessFlag access_flags
     return ResultSuccess;
 }
 
-Result Module::DeleteConfigNANDSaveFile() {
+HLE::Result Module::DeleteConfigNANDSaveFile() {
     FileSys::Path path("/config");
     return cfg_system_save_data_archive->DeleteFile(path);
 }
 
-Result Module::UpdateConfigNANDSavegame() {
+HLE::Result Module::UpdateConfigNANDSavegame() {
     LOG_DEBUG(Service_CFG, "Saving config file to NAND");
 
     FileSys::Mode mode = {};
@@ -866,8 +866,8 @@ Result Module::UpdateConfigNANDSavegame() {
     return ResultSuccess;
 }
 
-Result Module::FormatConfig() {
-    Result res = DeleteConfigNANDSaveFile();
+HLE::Result Module::FormatConfig() {
+    HLE::Result res = DeleteConfigNANDSaveFile();
     // The delete command fails if the file doesn't exist, so we have to check that too
     if (!res.IsSuccess() && res != FileSys::ResultFileNotFound) {
         return res;
@@ -902,7 +902,7 @@ Result Module::FormatConfig() {
     return ResultSuccess;
 }
 
-Result Module::LoadConfigNANDSaveFile() {
+HLE::Result Module::LoadConfigNANDSaveFile() {
     LOG_DEBUG(Service_CFG, "Loading config file from NAND");
 
     const std::string& nand_directory = FileUtil::GetUserPath(FileUtil::UserPath::NANDDir);
@@ -1188,9 +1188,9 @@ std::pair<u32, u64> Module::GenerateConsoleUniqueId() const {
     return std::make_pair(random_number, console_id);
 }
 
-Result Module::SetConsoleUniqueId(u32 random_number, u64 console_id) {
+HLE::Result Module::SetConsoleUniqueId(u32 random_number, u64 console_id) {
     u64_le console_id_le = console_id;
-    Result res = SetConfigBlock(ConsoleUniqueID1BlockID, sizeof(console_id_le), AccessFlag::Global,
+    HLE::Result res = SetConfigBlock(ConsoleUniqueID1BlockID, sizeof(console_id_le), AccessFlag::Global,
                                 &console_id_le);
     if (!res.IsSuccess())
         return res;

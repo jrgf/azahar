@@ -84,7 +84,7 @@ void Module::NSInterface::CardUpdateInitialize(Kernel::HLERequestContext& ctx) {
     rp.Pop<u32>(); // Shared mem handle
 
     LOG_WARNING(Service_APT, "(stubbed) called");
-    const Result update_not_needed(11, ErrorModule::CUP, ErrorSummary::NothingHappened,
+    const HLE::Result update_not_needed(11, ErrorModule::CUP, ErrorSummary::NothingHappened,
                                    ErrorLevel::Status);
 
     auto rb = rp.MakeBuilder(1, 0);
@@ -583,7 +583,7 @@ void Module::APTInterface::PrepareToDoApplicationJump(Kernel::HLERequestContext&
     LOG_INFO(Service_APT, "called title_id={:016X}, media_type={:#01X}, flags={:#08X}", title_id,
              media_type, flags);
 
-    Result result = apt->applet_manager->PrepareToDoApplicationJump(
+    HLE::Result result = apt->applet_manager->PrepareToDoApplicationJump(
         title_id, static_cast<FS::MediaType>(media_type), flags);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
@@ -1045,7 +1045,7 @@ void Module::APTInterface::LoadSysMenuArg(Kernel::HLERequestContext& ctx) {
 
     // This service function does not clear the buffer.
     std::vector<u8> buffer(size);
-    Result res = apt->applet_manager->LoadSysMenuArg(buffer);
+    HLE::Result res = apt->applet_manager->LoadSysMenuArg(buffer);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 2);
     rb.Push(res);
@@ -1060,7 +1060,7 @@ void Module::APTInterface::StoreSysMenuArg(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_APT, "called");
     ASSERT_MSG(buffer.size() >= size, "Buffer too small to hold requested data");
 
-    Result res = apt->applet_manager->StoreSysMenuArg(buffer);
+    HLE::Result res = apt->applet_manager->StoreSysMenuArg(buffer);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
     rb.Push(res);
@@ -1382,7 +1382,7 @@ void Module::APTInterface::Unwrap(Kernel::HLERequestContext& ctx) {
         rb.Push(ResultSuccess);
     } else {
         LOG_ERROR(Service_APT, "Failed to decrypt data");
-        rb.Push(Result(static_cast<ErrorDescription>(1), ErrorModule::PS,
+        rb.Push(HLE::Result(static_cast<ErrorDescription>(1), ErrorModule::PS,
                        ErrorSummary::WrongArgument, ErrorLevel::Status));
     }
 

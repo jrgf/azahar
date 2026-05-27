@@ -36,16 +36,16 @@ public:
          *     5 : Handle Translation Header (0x0)
          *     6 : Shared Memory Handle
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Initialize(Kernel::HLERequestContext& ctx);
 
         /**
          * ACT::GetErrorCode service function.
          * Inputs:
-         *     1 : Result code
+         *     1 : HLE::Result code
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          *     2 : Error code
          */
         void GetErrorCode(Kernel::HLERequestContext& ctx);
@@ -59,7 +59,7 @@ public:
          *     4 : Output Buffer Mapping Translation Header ((Size << 4) | 0xC)
          *     5 : Output Buffer Pointer
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetAccountInfo(Kernel::HLERequestContext& ctx);
     };

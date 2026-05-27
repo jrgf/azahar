@@ -29,7 +29,7 @@ private:
      *    1-32 : FatalErrInfo
      * Outputs:
      *       0 : Header code
-     *       1 : Result code
+     *       1 : HLE::Result code
      */
     void ThrowFatalError(Kernel::HLERequestContext& ctx);
 

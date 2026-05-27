@@ -55,7 +55,7 @@ private:
      * GetHandles service function
      *  No input
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Handle translation descriptor
      *      3 : Shared memory handle
      *      4 : Event handle
@@ -68,7 +68,7 @@ private:
      *      1 : pad state update period in ms
      *      2 : bool output raw c-stick data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Initialize(Kernel::HLERequestContext& ctx);
 
@@ -76,7 +76,7 @@ private:
      * Shutdown service function
      *  No input
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Shutdown(Kernel::HLERequestContext& ctx);
 

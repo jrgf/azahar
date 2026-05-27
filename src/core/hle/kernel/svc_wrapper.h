@@ -281,15 +281,15 @@ private:
     };
 
     template <typename SVCT>
-    struct WrapPass<SVCT, Result /*empty for T, Ts...*/> {
+    struct WrapPass<SVCT, HLE::Result /*empty for T, Ts...*/> {
         // Call function R(Context::svc)(Us...) and transfer the return value to registers
         template <typename... Us>
         static void Call(Context& context, SVCT svc, int id, Us... u) {
-            static_assert(std::is_same_v<SVCT, Result (Context::*)(Us...)>);
-            if constexpr (std::is_void_v<Result>) {
+            static_assert(std::is_same_v<SVCT, HLE::Result (Context::*)(Us...)>);
+            if constexpr (std::is_void_v<HLE::Result>) {
                 (context.*svc)(u...);
             } else {
-                Result r = (context.*svc)(u...);
+                HLE::Result r = (context.*svc)(u...);
                 if (r.IsError()) {
                     LOG_ERROR(
                         Kernel_SVC,
@@ -297,7 +297,7 @@ private:
                         id, r.raw, r.level.ExtractValue(r.raw), r.summary.ExtractValue(r.raw),
                         r.module.ExtractValue(r.raw), r.description.ExtractValue(r.raw));
                 }
-                SetParam<INDEX_RETURN, Result, Result, Us...>(context, r);
+                SetParam<INDEX_RETURN, HLE::Result, HLE::Result, Us...>(context, r);
             }
         }
     };

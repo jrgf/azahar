@@ -72,9 +72,9 @@ void Module::Interface::CancelConnectAsync(Kernel::HLERequestContext& ctx) {
     rp.Skip(2, false); // ProcessId descriptor
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-    rb.Push(ac->ac_connected ? Result(static_cast<ErrorDescription>(301), ErrorModule::AC,
+    rb.Push(ac->ac_connected ? HLE::Result(static_cast<ErrorDescription>(301), ErrorModule::AC,
                                       ErrorSummary::InvalidState, ErrorLevel::Usage)
-                             : Result(static_cast<ErrorDescription>(302), ErrorModule::AC,
+                             : HLE::Result(static_cast<ErrorDescription>(302), ErrorModule::AC,
                                       ErrorSummary::InvalidState, ErrorLevel::Usage));
 
     LOG_WARNING(Service_AC, "(STUBBED) called");

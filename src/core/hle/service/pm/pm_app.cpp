@@ -35,12 +35,12 @@ PM_APP::PM_APP(Core::System& _system) : ServiceFramework("pm:app", 3), system(_s
     RegisterHandlers(functions);
 }
 
-Result PM_APP::UpdateResourceLimit(Kernel::ResourceLimitType type, u32 value) {
+HLE::Result PM_APP::UpdateResourceLimit(Kernel::ResourceLimitType type, u32 value) {
     auto res_limit =
         system.Kernel().ResourceLimit().GetForCategory(Kernel::ResourceLimitCategory::Application);
 
     if (type != Kernel::ResourceLimitType::CpuTime) {
-        return Result{ErrorDescription::NotImplemented, ErrorModule::PM,
+        return HLE::Result{ErrorDescription::NotImplemented, ErrorModule::PM,
                       ErrorSummary::InvalidArgument, ErrorLevel::Permanent};
     }
 
@@ -57,7 +57,7 @@ ResultVal<u32> PM_APP::GetResourceLimit(Kernel::ResourceLimitType type) {
         system.Kernel().ResourceLimit().GetForCategory(Kernel::ResourceLimitCategory::Application);
 
     if (type != Kernel::ResourceLimitType::CpuTime) {
-        return Result{ErrorDescription::NotImplemented, ErrorModule::PM,
+        return HLE::Result{ErrorDescription::NotImplemented, ErrorModule::PM,
                       ErrorSummary::InvalidArgument, ErrorLevel::Permanent};
     }
 

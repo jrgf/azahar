@@ -34,7 +34,7 @@ private:
 };
 
 /// Performs IPC command buffer translation from one process to another.
-Result TranslateCommandBuffer(KernelSystem& system, Memory::MemorySystem& memory,
+HLE::Result TranslateCommandBuffer(KernelSystem& system, Memory::MemorySystem& memory,
                               std::shared_ptr<Thread> src_thread,
                               std::shared_ptr<Thread> dst_thread, VAddr src_address,
                               VAddr dst_address,

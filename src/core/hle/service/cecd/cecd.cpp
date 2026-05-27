@@ -80,7 +80,7 @@ void Module::Interface::Open(Kernel::HLERequestContext& ctx) {
                 rb.Push(ResultSuccess);
             } else {
                 LOG_DEBUG(Service_CECD, "Failed to open directory: {}", path.AsString());
-                rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+                rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                                ErrorLevel::Status));
             }
             rb.Push<u32>(0); // Zero entries
@@ -104,7 +104,7 @@ void Module::Interface::Open(Kernel::HLERequestContext& ctx) {
         auto file_result = cecd->cecd_system_save_data_archive->OpenFile(path, mode);
         if (file_result.Failed()) {
             LOG_DEBUG(Service_CECD, "Failed to open file: {}", path.AsString());
-            rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+            rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                            ErrorLevel::Status));
             rb.Push<u32>(0); // No file size
         } else {
@@ -152,7 +152,7 @@ void Module::Interface::Read(Kernel::HLERequestContext& ctx) {
     case CecDataPathType::MboxDir:
     case CecDataPathType::InboxDir:
     case CecDataPathType::OutboxDir:
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         rb.Push<u32>(0); // No bytes read
         break;
@@ -229,7 +229,7 @@ void Module::Interface::ReadMessage(Kernel::HLERequestContext& ctx) {
         rb.Push(ResultSuccess);
         rb.Push<u32>(bytes_read);
     } else {
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         rb.Push<u32>(0); // zero bytes read
     }
@@ -321,7 +321,7 @@ void Module::Interface::ReadMessageWithHMAC(Kernel::HLERequestContext& ctx) {
         rb.Push(ResultSuccess);
         rb.Push<u32>(bytes_read);
     } else {
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         rb.Push<u32>(0); // zero bytes read
     }
@@ -357,7 +357,7 @@ void Module::Interface::Write(Kernel::HLERequestContext& ctx) {
     case CecDataPathType::MboxDir:
     case CecDataPathType::InboxDir:
     case CecDataPathType::OutboxDir:
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         break;
     default: // If not directory, then it is a file
@@ -441,7 +441,7 @@ void Module::Interface::WriteMessage(Kernel::HLERequestContext& ctx) {
 
         rb.Push(ResultSuccess);
     } else {
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
     }
 
@@ -528,7 +528,7 @@ void Module::Interface::WriteMessageWithHMAC(Kernel::HLERequestContext& ctx) {
 
         rb.Push(ResultSuccess);
     } else {
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
     }
 
@@ -746,7 +746,7 @@ void Module::Interface::OpenAndWrite(Kernel::HLERequestContext& ctx) {
     case CecDataPathType::MboxDir:
     case CecDataPathType::InboxDir:
     case CecDataPathType::OutboxDir:
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         break;
     default: // If not directory, then it is a file
@@ -771,7 +771,7 @@ void Module::Interface::OpenAndWrite(Kernel::HLERequestContext& ctx) {
 
             rb.Push(ResultSuccess);
         } else {
-            rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+            rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                            ErrorLevel::Status));
         }
     }
@@ -805,7 +805,7 @@ void Module::Interface::OpenAndRead(Kernel::HLERequestContext& ctx) {
     case CecDataPathType::MboxDir:
     case CecDataPathType::InboxDir:
     case CecDataPathType::OutboxDir:
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::CEC, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         rb.Push<u32>(0); // No entries read
         break;
@@ -823,7 +823,7 @@ void Module::Interface::OpenAndRead(Kernel::HLERequestContext& ctx) {
             rb.Push(ResultSuccess);
             rb.Push<u32>(bytes_read);
         } else {
-            rb.Push(Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
+            rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::CEC, ErrorSummary::NotFound,
                            ErrorLevel::Status));
             rb.Push<u32>(0); // No bytes read
         }

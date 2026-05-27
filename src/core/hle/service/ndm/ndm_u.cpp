@@ -84,7 +84,7 @@ void NDM_U::ResumeDaemons(Kernel::HLERequestContext& ctx) {
 
     for (std::size_t index = 0; index < daemon_status.size(); ++index) {
         if (bit_mask & (1 << index) && daemon_suspend_counter[index] == 0) {
-            rb.Push(Result(13, ErrorModule::NDM, ErrorSummary::InvalidState, ErrorLevel::Status));
+            rb.Push(HLE::Result(13, ErrorModule::NDM, ErrorSummary::InvalidState, ErrorLevel::Status));
             return;
         }
     }

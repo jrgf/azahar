@@ -189,7 +189,7 @@ public:
         };
         Type type{Type::NONE};
         std::string install_full_path{};
-        Result result{0};
+        HLE::Result result{0};
     };
 
     explicit CIAFile(Core::System& system_, Service::FS::MediaType media_type,
@@ -203,9 +203,9 @@ public:
     ResultVal<std::size_t> Write(u64 offset, std::size_t length, bool flush, bool update_timestamp,
                                  const u8* buffer) override;
 
-    Result PrepareToImportContent(const FileSys::TitleMetadata& tmd);
-    Result ProvideTicket(const FileSys::Ticket& ticket);
-    Result ProvideTMDForAdditionalContent(const FileSys::TitleMetadata& tmd);
+    HLE::Result PrepareToImportContent(const FileSys::TitleMetadata& tmd);
+    HLE::Result ProvideTicket(const FileSys::Ticket& ticket);
+    HLE::Result ProvideTMDForAdditionalContent(const FileSys::TitleMetadata& tmd);
     const FileSys::TitleMetadata& GetTMD();
     FileSys::Ticket& GetTicket();
     CIAInstallState GetCiaInstallState() {
@@ -297,7 +297,7 @@ public:
     bool Close() override;
     void Flush() const override;
 
-    Result Commit();
+    HLE::Result Commit();
     u64 GetTitleID() {
         return title_id;
     }
@@ -326,7 +326,7 @@ public:
     bool Close() override;
     void Flush() const override;
 
-    Result Commit();
+    HLE::Result Commit();
 
 private:
     u64 written = 0;
@@ -450,7 +450,7 @@ std::string GetMediaTitlePath(Service::FS::MediaType media_type);
  * @param title_id the title ID to uninstall
  * @return result of the uninstall operation
  */
-Result UninstallProgram(const FS::MediaType media_type, const u64 title_id);
+HLE::Result UninstallProgram(const FS::MediaType media_type, const u64 title_id);
 
 class Module final {
 public:
@@ -483,7 +483,7 @@ public:
          *      0 : Command header (0x00010040)
          *      1 : Media type to load the titles from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : The number of titles in the requested media type
          */
         void GetNumPrograms(Kernel::HLERequestContext& ctx);
@@ -498,7 +498,7 @@ public:
          *      6 : Content IDs pointer
          *      8 : Content Infos pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void FindDLCContentInfos(Kernel::HLERequestContext& ctx);
 
@@ -512,7 +512,7 @@ public:
          *      5 : Start Index
          *      7 : Content Infos pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Number of content infos returned
          */
         void ListDLCContentInfos(Kernel::HLERequestContext& ctx);
@@ -525,7 +525,7 @@ public:
          *      4 : Content count
          *      6 : Content IDs pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void DeleteContents(Kernel::HLERequestContext& ctx);
 
@@ -538,7 +538,7 @@ public:
          *      2 : Media type to load the titles from
          *      4 : Title IDs output pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : The number of titles loaded from the requested media type
          */
         void GetProgramList(Kernel::HLERequestContext& ctx);
@@ -551,7 +551,7 @@ public:
          *      4 : TitleIDList pointer
          *      6 : TitleList pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetProgramInfos(Kernel::HLERequestContext& ctx);
 
@@ -563,7 +563,7 @@ public:
          *      4 : TitleIDList pointer
          *      6 : TitleList pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetProgramInfosIgnorePlatform(Kernel::HLERequestContext& ctx);
 
@@ -574,7 +574,7 @@ public:
          *      1 : Media Type
          *      2-3 : Title ID
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void DeleteUserProgram(Kernel::HLERequestContext& ctx);
 
@@ -585,7 +585,7 @@ public:
          *      1 : Media Type
          *      2-3 : Title ID
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-5 : Product Code
          */
         void GetProductCode(Kernel::HLERequestContext& ctx);
@@ -599,7 +599,7 @@ public:
          *      4 : TitleIDList pointer
          *      6 : TitleList pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetDLCTitleInfos(Kernel::HLERequestContext& ctx);
 
@@ -612,7 +612,7 @@ public:
          *      4 : TitleIDList input pointer
          *      6 : TitleList output pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : TitleIDList input pointer
          *      4 : TitleList output pointer
          */
@@ -627,7 +627,7 @@ public:
          *      5 : (TicketCount * 24) << 8 | 0x4
          *      6 : Ticket Infos pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Number of ticket infos returned
          */
         void ListDataTitleTicketInfos(Kernel::HLERequestContext& ctx);
@@ -640,7 +640,7 @@ public:
          *      1 : MediaType
          *    2-3 : u64, Title ID
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Number of content infos plus one
          */
         void GetDLCContentInfoCount(Kernel::HLERequestContext& ctx);
@@ -650,14 +650,14 @@ public:
          *  Inputs:
          *    1-2 : u64, Title ID
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void DeleteTicket(Kernel::HLERequestContext& ctx);
 
         /**
          * AM::GetNumTickets service function
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Number of tickets
          */
         void GetNumTickets(Kernel::HLERequestContext& ctx);
@@ -669,7 +669,7 @@ public:
          *      2 : Number to skip
          *      4 : TicketList pointer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Total TicketList
          */
         void GetTicketList(Kernel::HLERequestContext& ctx);
@@ -678,7 +678,7 @@ public:
          * AM::GetDeviceID service function
          *  Inputs:
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Unknown
          *      3 : DeviceID
          */
@@ -719,7 +719,7 @@ public:
          *  Inputs:
          *      1 : Media Type
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : bool, Needs Cleanup
          */
         void NeedsCleanup(Kernel::HLERequestContext& ctx);
@@ -729,7 +729,7 @@ public:
          *  Inputs:
          *      1 : Media Type
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void DoCleanup(Kernel::HLERequestContext& ctx);
 
@@ -738,7 +738,7 @@ public:
          *  Inputs:
          *      1 : Media Type
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Boolean, database availability
          */
         void QueryAvailableTitleDatabase(Kernel::HLERequestContext& ctx);
@@ -749,7 +749,7 @@ public:
          *      1 : Count
          *      2-3 : Buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Out count
          */
         void GetPersonalizedTicketInfoList(Kernel::HLERequestContext& ctx);
@@ -760,7 +760,7 @@ public:
          *      1 : Count
          *      2 : Filter
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Num import titles
          */
         void GetNumImportTitleContextsFiltered(Kernel::HLERequestContext& ctx);
@@ -773,7 +773,7 @@ public:
          *      3 : filter
          *      4-5 : Buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Out count
          *      3-4 : Out buffer
          */
@@ -785,7 +785,7 @@ public:
          *      1-2 : Title ID
          *      3 : Content Index
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Boolean, whether we have rights to this content
          */
         void CheckContentRights(Kernel::HLERequestContext& ctx);
@@ -796,7 +796,7 @@ public:
          *      1-2 : Title ID
          *      3 : Content Index
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Boolean, whether we have rights to this content
          */
         void CheckContentRightsIgnorePlatform(Kernel::HLERequestContext& ctx);
@@ -808,7 +808,7 @@ public:
          *      0 : Command header (0x04020040)
          *      1 : Media type to install title to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-3 : CIAFile handle for application to write to
          */
         void BeginImportProgram(Kernel::HLERequestContext& ctx);
@@ -819,7 +819,7 @@ public:
          *  Inputs:
          *      0 : Command header (0x04030000)
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-3 : CIAFile handle for application to write to
          */
         void BeginImportProgramTemporarily(Kernel::HLERequestContext& ctx);
@@ -831,7 +831,7 @@ public:
          *      0 : Command header (0x04040002)
          *      1-2 : CIAFile handle application wrote to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void CancelImportProgram(Kernel::HLERequestContext& ctx);
 
@@ -842,7 +842,7 @@ public:
          *      0 : Command header (0x04050002)
          *      1-2 : CIAFile handle application wrote to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void EndImportProgram(Kernel::HLERequestContext& ctx);
 
@@ -853,7 +853,7 @@ public:
          *      0 : Command header (0x04060002)
          *      1-2 : CIAFile handle application wrote to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void EndImportProgramWithoutCommit(Kernel::HLERequestContext& ctx);
 
@@ -868,7 +868,7 @@ public:
          *      3 : Database type
          *    4-5 : Title list buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void CommitImportPrograms(Kernel::HLERequestContext& ctx);
 
@@ -880,7 +880,7 @@ public:
          *      1 : Media type of the title
          *      2-3 : File handle CIA data can be read from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-8: TitleInfo structure
          */
         void GetProgramInfoFromCia(Kernel::HLERequestContext& ctx);
@@ -893,7 +893,7 @@ public:
          *      1-2 : File handle CIA data can be read from
          *      3-4 : Output buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetSystemMenuDataFromCia(Kernel::HLERequestContext& ctx);
 
@@ -905,7 +905,7 @@ public:
          *      1-2 : File handle CIA data can be read from
          *      64-65 : Output buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetDependencyListFromCia(Kernel::HLERequestContext& ctx);
 
@@ -916,7 +916,7 @@ public:
          *      0 : Command header (0x040B0002)
          *      1-2 : File handle CIA data can be read from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-3 : Transfer size
          */
         void GetTransferSizeFromCia(Kernel::HLERequestContext& ctx);
@@ -928,7 +928,7 @@ public:
          *      0 : Command header (0x040C0002)
          *      1-2 : File handle CIA data can be read from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Core version
          */
         void GetCoreVersionFromCia(Kernel::HLERequestContext& ctx);
@@ -941,7 +941,7 @@ public:
          *      1 : Media type to install title to
          *      2-3 : File handle CIA data can be read from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-3 : Required free space for CIA
          */
         void GetRequiredSizeFromCia(Kernel::HLERequestContext& ctx);
@@ -956,7 +956,7 @@ public:
          *      1 : Media type
          *      2-3 : Title ID
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void DeleteProgram(Kernel::HLERequestContext& ctx);
 
@@ -965,7 +965,7 @@ public:
          *  Inputs:
          *      0 : Command header (0x04120000)
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Copy handle descriptor
          *      3 : System updater mutex
          */
@@ -978,7 +978,7 @@ public:
          *      0 : Command header (0x04130002)
          *      1-2 : File handle CIA data can be read from
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Meta section size
          */
         void GetMetaSizeFromCia(Kernel::HLERequestContext& ctx);
@@ -991,7 +991,7 @@ public:
          *      1-2 : File handle CIA data can be read from
          *      3-4 : Output buffer
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void GetMetaDataFromCia(Kernel::HLERequestContext& ctx);
 
@@ -1000,7 +1000,7 @@ public:
          *  Inputs:
          *      1 : Media type to install title to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2-3 : TicketHandle handle for application to write to
          */
         void BeginImportTicket(Kernel::HLERequestContext& ctx);
@@ -1010,7 +1010,7 @@ public:
          *  Inputs:
          *      1-2 : TicketHandle handle application wrote to
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          */
         void EndImportTicket(Kernel::HLERequestContext& ctx);
 
@@ -1054,7 +1054,7 @@ public:
          * AM::GetDeviceCert service function
          *  Inputs:
          *  Outputs:
-         *      1 : Result, 0 on success, otherwise error code
+         *      1 : HLE::Result, 0 on success, otherwise error code
          *      2 : Unknown
          *      3-4 : Device cert
          */

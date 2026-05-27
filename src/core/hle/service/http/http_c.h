@@ -362,7 +362,7 @@ private:
      *      4 : 0x0
      *      5 : POST buffer memory block handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Initialize(Kernel::HLERequestContext& ctx);
 
@@ -374,7 +374,7 @@ private:
      *      3 : (URLSize << 4) | 10
      *      4 : URL data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : HTTP context handle
      */
     void CreateContext(Kernel::HLERequestContext& ctx);
@@ -384,7 +384,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CloseContext(Kernel::HLERequestContext& ctx);
 
@@ -393,7 +393,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CancelConnection(Kernel::HLERequestContext& ctx);
 
@@ -402,7 +402,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Request state
      */
     void GetRequestState(Kernel::HLERequestContext& ctx);
@@ -412,7 +412,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Total content data downloaded so far
      *      3 : Total content size from the "Content-Length" response header
      */
@@ -425,7 +425,7 @@ private:
      *      2 : 0x20, processID translate-header for the ARM11-kernel
      *      3 : processID set by the ARM11-kernel
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void InitializeConnectionSession(Kernel::HLERequestContext& ctx);
 
@@ -434,7 +434,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void BeginRequest(Kernel::HLERequestContext& ctx);
 
@@ -443,7 +443,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void BeginRequestAsync(Kernel::HLERequestContext& ctx);
 
@@ -452,7 +452,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetProxyDefault(Kernel::HLERequestContext& ctx);
 
@@ -464,7 +464,7 @@ private:
      *      3 : (OutSize<<4) | 12
      *      4 : Output data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReceiveData(Kernel::HLERequestContext& ctx);
 
@@ -477,7 +477,7 @@ private:
      *      5 : (OutSize<<4) | 12
      *      6 : Output data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReceiveDataTimeout(Kernel::HLERequestContext& ctx);
 
@@ -498,7 +498,7 @@ private:
      * 6 : (HeaderValueSize<<4) | 10
      * 7 : Header value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AddRequestHeader(Kernel::HLERequestContext& ctx);
 
@@ -513,7 +513,7 @@ private:
      * 6 : (FormValueSize<<4) | 10
      * 7 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AddPostDataAscii(Kernel::HLERequestContext& ctx);
 
@@ -528,7 +528,7 @@ private:
      * 6 : (FormValueSize<<4) | 10
      * 7 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AddPostDataBinary(Kernel::HLERequestContext& ctx);
 
@@ -539,7 +539,7 @@ private:
      *      2 : Post data length
      *      3-4: (Mapped buffer) Post data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3: (Mapped buffer) Post data
      */
     void AddPostDataRaw(Kernel::HLERequestContext& ctx);
@@ -550,7 +550,7 @@ private:
      *      1 : Context handle
      *      2 : Post data type
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetPostDataType(Kernel::HLERequestContext& ctx);
 
@@ -565,7 +565,7 @@ private:
      * 6 : (FormValueSize<<4) | 10
      * 7 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendPostDataAscii(Kernel::HLERequestContext& ctx);
 
@@ -581,7 +581,7 @@ private:
      * 8 : (FormValueSize<<4) | 10
      * 9 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendPostDataAsciiTimeout(Kernel::HLERequestContext& ctx);
 
@@ -602,7 +602,7 @@ private:
      * 6 : (FormValueSize<<4) | 10
      * 7 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendPostDataBinary(Kernel::HLERequestContext& ctx);
 
@@ -618,7 +618,7 @@ private:
      * 8 : (FormValueSize<<4) | 10
      * 9 : Form value data pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendPostDataBinaryTimeout(Kernel::HLERequestContext& ctx);
 
@@ -635,7 +635,7 @@ private:
      *      2 : Post data length
      *      3-4: (Mapped buffer) Post data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3: (Mapped buffer) Post data
      */
     void SendPostDataRaw(Kernel::HLERequestContext& ctx);
@@ -648,7 +648,7 @@ private:
      *      3-4: u64 nanoseconds delay
      *      5-6: (Mapped buffer) Post data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3: (Mapped buffer) Post data
      */
     void SendPostDataRawTimeout(Kernel::HLERequestContext& ctx);
@@ -664,7 +664,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void NotifyFinishSendPostData(Kernel::HLERequestContext& ctx);
 
@@ -674,7 +674,7 @@ private:
      *      1 : Context handle
      *      2 : Post data encoding
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetPostDataEncoding(Kernel::HLERequestContext& ctx);
 
@@ -687,7 +687,7 @@ private:
      *      4-5 : (Static buffer) Header name
      *      6-7 : (Mapped buffer) Header value
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Header value copied size
      *      3-4: (Mapped buffer) Header value
      */
@@ -703,7 +703,7 @@ private:
      *      6-7 : (Static buffer) Header name
      *      8-9 : (Mapped buffer) Header value
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Header value copied size
      *      3-4: (Mapped buffer) Header value
      */
@@ -726,7 +726,7 @@ private:
      *  Inputs:
      *      1 : Context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : HTTP response status code
      */
     void GetResponseStatusCode(Kernel::HLERequestContext& ctx);
@@ -737,7 +737,7 @@ private:
      *      1 : Context handle
      *    2-3 : u64 nanoseconds timeout
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : HTTP response status code
      */
     void GetResponseStatusCodeTimeout(Kernel::HLERequestContext& ctx);
@@ -749,7 +749,7 @@ private:
      *      2 : CA data length
      *      3-4: (Mapped buffer) CA data
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-3: (Mapped buffer) CA data
      */
     void AddTrustedRootCA(Kernel::HLERequestContext& ctx);
@@ -760,7 +760,7 @@ private:
      *      1 : Context handle
      *      2 : Cert ID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AddDefaultCert(Kernel::HLERequestContext& ctx);
 
@@ -776,7 +776,7 @@ private:
      *      1 : Context handle
      *      2 : Client cert ID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetDefaultClientCert(Kernel::HLERequestContext& ctx);
 
@@ -786,7 +786,7 @@ private:
      * 1 : Context handle
      * 2 : Cert context handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetClientCertContext(Kernel::HLERequestContext& ctx);
 
@@ -796,7 +796,7 @@ private:
      * 1 : Context handle
      * 2 : Unknown
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : SSL Error code
      */
     void GetSSLError(Kernel::HLERequestContext& ctx);
@@ -807,7 +807,7 @@ private:
      *      1 : Context handle
      *      2 : SSL Option
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetSSLOpt(Kernel::HLERequestContext& ctx);
 
@@ -821,7 +821,7 @@ private:
      *      5 :  (KeySize<<4) | 10
      *      6 :  Pointer to input key
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void OpenClientCertContext(Kernel::HLERequestContext& ctx);
 
@@ -830,7 +830,7 @@ private:
      *  Inputs:
      * 1 : CertID
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Client Cert context handle
      */
     void OpenDefaultClientCertContext(Kernel::HLERequestContext& ctx);
@@ -840,7 +840,7 @@ private:
      *  Inputs:
      * 1 : ClientCert Handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void CloseClientCertContext(Kernel::HLERequestContext& ctx);
 
@@ -850,7 +850,7 @@ private:
      *      1 : Context handle
      *      2 : Keep Alive Option
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetKeepAlive(Kernel::HLERequestContext& ctx);
 
@@ -861,14 +861,14 @@ private:
      *      2 : Post data type
      *      3 : Content length size
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetPostDataTypeSize(Kernel::HLERequestContext& ctx);
 
     /**
      * HTTP_C::Finalize service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
     */
     void Finalize(Kernel::HLERequestContext& ctx);
 

@@ -31,7 +31,7 @@ private:
      *     12 : Descriptor for mapping a write-only buffer in the target process
      *     13 : Signature buffer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Descriptor for mapping a write-only buffer in the target process
      *      3 : Signature buffer. Size for the translate-header is hard-coded to 0x100.
      */
@@ -48,7 +48,7 @@ private:
      *     12 : Descriptor for mapping a read-only buffer in the target process
      *     13 : Signature buffer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Descriptor for mapping a read-only buffer in the target process
      *      3 : Signature buffer. Size for the translate-header is hard-coded to 0x100.
      */
@@ -68,7 +68,7 @@ private:
      *     11 : (size<<4) | 12
      *     12 : Destination pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *    2-5 : Output IV / CTR
      */
     void EncryptDecryptAes(Kernel::HLERequestContext& ctx);
@@ -90,7 +90,7 @@ private:
      *     13 : (outbufsize<<8) | 0x14
      *     14 : Destination pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void EncryptSignDecryptVerifyAesCcm(Kernel::HLERequestContext& ctx);
 
@@ -100,7 +100,7 @@ private:
      *      0 : Header Code[0x00060040]
      *      1 :
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void GetRomId(Kernel::HLERequestContext& ctx);
 
@@ -110,7 +110,7 @@ private:
      *      0 : Header Code[0x00070040]
      *      1 :
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void GetRomId2(Kernel::HLERequestContext& ctx);
 
@@ -120,7 +120,7 @@ private:
      *      0 : Header Code[0x00080040]
      *      1 :
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void GetRomMakerCode(Kernel::HLERequestContext& ctx);
 
@@ -129,7 +129,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00090000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, 0 = auto startup bit not set, 1 = auto startup bit set
      */
     void GetCTRCardAutoStartupBit(Kernel::HLERequestContext& ctx);
@@ -139,7 +139,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000A0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : LocalFriendCodeSeed lower word
      *      3 : LocalFriendCodeSeed upper word
      */
@@ -150,7 +150,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000B0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u32, DeviceID
      */
     void GetDeviceId(Kernel::HLERequestContext& ctx);
@@ -160,7 +160,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x000C0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SeedRNG(Kernel::HLERequestContext& ctx);
 
@@ -172,7 +172,7 @@ private:
      *      2 : (Size<<8) | 0x4
      *      3 : Output buffer pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void GenerateRandomBytes(Kernel::HLERequestContext& ctx);
 
@@ -187,7 +187,7 @@ private:
      *      5 : (outsize<<8) | 0x14
      *      6 : Output buffer pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 :
      */
     void InterfaceForPXI_0x04010084(Kernel::HLERequestContext& ctx);
@@ -201,7 +201,7 @@ private:
      *      3 : (insize<<8) | 0x4
      *      4 : Input buffer pointer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 :
      */
     void InterfaceForPXI_0x04020082(Kernel::HLERequestContext& ctx);
@@ -212,7 +212,7 @@ private:
      *      0 : Header Code[0x00100042]
      *      1 :
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 :
      */
     void InterfaceForPXI_0x04030044(Kernel::HLERequestContext& ctx);
@@ -223,7 +223,7 @@ private:
      *      0 : Header Code[0x00110042]
      *      1 :
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 :
      */
     void InterfaceForPXI_0x04040044(Kernel::HLERequestContext& ctx);

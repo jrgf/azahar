@@ -9,7 +9,7 @@ SERIALIZE_EXPORT_IMPL(FileSys::DefaultSecureValueBackend)
 
 namespace FileSys {
 
-Result DefaultSecureValueBackend::ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation,
+HLE::Result DefaultSecureValueBackend::ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation,
                                                                   u32 secure_value_slot,
                                                                   u64 secure_value) {
 
@@ -36,7 +36,7 @@ ResultVal<std::tuple<bool, u64>> DefaultSecureValueBackend::ObsoletedGetSaveData
     return std::make_tuple<bool, u64>(false, 0);
 }
 
-Result DefaultSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_t input_size,
+HLE::Result DefaultSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_t input_size,
                                                     u8* output, size_t output_size) {
 
     LOG_WARNING(Service_FS,
@@ -47,7 +47,7 @@ Result DefaultSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_
     return ResultSuccess;
 }
 
-Result DefaultSecureValueBackend::SetThisSaveDataSecureValue(u32 secure_value_slot,
+HLE::Result DefaultSecureValueBackend::SetThisSaveDataSecureValue(u32 secure_value_slot,
                                                              u64 secure_value) {
     // TODO: Generate and Save the Secure Value
 

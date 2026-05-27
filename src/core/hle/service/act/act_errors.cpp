@@ -6,7 +6,7 @@
 
 namespace Service::ACT {
 
-u32 GetACTErrorCode(Result result) {
+u32 GetACTErrorCode(HLE::Result result) {
     u32 error_code = ErrCodes::Unknown;
     if (result.module == ErrorModule::ACT) {
         switch (result.description) {

@@ -9,7 +9,7 @@
 
 namespace HLE::Applets {
 
-Result Mint::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
+HLE::Result Mint::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
     if (parameter.signal != Service::APT::SignalType::Request) {
         LOG_ERROR(Service_APT, "unsupported signal {}", parameter.signal);
         UNIMPLEMENTED();
@@ -43,7 +43,7 @@ Result Mint::ReceiveParameterImpl(const Service::APT::MessageParameter& paramete
     return ResultSuccess;
 }
 
-Result Mint::Start(const Service::APT::MessageParameter& parameter) {
+HLE::Result Mint::Start(const Service::APT::MessageParameter& parameter) {
     startup_param = parameter.buffer;
 
     // TODO(Subv): Set the expected fields in the response buffer before resending it to the
@@ -55,7 +55,7 @@ Result Mint::Start(const Service::APT::MessageParameter& parameter) {
     return ResultSuccess;
 }
 
-Result Mint::Finalize() {
+HLE::Result Mint::Finalize() {
     std::vector<u8> buffer(startup_param.size());
     std::fill(buffer.begin(), buffer.end(), 0);
     CloseApplet(nullptr, buffer);

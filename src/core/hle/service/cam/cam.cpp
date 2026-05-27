@@ -77,9 +77,9 @@ constexpr std::array<int, 13> LATENCY_BY_FRAME_RATE{{
     33,  // Rate_30_To_10
 }};
 
-constexpr Result ResultInvalidEnumValue(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
+constexpr HLE::Result ResultInvalidEnumValue(ErrorDescription::InvalidEnumValue, ErrorModule::CAM,
                                         ErrorSummary::InvalidArgument, ErrorLevel::Usage);
-constexpr Result ResultOutOfRange(ErrorDescription::OutOfRange, ErrorModule::CAM,
+constexpr HLE::Result ResultOutOfRange(ErrorDescription::OutOfRange, ErrorModule::CAM,
                                   ErrorSummary::InvalidArgument, ErrorLevel::Usage);
 
 void Module::PortConfig::Clear() {
@@ -481,7 +481,7 @@ void Module::Interface::GetMaxLines(Kernel::HLERequestContext& ctx) {
         if (lines > height) {
             lines = height;
         }
-        Result result = ResultSuccess;
+        HLE::Result result = ResultSuccess;
         while (height % lines != 0 || (lines * width * 2 % MIN_TRANSFER_UNIT != 0)) {
             --lines;
             if (lines == 0) {
@@ -1014,7 +1014,7 @@ void Module::Interface::SetPackageParameterWithoutContext(Kernel::HLERequestCont
 }
 
 template <typename PackageParameterType>
-Result Module::SetPackageParameter(const PackageParameterType& package) {
+HLE::Result Module::SetPackageParameter(const PackageParameterType& package) {
     const CameraSet camera_select(package.camera_select);
     const ContextSet context_select(package.context_select);
 
@@ -1052,7 +1052,7 @@ void Module::Interface::SetPackageParameterWithContext(Kernel::HLERequestContext
     rp.PopRaw(package);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-    Result result = cam->SetPackageParameter(package);
+    HLE::Result result = cam->SetPackageParameter(package);
     rb.Push(result);
 
     LOG_DEBUG(Service_CAM, "called");
@@ -1065,7 +1065,7 @@ void Module::Interface::SetPackageParameterWithContextDetail(Kernel::HLERequestC
     rp.PopRaw(package);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-    Result result = cam->SetPackageParameter(package);
+    HLE::Result result = cam->SetPackageParameter(package);
     rb.Push(result);
 
     LOG_DEBUG(Service_CAM, "called");

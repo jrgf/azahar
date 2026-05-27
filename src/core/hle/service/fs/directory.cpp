@@ -48,7 +48,7 @@ void Directory::Read(Kernel::HLERequestContext& ctx) {
         u32 count;
 
         // Output
-        Result ret{0};
+        HLE::Result ret{0};
         u32 read;
         Kernel::MappedBuffer* buffer;
     };

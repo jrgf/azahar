@@ -81,7 +81,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SDMCWriteOnly::Open(co
     return std::make_unique<SDMCWriteOnlyArchive>(sdmc_directory, std::move(delay_generator));
 }
 
-Result ArchiveFactory_SDMCWriteOnly::Format(const Path& path,
+HLE::Result ArchiveFactory_SDMCWriteOnly::Format(const Path& path,
                                             const FileSys::ArchiveFormatInfo& format_info,
                                             u64 program_id, u32 directory_buckets,
                                             u32 file_buckets) {

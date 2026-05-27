@@ -120,7 +120,7 @@ public:
          *     11 : Image Buffer Pointer
          *  Outputs:
          *      0 : 0x00010046
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void AddNotification(Kernel::HLERequestContext& ctx);
 
@@ -139,7 +139,7 @@ public:
          *      9 : Image Buffer Pointer
          *  Outputs:
          *      0 : 0x00010046
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void AddNotificationSystem(Kernel::HLERequestContext& ctx);
 
@@ -149,7 +149,7 @@ public:
          *      0 : 0x00040000
          *  Outputs:
          *      0 : 0x00040040
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void ResetNotifications(Kernel::HLERequestContext& ctx);
 
@@ -159,7 +159,7 @@ public:
          *      0 : 0x00050000
          *  Outputs:
          *      0 : 0x00050080
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Number of notifications
          */
         void GetTotalNotifications(Kernel::HLERequestContext& ctx);
@@ -173,7 +173,7 @@ public:
          *      3 : Input Buffer Pointer
          *  Outputs:
          *      0 : 0x00060042
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNewsDBHeader(Kernel::HLERequestContext& ctx);
 
@@ -187,7 +187,7 @@ public:
          *      4 : Input Buffer Pointer
          *  Outputs:
          *      0 : 0x00070042
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNotificationHeader(Kernel::HLERequestContext& ctx);
 
@@ -201,7 +201,7 @@ public:
          *      4 : Input Buffer Pointer
          *  Outputs:
          *      0 : 0x00080042
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNotificationMessage(Kernel::HLERequestContext& ctx);
 
@@ -215,7 +215,7 @@ public:
          *      4 : Input Buffer Pointer
          *  Outputs:
          *      0 : 0x00090042
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNotificationImage(Kernel::HLERequestContext& ctx);
 
@@ -228,7 +228,7 @@ public:
          *      3 : Output Buffer Pointer
          *  Outputs:
          *      0 : 0x000A0082
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Actual Size
          */
         void GetNewsDBHeader(Kernel::HLERequestContext& ctx);
@@ -243,7 +243,7 @@ public:
          *      4 : Output Buffer Pointer
          *  Outputs:
          *      0 : 0x000B0082
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Actual Size
          */
         void GetNotificationHeader(Kernel::HLERequestContext& ctx);
@@ -258,7 +258,7 @@ public:
          *      4 : Output Buffer Pointer
          *  Outputs:
          *      0 : 0x000C0082
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Actual Size
          */
         void GetNotificationMessage(Kernel::HLERequestContext& ctx);
@@ -273,7 +273,7 @@ public:
          *      4 : Output Buffer Pointer
          *  Outputs:
          *      0 : 0x000D0082
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Actual Size
          */
         void GetNotificationImage(Kernel::HLERequestContext& ctx);
@@ -285,7 +285,7 @@ public:
          *      1 : Flag
          *  Outputs:
          *      0 : 0x00110040
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetAutomaticSyncFlag(Kernel::HLERequestContext& ctx);
 
@@ -299,7 +299,7 @@ public:
          *      4 : Input Buffer Pointer
          *  Outputs:
          *      0 : 0x00120042
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetNotificationHeaderOther(Kernel::HLERequestContext& ctx);
 
@@ -309,7 +309,7 @@ public:
          *      0 : 0x00130000
          *  Outputs:
          *      0 : 0x00130040
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void WriteNewsDBSavedata(Kernel::HLERequestContext& ctx);
 
@@ -319,7 +319,7 @@ public:
          *      0 : 0x00140000
          *  Outputs:
          *      0 : 0x00140080
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Number of pending notifications to be synced
          */
         void GetTotalArrivedNotifications(Kernel::HLERequestContext& ctx);
@@ -375,18 +375,18 @@ private:
      * Modifies the header for the News DB in memory and saves the News DB file
      * @param header The database header
      * @param size The amount of bytes to copy from the header
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetNewsDBHeader(const NewsDBHeader* header, const std::size_t size);
+    HLE::Result SetNewsDBHeader(const NewsDBHeader* header, const std::size_t size);
 
     /**
      * Modifies the header for a notification ID on memory and saves the News DB file
      * @param notification_index The index of the notification ID
      * @param header The notification header
      * @param size The amount of bytes to copy from the header
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetNotificationHeader(const u32 notification_index, const NotificationHeader* header,
+    HLE::Result SetNotificationHeader(const u32 notification_index, const NotificationHeader* header,
                                  const std::size_t size);
 
     /**
@@ -394,26 +394,26 @@ private:
      * @param notification_index The index of the notification ID
      * @param header The notification header
      * @param size The amount of bytes to copy from the header
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetNotificationHeaderOther(const u32 notification_index,
+    HLE::Result SetNotificationHeaderOther(const u32 notification_index,
                                       const NotificationHeader* header, const std::size_t size);
 
     /**
      * Sets a given message to a notification ID
      * @param notification_index The index of the notification ID
      * @param message The notification message
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetNotificationMessage(const u32 notification_index, std::span<const u8> message);
+    HLE::Result SetNotificationMessage(const u32 notification_index, std::span<const u8> message);
 
     /**
      * Sets a given image to a notification ID
      * @param notification_index The index of the notification ID
      * @param image The notification image
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SetNotificationImage(const u32 notification_index, std::span<const u8> image);
+    HLE::Result SetNotificationImage(const u32 notification_index, std::span<const u8> image);
 
     /**
      * Creates a new notification with the given data and saves all the contents
@@ -421,30 +421,30 @@ private:
      * @param header_size The amount of bytes to copy from the header
      * @param message The notification message
      * @param image The notification image
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SaveNotification(const NotificationHeader* header, const std::size_t header_size,
+    HLE::Result SaveNotification(const NotificationHeader* header, const std::size_t header_size,
                             std::span<const u8> message, std::span<const u8> image);
 
     /**
      * Deletes the given notification ID from the database
      * @param notification_id The notification ID to delete
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result DeleteNotification(const u32 notification_id);
+    HLE::Result DeleteNotification(const u32 notification_id);
 
     /**
      * Opens the news.db savedata file and load it to the memory buffer. If the file or the savedata
      * don't exist, they are created
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result LoadNewsDBSavedata();
+    HLE::Result LoadNewsDBSavedata();
 
     /**
      * Writes the news.db savedata file to the the NEWS system savedata
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SaveNewsDBSavedata();
+    HLE::Result SaveNewsDBSavedata();
 
     /**
      * Opens the file with the given filename inside the NEWS system savedata
@@ -458,9 +458,9 @@ private:
      * Writes the file with the given filename inside the NEWS system savedata
      * @param filename The output file
      * @param buffer The buffer to read the contents from
-     * @returns Result indicating the result of the operation, 0 on success
+     * @returns HLE::Result indicating the result of the operation, 0 on success
      */
-    Result SaveFileToSavedata(std::string filename, std::span<const u8> buffer);
+    HLE::Result SaveFileToSavedata(std::string filename, std::span<const u8> buffer);
 
     bool CompareNotifications(const u32 first_id, const u32 second_id);
 

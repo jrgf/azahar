@@ -94,7 +94,7 @@ ResultVal<std::unique_ptr<FileBackend>> SaveDataArchive::OpenFile(const Path& pa
     return std::make_unique<DiskFile>(std::move(file), mode, std::move(delay_generator));
 }
 
-Result SaveDataArchive::DeleteFile(const Path& path) const {
+HLE::Result SaveDataArchive::DeleteFile(const Path& path) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -128,7 +128,7 @@ Result SaveDataArchive::DeleteFile(const Path& path) const {
     return ResultFileNotFound;
 }
 
-Result SaveDataArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
+HLE::Result SaveDataArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
     const PathParser path_parser_src(src_path);
 
     // TODO: Verify these return codes with HW
@@ -153,12 +153,12 @@ Result SaveDataArchive::RenameFile(const Path& src_path, const Path& dest_path) 
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 
 template <typename T>
-static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
+static HLE::Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -195,16 +195,16 @@ static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_p
     return ResultDirectoryNotEmpty;
 }
 
-Result SaveDataArchive::DeleteDirectory(const Path& path) const {
+HLE::Result SaveDataArchive::DeleteDirectory(const Path& path) const {
     return DeleteDirectoryHelper(path, mount_point, FileUtil::DeleteDir);
 }
 
-Result SaveDataArchive::DeleteDirectoryRecursively(const Path& path) const {
+HLE::Result SaveDataArchive::DeleteDirectoryRecursively(const Path& path) const {
     return DeleteDirectoryHelper(
         path, mount_point, [](const std::string& p) { return FileUtil::DeleteDirRecursively(p); });
 }
 
-Result SaveDataArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
+HLE::Result SaveDataArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -250,11 +250,11 @@ Result SaveDataArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attr
     }
 
     LOG_ERROR(Service_FS, "Too large file");
-    return Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
+    return HLE::Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
                   ErrorLevel::Info);
 }
 
-Result SaveDataArchive::CreateDirectory(const Path& path, u32 attributes) const {
+HLE::Result SaveDataArchive::CreateDirectory(const Path& path, u32 attributes) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -287,11 +287,11 @@ Result SaveDataArchive::CreateDirectory(const Path& path, u32 attributes) const 
     }
 
     LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating {}", mount_point);
-    return Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
                   ErrorLevel::Status);
 }
 
-Result SaveDataArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
+HLE::Result SaveDataArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
     const PathParser path_parser_src(src_path);
 
     // TODO: Verify these return codes with HW
@@ -316,7 +316,7 @@ Result SaveDataArchive::RenameDirectory(const Path& src_path, const Path& dest_p
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 

@@ -22,7 +22,7 @@ SERIALIZE_EXPORT_IMPL(Kernel::MappedBufferContext)
 
 namespace Kernel {
 
-Result TranslateCommandBuffer(Kernel::KernelSystem& kernel, Memory::MemorySystem& memory,
+HLE::Result TranslateCommandBuffer(Kernel::KernelSystem& kernel, Memory::MemorySystem& memory,
                               std::shared_ptr<Thread> src_thread,
                               std::shared_ptr<Thread> dst_thread, VAddr src_address,
                               VAddr dst_address,
@@ -63,7 +63,7 @@ Result TranslateCommandBuffer(Kernel::KernelSystem& kernel, Memory::MemorySystem
             // Note: The real kernel does not check that the number of handles fits into the command
             // buffer before writing them, only after finishing.
             if (i + num_handles > command_size) {
-                return Result(ErrCodes::CommandTooLarge, ErrorModule::OS,
+                return HLE::Result(ErrCodes::CommandTooLarge, ErrorModule::OS,
                               ErrorSummary::InvalidState, ErrorLevel::Status);
             }
 
@@ -183,7 +183,7 @@ Result TranslateCommandBuffer(Kernel::KernelSystem& kernel, Memory::MemorySystem
                        next_vma.meminfo_state == MemoryState::Reserved);
 
                 // Unmap the buffer and guard pages from the source process
-                Result result =
+                HLE::Result result =
                     src_process->vm_manager.UnmapRange(page_start - Memory::CITRA_PAGE_SIZE,
                                                        (num_pages + 2) * Memory::CITRA_PAGE_SIZE);
                 ASSERT(result == ResultSuccess);

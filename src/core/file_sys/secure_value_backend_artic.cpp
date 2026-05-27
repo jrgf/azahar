@@ -9,7 +9,7 @@
 SERIALIZE_EXPORT_IMPL(FileSys::ArticSecureValueBackend)
 
 namespace FileSys {
-Result ArticSecureValueBackend::ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation,
+HLE::Result ArticSecureValueBackend::ObsoletedSetSaveDataSecureValue(u32 unique_id, u8 title_variation,
                                                                 u32 secure_value_slot,
                                                                 u64 secure_value) {
     auto req = client->NewRequest("FSUSER_ObsSetSaveDataSecureVal");
@@ -53,7 +53,7 @@ ResultVal<std::tuple<bool, u64>> ArticSecureValueBackend::ObsoletedGetSaveDataSe
     return std::make_tuple(secure_value_result.exists, secure_value_result.secure_value);
 }
 
-Result ArticSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_t input_size,
+HLE::Result ArticSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_t input_size,
                                                   u8* output, size_t output_size) {
     auto req = client->NewRequest("FSUSER_ControlSecureSave");
 
@@ -77,7 +77,7 @@ Result ArticSecureValueBackend::ControlSecureSave(u32 action, u8* input, size_t 
     return res;
 }
 
-Result ArticSecureValueBackend::SetThisSaveDataSecureValue(u32 secure_value_slot,
+HLE::Result ArticSecureValueBackend::SetThisSaveDataSecureValue(u32 secure_value_slot,
                                                            u64 secure_value) {
     auto req = client->NewRequest("FSUSER_SetThisSaveDataSecVal");
 

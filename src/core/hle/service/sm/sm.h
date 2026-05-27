@@ -31,17 +31,17 @@ namespace Service::SM {
 
 class SRV;
 
-constexpr Result ResultServiceNotRegistered(1, ErrorModule::SRV, ErrorSummary::WouldBlock,
+constexpr HLE::Result ResultServiceNotRegistered(1, ErrorModule::SRV, ErrorSummary::WouldBlock,
                                             ErrorLevel::Temporary); // 0xD0406401
-constexpr Result ResultMaxConnectionsReached(2, ErrorModule::SRV, ErrorSummary::WouldBlock,
+constexpr HLE::Result ResultMaxConnectionsReached(2, ErrorModule::SRV, ErrorSummary::WouldBlock,
                                              ErrorLevel::Temporary); // 0xD0406402
-constexpr Result ResultInvalidNameSize(5, ErrorModule::SRV, ErrorSummary::WrongArgument,
+constexpr HLE::Result ResultInvalidNameSize(5, ErrorModule::SRV, ErrorSummary::WrongArgument,
                                        ErrorLevel::Permanent); // 0xD9006405
-constexpr Result ResultAccessDenied(6, ErrorModule::SRV, ErrorSummary::InvalidArgument,
+constexpr HLE::Result ResultAccessDenied(6, ErrorModule::SRV, ErrorSummary::InvalidArgument,
                                     ErrorLevel::Permanent); // 0xD8E06406
-constexpr Result ResultNameContainsNul(7, ErrorModule::SRV, ErrorSummary::WrongArgument,
+constexpr HLE::Result ResultNameContainsNul(7, ErrorModule::SRV, ErrorSummary::WrongArgument,
                                        ErrorLevel::Permanent); // 0xD9006407
-constexpr Result ResultAlreadyRegistered(ErrorDescription::AlreadyExists, ErrorModule::OS,
+constexpr HLE::Result ResultAlreadyRegistered(ErrorDescription::AlreadyExists, ErrorModule::OS,
                                          ErrorSummary::WrongArgument,
                                          ErrorLevel::Permanent); // 0xD9001BFC
 
@@ -51,11 +51,11 @@ public:
 
     explicit ServiceManager(Core::System& system);
 
-    Result RegisterService(std::shared_ptr<Kernel::ServerPort>* out_server_port, std::string name,
+    HLE::Result RegisterService(std::shared_ptr<Kernel::ServerPort>* out_server_port, std::string name,
                            u32 max_sessions);
-    Result GetServicePort(std::shared_ptr<Kernel::ClientPort>* out_client_port,
+    HLE::Result GetServicePort(std::shared_ptr<Kernel::ClientPort>* out_client_port,
                           const std::string& name);
-    Result ConnectToService(std::shared_ptr<Kernel::ClientSession>* out_client_session,
+    HLE::Result ConnectToService(std::shared_ptr<Kernel::ClientSession>* out_client_session,
                             const std::string& name);
     // For IPC Recorder
     std::string GetServiceNameByPortId(u32 port) const;

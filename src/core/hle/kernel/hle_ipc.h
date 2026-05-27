@@ -415,10 +415,10 @@ public:
     MappedBuffer& GetMappedBuffer(u32 id_from_cmdbuf);
 
     /// Populates this context with data from the requesting process/thread.
-    Result PopulateFromIncomingCommandBuffer(const u32_le* src_cmdbuf,
+    HLE::Result PopulateFromIncomingCommandBuffer(const u32_le* src_cmdbuf,
                                              std::shared_ptr<Process> src_process);
     /// Writes data from this context back to the requesting process/thread.
-    Result WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process) const;
+    HLE::Result WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process) const;
 
     /// Reports an unimplemented function.
     void ReportUnimplemented() const;

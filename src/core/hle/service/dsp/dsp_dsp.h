@@ -41,7 +41,7 @@ private:
      *      0 : Header Code[0x00010040]
      *      1 : Register Number
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u16, Value in the register
      *  Notes:
      *      This function has only been observed being called with a register number of 0.
@@ -55,7 +55,7 @@ private:
      *      0 : Header Code[0x00020040]
      *      1 : Register Number
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Reply Register Update Flag (0 = not ready, 1 = ready)
      *  Note:
      *      This function has only been observed being called with a register number of 0.
@@ -68,7 +68,7 @@ private:
      *      0 : Header Code[0x00070040]
      *      1 : u16, Semaphore value
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetSemaphore(Kernel::HLERequestContext& ctx);
 
@@ -78,7 +78,7 @@ private:
      *      0 : Header Code[0x000C0040]
      *      1 : Address
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Address. (inaddr << 1) + 0x1FF40000 (where 0x1FF00000 is the DSP RAM address)
      */
     void ConvertProcessAddressFromDspDram(Kernel::HLERequestContext& ctx);
@@ -93,7 +93,7 @@ private:
      *      4 : Buffer
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void WriteProcessPipe(Kernel::HLERequestContext& ctx);
 
@@ -106,7 +106,7 @@ private:
      *      3 : u16, Size
      *      0x41 : Virtual address of memory buffer to write pipe contents to
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ReadPipe(Kernel::HLERequestContext& ctx);
 
@@ -117,7 +117,7 @@ private:
      *      1 : Channel (0 - 7 0:Debug from DSP 1:P-DMA 2:audio 3:binary 4-7: free ?)
      *      2 : Peer (0 = from DSP, 1 = from ARM)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u16, Readable size
      */
     void GetPipeReadableSize(Kernel::HLERequestContext& ctx);
@@ -134,7 +134,7 @@ private:
      *      3 : u16, Size
      *      0x41 : Virtual address of memory buffer to write pipe contents to
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u16, Actual read size
      */
     void ReadPipeIfPossible(Kernel::HLERequestContext& ctx);
@@ -149,7 +149,7 @@ private:
      *      4 : (size << 4) | 0xA
      *      5 : Component Buffer
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, Component Loaded (0 = not loaded, 1 = loaded)
      *      3 : (Size << 4) | 0xA
      *      4 : Component Buffer
@@ -161,7 +161,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00120000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnloadComponent(Kernel::HLERequestContext& ctx);
 
@@ -177,7 +177,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void FlushDataCache(Kernel::HLERequestContext& ctx);
 
@@ -193,7 +193,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void InvalidateDataCache(Kernel::HLERequestContext& ctx);
 
@@ -206,7 +206,7 @@ private:
      *      3 : 0x0, some descriptor for the Event Handle
      *      4 : Interrupt Event handle (0 = unregister the event that was previous registered)
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void RegisterInterruptEvents(Kernel::HLERequestContext& ctx);
 
@@ -215,7 +215,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x00160000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : 0x0, some descriptor for the Event Handle
      *      3 : Semaphore Event Handle
      */
@@ -227,7 +227,7 @@ private:
      *      0 : Header Code[0x00170040]
      *      1 : u16, Mask
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetSemaphoreMask(Kernel::HLERequestContext& ctx);
 
@@ -236,7 +236,7 @@ private:
      *  Inputs:
      *      0 : Header Code[0x001F0000]
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, The headphone status response, 0 = Not inserted, 1 = inserted
      */
     void GetHeadphoneStatus(Kernel::HLERequestContext& ctx);
@@ -247,7 +247,7 @@ private:
      *      0 : Header Code[0x00020040]
      *      1 : u8, 0 = don't force, 1 = force
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ForceHeadphoneOut(Kernel::HLERequestContext& ctx);
 

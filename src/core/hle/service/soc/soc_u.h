@@ -62,14 +62,14 @@ public:
     std::optional<InterfaceInfo> GetDefaultInterfaceInfo();
 
 private:
-    static constexpr Result ResultWrongProcess =
-        Result(4, ErrorModule::SOC, ErrorSummary::InvalidState, ErrorLevel::Status);
-    static constexpr Result ResultNotInitialized =
-        Result(6, ErrorModule::SOC, ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
-    static constexpr Result ResultInvalidSocketDescriptor =
-        Result(7, ErrorModule::SOC, ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
-    static constexpr Result ResultAlreadyInitialized =
-        Result(11, ErrorModule::SOC, ErrorSummary::InvalidState, ErrorLevel::Status);
+    static constexpr HLE::Result ResultWrongProcess =
+        HLE::Result(4, ErrorModule::SOC, ErrorSummary::InvalidState, ErrorLevel::Status);
+    static constexpr HLE::Result ResultNotInitialized =
+        HLE::Result(6, ErrorModule::SOC, ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
+    static constexpr HLE::Result ResultInvalidSocketDescriptor =
+        HLE::Result(7, ErrorModule::SOC, ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
+    static constexpr HLE::Result ResultAlreadyInitialized =
+        HLE::Result(11, ErrorModule::SOC, ErrorSummary::InvalidState, ErrorLevel::Status);
 
     static constexpr u32 SOC_ERR_INAVLID_ENUM_VALUE = 0xFFFF8025;
 

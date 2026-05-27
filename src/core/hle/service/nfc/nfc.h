@@ -54,7 +54,7 @@ public:
          *      0 : Header code [0x00010040]
          *      1 : (u8) CommunicationMode. Can be either value 0x1, 0x2 or 0x3
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Initialize(Kernel::HLERequestContext& ctx);
 
@@ -64,7 +64,7 @@ public:
          *      0 : Header code [0x00020040]
          *      1 : (u8) CommunicationMode.
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Finalize(Kernel::HLERequestContext& ctx);
 
@@ -73,7 +73,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00030000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Connect(Kernel::HLERequestContext& ctx);
 
@@ -82,7 +82,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00040000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Disconnect(Kernel::HLERequestContext& ctx);
 
@@ -92,7 +92,7 @@ public:
          *      0 : Header code [0x00050040]
          *      1 : (u16) unknown. This is normally 0x0
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StartDetection(Kernel::HLERequestContext& ctx);
 
@@ -101,7 +101,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00060000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StopDetection(Kernel::HLERequestContext& ctx);
 
@@ -110,7 +110,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00070000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Mount(Kernel::HLERequestContext& ctx);
 
@@ -119,7 +119,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00080000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Unmount(Kernel::HLERequestContext& ctx);
 
@@ -128,7 +128,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00090002]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Flush(Kernel::HLERequestContext& ctx);
 
@@ -137,7 +137,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x000B0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Copy handle descriptor
          *      3 : Event Handle
          */
@@ -148,7 +148,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x000C0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Copy handle descriptor
          *      3 : Event Handle
          */
@@ -159,7 +159,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x000D0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : (u8) Tag state
          */
         void GetStatus(Kernel::HLERequestContext& ctx);
@@ -169,7 +169,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x000F0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : (u8) Communication state
          */
         void GetTargetConnectionStatus(Kernel::HLERequestContext& ctx);
@@ -179,7 +179,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00100000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-26 : 0x60-byte struct
          */
         void GetTagInfo2(Kernel::HLERequestContext& ctx);
@@ -189,7 +189,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00110000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-12 : 0x2C-byte struct
          */
         void GetTagInfo(Kernel::HLERequestContext& ctx);
@@ -199,7 +199,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00120000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Output NFC-adapter result-code
          */
         void GetConnectResult(Kernel::HLERequestContext& ctx);
@@ -210,7 +210,7 @@ public:
          *      0 : Header code [0x00130040]
          *      1 : (u32) App ID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void OpenApplicationArea(Kernel::HLERequestContext& ctx);
 
@@ -226,7 +226,7 @@ public:
          *     17 : (Size << 14) | 2
          *     18 : Pointer to input buffer
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CreateApplicationArea(Kernel::HLERequestContext& ctx);
 
@@ -236,7 +236,7 @@ public:
          *      0 : Header code [0x00150040]
          *      1 : Size (unused? Hard-coded to be 0xD8)
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void ReadApplicationArea(Kernel::HLERequestContext& ctx);
 
@@ -249,7 +249,7 @@ public:
          *     10 : (Size << 14) | 2
          *     11 : Pointer to input appdata buffer
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void WriteApplicationArea(Kernel::HLERequestContext& ctx);
 
@@ -258,7 +258,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00170000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-43 : AmiiboSettings struct (see above)
          */
         void GetNfpRegisterInfo(Kernel::HLERequestContext& ctx);
@@ -268,7 +268,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00180000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-17 : 0x40-byte config struct
          */
         void GetNfpCommonInfo(Kernel::HLERequestContext& ctx);
@@ -278,7 +278,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x00180000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-16 : 0x3C-byte config struct
          */
         void InitializeCreateInfo(Kernel::HLERequestContext& ctx);
@@ -288,7 +288,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x001A0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void MountRom(Kernel::HLERequestContext& ctx);
 
@@ -297,7 +297,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x001B0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *   2-31 : 0x36-byte struct
          */
         void GetIdentificationBlock(Kernel::HLERequestContext& ctx);
@@ -307,7 +307,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x040100C2]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Format(Kernel::HLERequestContext& ctx);
 
@@ -316,7 +316,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04020000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetAdminInfo(Kernel::HLERequestContext& ctx);
 
@@ -325,7 +325,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04030000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void GetEmptyRegisterInfo(Kernel::HLERequestContext& ctx);
 
@@ -334,7 +334,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04040A40]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetRegisterInfo(Kernel::HLERequestContext& ctx);
 
@@ -343,7 +343,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04050000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DeleteRegisterInfo(Kernel::HLERequestContext& ctx);
 
@@ -352,7 +352,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04060000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DeleteApplicationArea(Kernel::HLERequestContext& ctx);
 
@@ -361,7 +361,7 @@ public:
          *  Inputs:
          *      0 : Header code [0x04070000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void ExistsApplicationArea(Kernel::HLERequestContext& ctx);
 

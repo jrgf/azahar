@@ -17,7 +17,7 @@
 
 namespace HLE::Applets {
 
-Result MiiSelector::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
+HLE::Result MiiSelector::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
     if (parameter.signal != Service::APT::SignalType::Request) {
         LOG_ERROR(Service_APT, "unsupported signal {}", parameter.signal);
         UNIMPLEMENTED();
@@ -50,7 +50,7 @@ Result MiiSelector::ReceiveParameterImpl(const Service::APT::MessageParameter& p
     return ResultSuccess;
 }
 
-Result MiiSelector::Start(const Service::APT::MessageParameter& parameter) {
+HLE::Result MiiSelector::Start(const Service::APT::MessageParameter& parameter) {
     ASSERT_MSG(parameter.buffer.size() == sizeof(config),
                "The size of the parameter (MiiConfig) is wrong");
 
@@ -78,7 +78,7 @@ void MiiSelector::Update() {
     Finalize();
 }
 
-Result MiiSelector::Finalize() {
+HLE::Result MiiSelector::Finalize() {
     std::vector<u8> buffer(sizeof(MiiResult));
     std::memcpy(buffer.data(), &result, buffer.size());
     CloseApplet(nullptr, buffer);

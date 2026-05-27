@@ -33,11 +33,11 @@ std::vector<u8> ArticArchive::BuildFSPath(const Path& path) {
     return ret;
 }
 
-Result ArticArchive::RespResult(const std::optional<Network::ArticBase::Client::Response>& resp) {
+HLE::Result ArticArchive::RespResult(const std::optional<Network::ArticBase::Client::Response>& resp) {
     if (!resp.has_value() || !resp->Succeeded()) {
         return ResultUnknown;
     }
-    return Result(static_cast<u32>(resp->GetMethodResult()));
+    return HLE::Result(static_cast<u32>(resp->GetMethodResult()));
 }
 
 ArticArchive::~ArticArchive() {
@@ -69,7 +69,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArticArchive::Open(
     if (!resp.has_value() || !resp->Succeeded()) {
         return ResultUnknown;
     }
-    Result res(static_cast<u32>(resp->GetMethodResult()));
+    HLE::Result res(static_cast<u32>(resp->GetMethodResult()));
     if (res.IsError())
         return res;
 
@@ -145,7 +145,7 @@ ResultVal<std::unique_ptr<FileBackend>> ArticArchive::OpenFile(const Path& path,
                                               *cache_provider, path);
 }
 
-Result ArticArchive::DeleteFile(const Path& path) const {
+HLE::Result ArticArchive::DeleteFile(const Path& path) const {
     auto cache = cache_provider->ProvideCache(
         client, cache_provider->PathsToVector(archive_path, path), false);
     if (cache != nullptr) {
@@ -161,7 +161,7 @@ Result ArticArchive::DeleteFile(const Path& path) const {
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
+HLE::Result ArticArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
     auto cache = cache_provider->ProvideCache(
         client, cache_provider->PathsToVector(archive_path, src_path), false);
     if (cache != nullptr) {
@@ -185,7 +185,7 @@ Result ArticArchive::RenameFile(const Path& src_path, const Path& dest_path) con
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::DeleteDirectory(const Path& path) const {
+HLE::Result ArticArchive::DeleteDirectory(const Path& path) const {
     cache_provider->ClearAllCache();
 
     auto req = client->NewRequest("FSUSER_DeleteDirectory");
@@ -197,7 +197,7 @@ Result ArticArchive::DeleteDirectory(const Path& path) const {
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::DeleteDirectoryRecursively(const Path& path) const {
+HLE::Result ArticArchive::DeleteDirectoryRecursively(const Path& path) const {
     cache_provider->ClearAllCache();
 
     auto req = client->NewRequest("FSUSER_DeleteDirectoryRec");
@@ -209,7 +209,7 @@ Result ArticArchive::DeleteDirectoryRecursively(const Path& path) const {
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::CreateFile(const Path& path, u64 size, u32 attributes) const {
+HLE::Result ArticArchive::CreateFile(const Path& path, u64 size, u32 attributes) const {
     auto cache = cache_provider->ProvideCache(
         client, cache_provider->PathsToVector(archive_path, path), false);
     if (cache != nullptr) {
@@ -227,7 +227,7 @@ Result ArticArchive::CreateFile(const Path& path, u64 size, u32 attributes) cons
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::CreateDirectory(const Path& path, u32 attributes) const {
+HLE::Result ArticArchive::CreateDirectory(const Path& path, u32 attributes) const {
     auto req = client->NewRequest("FSUSER_CreateDirectory");
 
     req.AddParameterS64(archive_handle);
@@ -238,7 +238,7 @@ Result ArticArchive::CreateDirectory(const Path& path, u32 attributes) const {
     return RespResult(client->Send(req));
 }
 
-Result ArticArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
+HLE::Result ArticArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
     cache_provider->ClearAllCache();
 
     auto req = client->NewRequest("FSUSER_RenameDirectory");
@@ -292,7 +292,7 @@ u64 ArticArchive::GetFreeBytes() const {
     return free_bytes_opt.has_value() ? static_cast<u64>(*free_bytes_opt) : 0;
 }
 
-Result ArticArchive::Control(u32 action, u8* input, size_t input_size, u8* output,
+HLE::Result ArticArchive::Control(u32 action, u8* input, size_t input_size, u8* output,
                              size_t output_size) {
     auto req = client->NewRequest("FSUSER_ControlArchive");
 
@@ -317,7 +317,7 @@ Result ArticArchive::Control(u32 action, u8* input, size_t input_size, u8* outpu
     return res;
 }
 
-Result ArticArchive::SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) {
+HLE::Result ArticArchive::SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) {
     auto req = client->NewRequest("FSUSER_SetSaveDataSecureValue");
 
     req.AddParameterS64(archive_handle);
@@ -398,9 +398,9 @@ ResultVal<std::size_t> ArticFileBackend::Read(u64 offset, std::size_t length, u8
         req.AddParameterS32(static_cast<s32>(to_read));
         auto resp = client->Send(req);
         if (!resp.has_value() || !resp->Succeeded())
-            return Result(-1);
+            return HLE::Result(-1);
 
-        auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+        auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
         if (res.IsError())
             return res;
 
@@ -439,15 +439,15 @@ ResultVal<std::size_t> ArticFileBackend::Write(u64 offset, std::size_t length, b
             req.AddParameterBuffer(buffer + written_amount, to_write);
             auto resp = client->Send(req);
             if (!resp.has_value() || !resp->Succeeded())
-                return Result(-1);
+                return HLE::Result(-1);
 
-            auto res = Result(static_cast<u32>(resp->GetMethodResult()));
+            auto res = HLE::Result(static_cast<u32>(resp->GetMethodResult()));
             if (res.IsError())
                 return res;
 
             auto actually_written_opt = resp->GetResponseS32(0);
             if (!actually_written_opt.has_value())
-                return Result(-1);
+                return HLE::Result(-1);
 
             size_t actually_written = static_cast<size_t>(actually_written_opt.value());
 

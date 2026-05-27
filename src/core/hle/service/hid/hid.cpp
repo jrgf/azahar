@@ -438,7 +438,7 @@ void Module::Interface::EnableAccelerometer(Kernel::HLERequestContext& ctx) {
         if (!resp.has_value()) {
             rb.Push(ResultUnknown);
         } else {
-            rb.Push(Result{static_cast<u32>(resp->GetMethodResult())});
+            rb.Push(HLE::Result{static_cast<u32>(resp->GetMethodResult())});
         }
     } else {
         rb.Push(ResultSuccess);
@@ -469,7 +469,7 @@ void Module::Interface::DisableAccelerometer(Kernel::HLERequestContext& ctx) {
         if (!resp.has_value()) {
             rb.Push(ResultUnknown);
         } else {
-            rb.Push(Result{static_cast<u32>(resp->GetMethodResult())});
+            rb.Push(HLE::Result{static_cast<u32>(resp->GetMethodResult())});
         }
     } else {
         rb.Push(ResultSuccess);
@@ -499,7 +499,7 @@ void Module::Interface::EnableGyroscopeLow(Kernel::HLERequestContext& ctx) {
         if (!resp.has_value()) {
             rb.Push(ResultUnknown);
         } else {
-            rb.Push(Result{static_cast<u32>(resp->GetMethodResult())});
+            rb.Push(HLE::Result{static_cast<u32>(resp->GetMethodResult())});
         }
     } else {
         rb.Push(ResultSuccess);
@@ -529,7 +529,7 @@ void Module::Interface::DisableGyroscopeLow(Kernel::HLERequestContext& ctx) {
         if (!resp.has_value()) {
             rb.Push(ResultUnknown);
         } else {
-            rb.Push(Result{static_cast<u32>(resp->GetMethodResult())});
+            rb.Push(HLE::Result{static_cast<u32>(resp->GetMethodResult())});
         }
     } else {
         rb.Push(ResultSuccess);
@@ -562,7 +562,7 @@ void Module::Interface::GetGyroscopeLowRawToDpsCoefficient(Kernel::HLERequestCon
             return;
         }
 
-        Result res = Result{static_cast<u32>(resp->GetMethodResult())};
+        HLE::Result res = HLE::Result{static_cast<u32>(resp->GetMethodResult())};
         if (res.IsError()) {
             rb.Push(res);
             rb.Push(0.f);
@@ -603,7 +603,7 @@ void Module::Interface::GetGyroscopeLowCalibrateParam(Kernel::HLERequestContext&
             return;
         }
 
-        Result res = Result{static_cast<u32>(resp->GetMethodResult())};
+        HLE::Result res = HLE::Result{static_cast<u32>(resp->GetMethodResult())};
         if (res.IsError()) {
             rb.Push(res);
             rb.PushRaw(param);

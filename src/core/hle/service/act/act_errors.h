@@ -608,6 +608,6 @@ enum {
 }
 
 /// Gets the ACT error code for the given result
-u32 GetACTErrorCode(Result result);
+u32 GetACTErrorCode(HLE::Result result);
 
 } // namespace Service::ACT

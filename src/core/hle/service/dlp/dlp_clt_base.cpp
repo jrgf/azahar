@@ -124,7 +124,7 @@ void DLP_Clt_Base::StartScan(Kernel::HLERequestContext& ctx) {
 
     // start beacon worker
     if (!IsIdling()) {
-        rb.Push(Result(0x1, ErrorModule::DLP, ErrorSummary::InvalidState, ErrorLevel::Usage));
+        rb.Push(HLE::Result(0x1, ErrorModule::DLP, ErrorSummary::InvalidState, ErrorLevel::Usage));
         return;
     }
 
@@ -179,7 +179,7 @@ void DLP_Clt_Base::GetTitleInfo(Kernel::HLERequestContext& ctx) {
 
     if (!TitleInfoIsCached(mac_addr)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -206,7 +206,7 @@ void DLP_Clt_Base::GetTitleInfoInOrder(Kernel::HLERequestContext& ctx) {
 
     if (title_info_index >= scanned_title_info.size()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -231,7 +231,7 @@ void DLP_Clt_Base::DeleteScanInfo(Kernel::HLERequestContext& ctx) {
 
     if (!TitleInfoIsCached(mac_addr)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -251,7 +251,7 @@ void DLP_Clt_Base::GetServerInfo(Kernel::HLERequestContext& ctx) {
 
     if (!TitleInfoIsCached(mac_addr)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -273,7 +273,7 @@ public:
         IPC::RequestBuilder rb(ctx, 1, 0);
 
         if (!p_obj->OnConnectCallback()) {
-            rb.Push(Result(ErrorDescription::Timeout, ErrorModule::DLP, ErrorSummary::Canceled,
+            rb.Push(HLE::Result(ErrorDescription::Timeout, ErrorModule::DLP, ErrorSummary::Canceled,
                            ErrorLevel::Status));
             return;
         }
@@ -320,12 +320,12 @@ void DLP_Clt_Base::StartSession(Kernel::HLERequestContext& ctx) {
 
     if (!IsIdling()) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(0x1, ErrorModule::DLP, ErrorSummary::InvalidState, ErrorLevel::Usage));
+        rb.Push(HLE::Result(0x1, ErrorModule::DLP, ErrorSummary::InvalidState, ErrorLevel::Usage));
         return;
     }
     if (!TitleInfoIsCached(mac_addr)) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -419,7 +419,7 @@ void DLP_Clt_Base::GetNodeInfo(Kernel::HLERequestContext& ctx) {
         LOG_ERROR(Service_DLP, "Could not get node info for network node id 0x{:x}",
                   network_node_id);
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }

@@ -23,10 +23,10 @@ bool Applet::IsActive() const {
     return is_active;
 }
 
-Result Applet::ReceiveParameter(const Service::APT::MessageParameter& parameter) {
+HLE::Result Applet::ReceiveParameter(const Service::APT::MessageParameter& parameter) {
     switch (parameter.signal) {
     case Service::APT::SignalType::Wakeup: {
-        Result result = Start(parameter);
+        HLE::Result result = Start(parameter);
         if (!result.IsError()) {
             is_active = true;
         }

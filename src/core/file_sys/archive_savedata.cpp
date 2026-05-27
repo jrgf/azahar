@@ -21,7 +21,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SaveData::Open(const P
     return sd_savedata_source->Open(Service::FS::ArchiveIdCode::SaveData, path, program_id);
 }
 
-Result ArchiveFactory_SaveData::Format(const Path& path,
+HLE::Result ArchiveFactory_SaveData::Format(const Path& path,
                                        const FileSys::ArchiveFormatInfo& format_info,
                                        u64 program_id, u32 directory_buckets, u32 file_buckets) {
     return sd_savedata_source->Format(program_id, format_info, Service::FS::ArchiveIdCode::SaveData,

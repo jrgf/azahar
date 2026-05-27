@@ -135,37 +135,37 @@ public:
         }
     }
 
-    Result DeleteFile(const Path& path) const override {
+    HLE::Result DeleteFile(const Path& path) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result RenameFile(const Path& src_path, const Path& dest_path) const override {
+    HLE::Result RenameFile(const Path& src_path, const Path& dest_path) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result DeleteDirectory(const Path& path) const override {
+    HLE::Result DeleteDirectory(const Path& path) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result DeleteDirectoryRecursively(const Path& path) const override {
+    HLE::Result DeleteDirectoryRecursively(const Path& path) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result CreateFile(const Path& path, u64 size, u32 attributes) const override {
+    HLE::Result CreateFile(const Path& path, u64 size, u32 attributes) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result CreateDirectory(const Path& path, u32 attributes) const override {
+    HLE::Result CreateDirectory(const Path& path, u32 attributes) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
 
-    Result RenameDirectory(const Path& src_path, const Path& dest_path) const override {
+    HLE::Result RenameDirectory(const Path& src_path, const Path& dest_path) const override {
         LOG_ERROR(Service_FS, "Unsupported");
         return ResultUnsupportedOpenFlags;
     }
@@ -297,7 +297,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SelfNCCH::Open(const P
     return std::make_unique<SelfNCCHArchive>(ncch_data[program_id]);
 }
 
-Result ArchiveFactory_SelfNCCH::Format(const Path&, const FileSys::ArchiveFormatInfo&,
+HLE::Result ArchiveFactory_SelfNCCH::Format(const Path&, const FileSys::ArchiveFormatInfo&,
                                        u64 program_id, u32 directory_buckets, u32 file_buckets) {
     LOG_ERROR(Service_FS, "Attempted to format a SelfNCCH archive.");
     return ResultInvalidPath;

@@ -31,42 +31,42 @@ public:
     void Initialize();
     void Finalize();
 
-    Result StartCommunication();
-    Result StopCommunication();
-    Result StartDetection(TagProtocol allowed_protocol);
-    Result StopDetection();
-    Result Mount();
-    Result MountAmiibo();
-    Result PartiallyMount();
-    Result PartiallyMountAmiibo();
-    Result ResetTagScanState();
-    Result Flush();
+    HLE::Result StartCommunication();
+    HLE::Result StopCommunication();
+    HLE::Result StartDetection(TagProtocol allowed_protocol);
+    HLE::Result StopDetection();
+    HLE::Result Mount();
+    HLE::Result MountAmiibo();
+    HLE::Result PartiallyMount();
+    HLE::Result PartiallyMountAmiibo();
+    HLE::Result ResetTagScanState();
+    HLE::Result Flush();
 
-    Result GetTagInfo2(TagInfo2& tag_info) const;
-    Result GetTagInfo(TagInfo& tag_info) const;
-    Result GetCommonInfo(CommonInfo& common_info) const;
-    Result GetModelInfo(ModelInfo& model_info) const;
-    Result GetRegisterInfo(RegisterInfo& register_info) const;
-    Result GetAdminInfo(AdminInfo& admin_info) const;
+    HLE::Result GetTagInfo2(TagInfo2& tag_info) const;
+    HLE::Result GetTagInfo(TagInfo& tag_info) const;
+    HLE::Result GetCommonInfo(CommonInfo& common_info) const;
+    HLE::Result GetModelInfo(ModelInfo& model_info) const;
+    HLE::Result GetRegisterInfo(RegisterInfo& register_info) const;
+    HLE::Result GetAdminInfo(AdminInfo& admin_info) const;
 
-    Result DeleteRegisterInfo();
-    Result SetRegisterInfoPrivate(const RegisterInfoPrivate& register_info);
-    Result RestoreAmiibo();
-    Result Format();
+    HLE::Result DeleteRegisterInfo();
+    HLE::Result SetRegisterInfoPrivate(const RegisterInfoPrivate& register_info);
+    HLE::Result RestoreAmiibo();
+    HLE::Result Format();
 
-    Result OpenApplicationArea(u32 access_id);
-    Result GetApplicationAreaId(u32& application_area_id) const;
-    Result GetApplicationArea(std::vector<u8>& data) const;
-    Result SetApplicationArea(std::span<const u8> data);
-    Result CreateApplicationArea(u32 access_id, std::span<const u8> data);
-    Result RecreateApplicationArea(u32 access_id, std::span<const u8> data);
-    Result DeleteApplicationArea();
-    Result ApplicationAreaExist(bool& has_application_area);
+    HLE::Result OpenApplicationArea(u32 access_id);
+    HLE::Result GetApplicationAreaId(u32& application_area_id) const;
+    HLE::Result GetApplicationArea(std::vector<u8>& data) const;
+    HLE::Result SetApplicationArea(std::span<const u8> data);
+    HLE::Result CreateApplicationArea(u32 access_id, std::span<const u8> data);
+    HLE::Result RecreateApplicationArea(u32 access_id, std::span<const u8> data);
+    HLE::Result DeleteApplicationArea();
+    HLE::Result ApplicationAreaExist(bool& has_application_area);
 
     constexpr u32 GetApplicationAreaSize() const;
     DeviceState GetCurrentState() const;
-    Result GetCommunicationStatus(CommunicationState& status) const;
-    Result CheckConnectionState() const;
+    HLE::Result GetCommunicationStatus(CommunicationState& status) const;
+    HLE::Result CheckConnectionState() const;
 
     std::shared_ptr<Kernel::Event> GetActivateEvent() const;
     std::shared_ptr<Kernel::Event> GetDeactivateEvent() const;

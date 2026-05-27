@@ -17,9 +17,9 @@ public:
     /**
      * Handles a parameter from the application.
      * @param parameter Parameter data to handle.
-     * @returns Result Whether the operation was successful or not.
+     * @returns HLE::Result Whether the operation was successful or not.
      */
-    Result ReceiveParameter(const Service::APT::MessageParameter& parameter);
+    HLE::Result ReceiveParameter(const Service::APT::MessageParameter& parameter);
 
     /**
      * Whether the applet is currently running.
@@ -44,22 +44,22 @@ protected:
     /**
      * Handles a parameter from the application.
      * @param parameter Parameter data to handle.
-     * @returns Result Whether the operation was successful or not.
+     * @returns HLE::Result Whether the operation was successful or not.
      */
-    virtual Result ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) = 0;
+    virtual HLE::Result ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) = 0;
 
     /**
      * Handles the Applet start event, triggered from the application.
      * @param parameter Parameter data to handle.
-     * @returns Result Whether the operation was successful or not.
+     * @returns HLE::Result Whether the operation was successful or not.
      */
-    virtual Result Start(const Service::APT::MessageParameter& parameter) = 0;
+    virtual HLE::Result Start(const Service::APT::MessageParameter& parameter) = 0;
 
     /**
      * Sends the LibAppletClosing signal to the application,
      * along with the relevant data buffers.
      */
-    virtual Result Finalize() = 0;
+    virtual HLE::Result Finalize() = 0;
 
     Core::System& system;
 

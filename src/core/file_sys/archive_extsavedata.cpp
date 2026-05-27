@@ -293,7 +293,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_ExtSaveData::Open(cons
     }
 }
 
-Result ArchiveFactory_ExtSaveData::FormatAsExtData(const Path& path,
+HLE::Result ArchiveFactory_ExtSaveData::FormatAsExtData(const Path& path,
                                                    const FileSys::ArchiveFormatInfo& format_info,
                                                    u8 unknown, u64 program_id, u64 total_size,
                                                    std::optional<std::span<const u8>> icon) {
@@ -351,7 +351,7 @@ Result ArchiveFactory_ExtSaveData::FormatAsExtData(const Path& path,
     }
 }
 
-Result ArchiveFactory_ExtSaveData::DeleteExtData(Service::FS::MediaType media_type, u8 unknown,
+HLE::Result ArchiveFactory_ExtSaveData::DeleteExtData(Service::FS::MediaType media_type, u8 unknown,
                                                  u32 high, u32 low) {
     if (IsUsingArtic()) {
         Service::FS::ExtSaveDataInfo artic_extdata_path;
@@ -401,7 +401,7 @@ ResultVal<ArchiveFormatInfo> ArchiveFactory_ExtSaveData::GetFormatInfo(const Pat
         req.AddParameterBuffer(path_artic.data(), path_artic.size());
 
         auto resp = artic_client->Send(req);
-        Result res = ArticArchive::RespResult(resp);
+        HLE::Result res = ArticArchive::RespResult(resp);
         if (R_FAILED(res)) {
             return res;
         }

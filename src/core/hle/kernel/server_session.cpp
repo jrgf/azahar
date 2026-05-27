@@ -77,7 +77,7 @@ void ServerSession::Acquire(Thread* thread) {
     pending_requesting_threads.pop_back();
 }
 
-Result ServerSession::HandleSyncRequest(std::shared_ptr<Thread> thread) {
+HLE::Result ServerSession::HandleSyncRequest(std::shared_ptr<Thread> thread) {
     // The ServerSession received a sync request, this means that there's new data available
     // from its ClientSession, so wake up any threads that may be waiting on a svcReplyAndReceive or
     // similar.

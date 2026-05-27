@@ -71,7 +71,7 @@ public:
          *     2 : (Size<<14) | 2
          *     3 : Wireless reboot info buffer ptr
          * Outputs:
-         *     0 : Result of function, 0 on success, otherwise error code
+         *     0 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetWirelessRebootInfo(Kernel::HLERequestContext& ctx);
 
@@ -82,7 +82,7 @@ public:
          * Inputs:
          *     1 : None
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void ShutdownAsync(Kernel::HLERequestContext& ctx);
 
@@ -95,7 +95,7 @@ public:
          *     5 : Padding
          *     6 : Launch memory type
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void RebootSystem(Kernel::HLERequestContext& ctx);
 
@@ -104,7 +104,7 @@ public:
          * Inputs:
          *     1 : None
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void RebootSystemClean(Kernel::HLERequestContext& ctx);
     };
@@ -121,7 +121,7 @@ public:
          * APT::Initialize service function
          * Service function that initializes the APT process for the running application
          *  Outputs:
-         *      1 : Result of the function, 0 on success, otherwise error code
+         *      1 : HLE::Result of the function, 0 on success, otherwise error code
          *      3 : Handle to the notification event
          *      4 : Handle to the pause event
          */
@@ -130,7 +130,7 @@ public:
         /**
          * APT::GetSharedFont service function
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Virtual address of where shared font will be loaded in memory
          *      4 : Handle to shared font memory
          */
@@ -148,7 +148,7 @@ public:
          *      7 : Buffer mapping descriptor ((input_buffer_size << 4) | 0xC)
          *      8 : Output buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Buffer unmapping descriptor ((input_buffer_size << 4) | 0xA)
          *      3 : Input buffer address
          *      4 : Buffer unmapping descriptor ((input_buffer_size << 4) | 0xC)
@@ -168,7 +168,7 @@ public:
          *      7 : Buffer mapping descriptor ((input_buffer_size << 4) | 0xC)
          *      8 : Output buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Buffer unmapping descriptor ((input_buffer_size << 4) | 0xA)
          *      3 : Input buffer address
          *      4 : Buffer unmapping descriptor ((input_buffer_size << 4) | 0xC)
@@ -181,7 +181,7 @@ public:
          *  Inputs:
          *      1 : size
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Output parameter buffer ptr
          */
         void GetWirelessRebootInfo(Kernel::HLERequestContext& ctx);
@@ -191,7 +191,7 @@ public:
          *  Inputs:
          *      1 : AppID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void NotifyToWait(Kernel::HLERequestContext& ctx);
 
@@ -200,7 +200,7 @@ public:
          *  Inputs:
          *      1 : Applet attributes
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Applet attributes
          *      3 : Power button state
          *      4 : IPC handle descriptor
@@ -213,7 +213,7 @@ public:
          *  Inputs:
          *      1 : Applet attributes
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Enable(Kernel::HLERequestContext& ctx);
 
@@ -222,7 +222,7 @@ public:
          *  Inputs:
          *      1 : Applet ID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Finalize(Kernel::HLERequestContext& ctx);
 
@@ -231,7 +231,7 @@ public:
          *  Inputs:
          *      1 : Unknown
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Unknown u32 value
          *      3 : Unknown u8 value
          *      4 : Home Menu AppId
@@ -244,7 +244,7 @@ public:
          *  Inputs:
          *      1 : AppId
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2-3 : Title ID
          *      4 : Media Type
          *      5 : Registered
@@ -257,7 +257,7 @@ public:
          * APT::CountRegisteredApplet service function
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Number of registered applets
          */
         void CountRegisteredApplet(Kernel::HLERequestContext& ctx);
@@ -273,7 +273,7 @@ public:
          *      1 : AppID
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Output, 0 = not registered, 1 = registered.
          */
         void IsRegistered(Kernel::HLERequestContext& ctx);
@@ -284,7 +284,7 @@ public:
          *      1 : AppID
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Applet Attributes
          */
         void GetAttribute(Kernel::HLERequestContext& ctx);
@@ -305,7 +305,7 @@ public:
          *     8 : Input parameter buffer ptr
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SendParameter(Kernel::HLERequestContext& ctx);
 
@@ -319,7 +319,7 @@ public:
          *      1 : AppID
          *      2 : Parameter buffer size, max size is 0x1000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : AppID of the process which sent these parameters
          *      3 : Signal type
          *      4 : Actual parameter buffer size, this is <= to the the input size
@@ -340,7 +340,7 @@ public:
          *      1 : AppID
          *      2 : Parameter buffer size, max size is 0x1000
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Unknown, for now assume AppID of the process which sent these parameters
          *      3 : Unknown, for now assume Signal type
          *      4 : Actual parameter buffer size, this is <= to the the input size
@@ -369,7 +369,7 @@ public:
          *      4 : AppID
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Status flag, 0 = failure due to no parameter data being available, or the above
          * enabled
          *          fields don't match the fields in NS state. 1 = success.
@@ -389,7 +389,7 @@ public:
          *      4 : Flags
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void PrepareToStartApplication(Kernel::HLERequestContext& ctx);
 
@@ -406,7 +406,7 @@ public:
          *     7 : Buffer 1 pointer
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StartApplication(Kernel::HLERequestContext& ctx);
 
@@ -416,7 +416,7 @@ public:
          *      0 : Command header [0x001C0000]
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void WakeupApplication(Kernel::HLERequestContext& ctx);
 
@@ -426,7 +426,7 @@ public:
          *      0 : Command header [0x001D0000]
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CancelApplication(Kernel::HLERequestContext& ctx);
 
@@ -439,7 +439,7 @@ public:
          *      5 : Buffer 1 address (purpose is unknown)
          *      65 : Buffer 2 address (purpose is unknown)
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void AppletUtility(Kernel::HLERequestContext& ctx);
 
@@ -449,7 +449,7 @@ public:
          *      1 : Value, must be one
          *      2 : Percentage of CPU time from 5 to 80
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetAppCpuTimeLimit(Kernel::HLERequestContext& ctx);
 
@@ -459,7 +459,7 @@ public:
          *      1 : Value, must be one
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : System core CPU time percentage
          */
         void GetAppCpuTimeLimit(Kernel::HLERequestContext& ctx);
@@ -471,7 +471,7 @@ public:
          *      1 : Id of the applet to start
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void PrepareToStartLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -482,7 +482,7 @@ public:
          *      1 : Id of the applet to start
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void PrepareToStartSystemApplet(Kernel::HLERequestContext& ctx);
 
@@ -492,7 +492,7 @@ public:
          *      0 : Command header [0x001A0000]
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function
+         *      1 : HLE::Result of function
          */
         void PrepareToStartNewestHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -503,7 +503,7 @@ public:
          *      1 : Id of the applet to start
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void PreloadLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -514,7 +514,7 @@ public:
          *      1 : Id of the applet
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void FinishPreloadingLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -530,7 +530,7 @@ public:
          *      6 : Input buffer virtual address
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StartLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -546,7 +546,7 @@ public:
          *      6 : Input buffer virtual address
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StartSystemApplet(Kernel::HLERequestContext& ctx);
 
@@ -561,7 +561,7 @@ public:
          *      5 : void*, Parameters
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void StartNewestHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -571,7 +571,7 @@ public:
          *      0 : Command header [0x00210000]
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void OrderToCloseApplication(Kernel::HLERequestContext& ctx);
 
@@ -582,7 +582,7 @@ public:
          *      1 : Boolean indicating whether to cancel applet preloads.
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void PrepareToCloseApplication(Kernel::HLERequestContext& ctx);
 
@@ -596,7 +596,7 @@ public:
          *      4 : (Parameters Size << 14) | 2
          *      5 : void*, Parameters
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void CloseApplication(Kernel::HLERequestContext& ctx);
 
@@ -609,7 +609,7 @@ public:
          *      3 : Program ID high
          *      4 : Media type
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          * @param ctx
          */
         void PrepareToDoApplicationJump(Kernel::HLERequestContext& ctx);
@@ -625,7 +625,7 @@ public:
          *      5 : (HMAC Size << 14) | 0x802
          *      6 : void*, HMAC
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void DoApplicationJump(Kernel::HLERequestContext& ctx);
 
@@ -635,7 +635,7 @@ public:
          *      0 : Command header [0x00330000]
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : Current Application title id
          *      4 : Current Application media type
          *    5-6 : Next Application title id to jump to
@@ -654,7 +654,7 @@ public:
          *      5 : (HMAC Size << 14) | 0x802
          *      6 : Input buffer for HMAC
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SendDeliverArg(Kernel::HLERequestContext& ctx);
 
@@ -669,7 +669,7 @@ public:
          *     66 : (HMAC Size << 14) | 0x802
          *     67 : Output buffer for HMAC
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : Source program id
          *      4 : u8, whether the arg is received (0 = not received, 1 = received)
          */
@@ -682,7 +682,7 @@ public:
          *      1 : u8, Application exiting (0 = not exiting, 1 = exiting)
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void CancelLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -695,7 +695,7 @@ public:
          *      3 : bool, Jump to home
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void PrepareToCloseLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -705,7 +705,7 @@ public:
          *      0 : Command header [0x00260000]
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void PrepareToCloseSystemApplet(Kernel::HLERequestContext& ctx);
 
@@ -720,7 +720,7 @@ public:
          *      5 : Input buffer virtual address
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void CloseLibraryApplet(Kernel::HLERequestContext& ctx);
 
@@ -735,7 +735,7 @@ public:
          *      5 : Input buffer virtual address
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void CloseSystemApplet(Kernel::HLERequestContext& ctx);
 
@@ -745,7 +745,7 @@ public:
          *      0 : Command header [0x002A0000]
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void OrderToCloseSystemApplet(Kernel::HLERequestContext& ctx);
 
@@ -757,7 +757,7 @@ public:
          *      3 : Handle parameter
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void SendDspSleep(Kernel::HLERequestContext& ctx);
 
@@ -769,7 +769,7 @@ public:
          *      3 : Handle parameter
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void SendDspWakeUp(Kernel::HLERequestContext& ctx);
 
@@ -780,7 +780,7 @@ public:
          *      2 : Reply Value
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void ReplySleepQuery(Kernel::HLERequestContext& ctx);
 
@@ -790,7 +790,7 @@ public:
          *      1 : Source App ID
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void ReplySleepNotificationComplete(Kernel::HLERequestContext& ctx);
 
@@ -800,7 +800,7 @@ public:
          *      0 : Command header [0x002B0000]
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void PrepareToJumpToHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -815,7 +815,7 @@ public:
          *      5 : Input buffer virtual address
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void JumpToHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -825,7 +825,7 @@ public:
          *      0 : Command header [0x002B0000]
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void PrepareToLeaveHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -840,7 +840,7 @@ public:
          *      5 : Input buffer virtual address
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void LeaveHomeMenu(Kernel::HLERequestContext& ctx);
 
@@ -851,7 +851,7 @@ public:
          *      1 : Buffer size
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          *     64 : Size << 14 | 2
          *     65 : void* Output Buffer
          */
@@ -866,7 +866,7 @@ public:
          *      3 : Input buffer virtual address
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void StoreSysMenuArg(Kernel::HLERequestContext& ctx);
 
@@ -879,7 +879,7 @@ public:
          *      3 : void*, CaptureBufferInfo
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          */
         void SendCaptureBufferInfo(Kernel::HLERequestContext& ctx);
 
@@ -892,7 +892,7 @@ public:
          *      65 : void*, CaptureBufferInfo
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          *      2 : Actual Size
          */
         void ReceiveCaptureBufferInfo(Kernel::HLERequestContext& ctx);
@@ -906,7 +906,7 @@ public:
          *      65 : void*, CaptureBufferInfo
          *  Outputs:
          *      0 : Header code
-         *      1 : Result code
+         *      1 : HLE::Result code
          *      2 : Actual Size
          */
         void GetCaptureInfo(Kernel::HLERequestContext& ctx);
@@ -919,7 +919,7 @@ public:
          *      65 : Output buffer for startup argument
          *  Outputs:
          *      0 : Return header
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8, Exists (0 = does not exist, 1 = exists)
          */
         void GetStartupArgument(Kernel::HLERequestContext& ctx);
@@ -930,7 +930,7 @@ public:
          *      0 : Header Code[0x00540040]
          *      1 : Unknown
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Media Type
          */
         void Unknown54(Kernel::HLERequestContext& ctx);
@@ -941,7 +941,7 @@ public:
          *      0 : Header Code[0x00550040]
          *      1 : u8 The screenshot posting permission
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void SetScreenCapturePostPermission(Kernel::HLERequestContext& ctx);
 
@@ -950,7 +950,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x00560000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : u8 The screenshot posting permission
          */
         void GetScreenCapturePostPermission(Kernel::HLERequestContext& ctx);
@@ -965,7 +965,7 @@ public:
          *     5 : Buffer parameter pointer
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void WakeupApplication2(Kernel::HLERequestContext& ctx);
 
@@ -976,7 +976,7 @@ public:
          *     2 : Process ID (filled in by kernel)
          * Outputs:
          *     0 : Return Header
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          *     2-3 : u64 Program ID
          */
         void GetProgramId(Kernel::HLERequestContext& ctx);
@@ -988,7 +988,7 @@ public:
          *     3 : Media Type
          *     4 : Padding
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          *     2 : Required app memory mode
          *     3 : Required app FIRM title ID low
          */
@@ -1003,21 +1003,21 @@ public:
          *     5 : Launch memory type
          *     6 : FIRM title ID low 32-bits
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Reboot(Kernel::HLERequestContext& ctx);
 
         /**
          * APT::HardwareResetAsync service function.
          * Outputs:
-         *     1 : Result of function, 0 on success, otherwise error code
+         *     1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void HardwareResetAsync(Kernel::HLERequestContext& ctx);
 
         /**
          * APT::GetTargetPlatform service function
          *  Outputs:
-         *      1: Result code, 0 on success, otherwise error code
+         *      1: HLE::Result code, 0 on success, otherwise error code
          *      2: u8 output: 0 = Old3DS, 1 = New3DS.
          *  Note:
          *  This uses PTMSYSM:CheckNew3DS.
@@ -1032,7 +1032,7 @@ public:
          * Wrapper for PTMSYSM:CheckNew3DS
          * APT::CheckNew3DS service function
          *  Outputs:
-         *      1: Result code, 0 on success, otherwise error code
+         *      1: HLE::Result code, 0 on success, otherwise error code
          *      2: u8 output: 0 = Old3DS, 1 = New3DS.
          */
         void CheckNew3DS(Kernel::HLERequestContext& ctx);
@@ -1040,7 +1040,7 @@ public:
         /**
          * APT::GetApplicationRunningMode service function
          *  Outputs:
-         *      1: Result code, 0 on success otherwise error code
+         *      1: HLE::Result code, 0 on success otherwise error code
          *      2: u8 output: 0 = No application, 1/3 = Old 3DS, 2/4 = New 3DS
          */
         void GetApplicationRunningMode(Kernel::HLERequestContext& ctx);
@@ -1048,7 +1048,7 @@ public:
         /**
          * APT::IsStandardMemoryLayout service function
          *  Outputs:
-         *      1: Result code, 0 on success otherwise error code
+         *      1: HLE::Result code, 0 on success otherwise error code
          *      2: bool output: Whether the system is in its standard memory layout.
          */
         void IsStandardMemoryLayout(Kernel::HLERequestContext& ctx);
@@ -1061,7 +1061,7 @@ public:
          *      3 : Media type
          *      4 : Padding
          *  Outputs:
-         *      1: Result code, 0 on success, otherwise error code
+         *      1: HLE::Result code, 0 on success, otherwise error code
          *      2: u8 output, 0 if the title is not allowed, 1 if it is
          */
         void IsTitleAllowed(Kernel::HLERequestContext& ctx);

@@ -117,9 +117,9 @@ constexpr Reg32 LOOPCOUNT_REG = r12d;
 constexpr Reg32 LOOPCOUNT = esi;
 /// Number to increment LOOPCOUNT_REG by on each loop iteration (Multiplied by 16)
 constexpr Reg32 LOOPINC = edi;
-/// Result of the previous CMP instruction for the X-component comparison
+/// Condition result from the previous CMP instruction for the X-component comparison
 constexpr Reg64 COND0 = r13;
-/// Result of the previous CMP instruction for the Y-component comparison
+/// Condition result from the previous CMP instruction for the Y-component comparison
 constexpr Reg64 COND1 = r14;
 /// Pointer to the ShaderUnit instance for the current VS unit
 constexpr Reg64 STATE = r15;

@@ -120,9 +120,9 @@ struct ConversionConfiguration {
     /// Output parameters for the conversion results
     ConversionBuffer dst;
 
-    Result SetInputLineWidth(u16 width);
-    Result SetInputLines(u16 lines);
-    Result SetStandardCoefficient(StandardCoefficient standard_coefficient);
+    HLE::Result SetInputLineWidth(u16 width);
+    HLE::Result SetInputLines(u16 lines);
+    HLE::Result SetStandardCoefficient(StandardCoefficient standard_coefficient);
 
 private:
     template <class Archive>
@@ -219,14 +219,14 @@ private:
      *  Inputs:
      *      1 : u8, 0 = Disabled, 1 = Enabled
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetSpacialDithering(Kernel::HLERequestContext& ctx);
 
     /**
      * Y2R_U::GetSpacialDithering service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, 0 = Disabled, 1 = Enabled
      */
     void GetSpacialDithering(Kernel::HLERequestContext& ctx);
@@ -236,14 +236,14 @@ private:
      *  Inputs:
      *      1 : u8, 0 = Disabled, 1 = Enabled
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetTemporalDithering(Kernel::HLERequestContext& ctx);
 
     /**
      * Y2R_U::GetTemporalDithering service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, 0 = Disabled, 1 = Enabled
      */
     void GetTemporalDithering(Kernel::HLERequestContext& ctx);
@@ -253,14 +253,14 @@ private:
      *  Inputs:
      *      1 : u8, 0 = Disabled, 1 = Enabled
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetTransferEndInterrupt(Kernel::HLERequestContext& ctx);
 
     /**
      * Y2R_U::GetTransferEndInterrupt service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : u8, 0 = Disabled, 1 = Enabled
      */
     void GetTransferEndInterrupt(Kernel::HLERequestContext& ctx);
@@ -268,7 +268,7 @@ private:
     /**
      * Y2R_U::GetTransferEndEvent service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      3 : The handle of the completion event
      */
     void GetTransferEndEvent(Kernel::HLERequestContext& ctx);
@@ -281,7 +281,7 @@ private:
     /**
      * Y2R::IsFinishedSendingYuv service function
      * Output:
-     *       1 : Result of the function, 0 on success, otherwise error code
+     *       1 : HLE::Result of the function, 0 on success, otherwise error code
      *       2 : u8, 0 = Not Finished, 1 = Finished
      */
     void IsFinishedSendingYuv(Kernel::HLERequestContext& ctx);
@@ -289,7 +289,7 @@ private:
     /**
      * Y2R::IsFinishedSendingY service function
      * Output:
-     *       1 : Result of the function, 0 on success, otherwise error code
+     *       1 : HLE::Result of the function, 0 on success, otherwise error code
      *       2 : u8, 0 = Not Finished, 1 = Finished
      */
     void IsFinishedSendingY(Kernel::HLERequestContext& ctx);
@@ -297,7 +297,7 @@ private:
     /**
      * Y2R::IsFinishedSendingU service function
      * Output:
-     *       1 : Result of the function, 0 on success, otherwise error code
+     *       1 : HLE::Result of the function, 0 on success, otherwise error code
      *       2 : u8, 0 = Not Finished, 1 = Finished
      */
     void IsFinishedSendingU(Kernel::HLERequestContext& ctx);
@@ -305,7 +305,7 @@ private:
     /**
      * Y2R::IsFinishedSendingV service function
      * Output:
-     *       1 : Result of the function, 0 on success, otherwise error code
+     *       1 : HLE::Result of the function, 0 on success, otherwise error code
      *       2 : u8, 0 = Not Finished, 1 = Finished
      */
     void IsFinishedSendingV(Kernel::HLERequestContext& ctx);
@@ -315,7 +315,7 @@ private:
     /**
      * Y2R::IsFinishedReceiving service function
      * Output:
-     *       1 : Result of the function, 0 on success, otherwise error code
+     *       1 : HLE::Result of the function, 0 on success, otherwise error code
      *       2 : u8, 0 = Not Finished, 1 = Finished
      */
     void IsFinishedReceiving(Kernel::HLERequestContext& ctx);

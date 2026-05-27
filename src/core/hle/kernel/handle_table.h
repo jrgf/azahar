@@ -52,7 +52,7 @@ public:
      * @return The created Handle or one of the following errors:
      *           - `ResultOutOfHandles`: the maximum number of handles has been exceeded.
      */
-    Result Create(Handle* out_handle, std::shared_ptr<Object> obj);
+    HLE::Result Create(Handle* out_handle, std::shared_ptr<Object> obj);
 
     /**
      * Returns a new handle that points to the same object as the passed in handle.
@@ -60,14 +60,14 @@ public:
      *           - `ResultInvalidHandle`: an invalid handle was passed in.
      *           - Any errors returned by `Create()`.
      */
-    Result Duplicate(Handle* out_handle, Handle handle);
+    HLE::Result Duplicate(Handle* out_handle, Handle handle);
 
     /**
      * Closes a handle, removing it from the table and decreasing the object's ref-count.
      * @return `ResultSuccess` or one of the following errors:
      *           - `ResultInvalidHandle`: an invalid handle was passed in.
      */
-    Result Close(Handle handle);
+    HLE::Result Close(Handle handle);
 
     /// Checks if a handle is valid and points to an existing object.
     bool IsValid(Handle handle) const;

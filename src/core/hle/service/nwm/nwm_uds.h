@@ -171,7 +171,7 @@ private:
      *      1 : None
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Shutdown(Kernel::HLERequestContext& ctx);
 
@@ -182,7 +182,7 @@ private:
      *      0 : Command header.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void DestroyNetwork(Kernel::HLERequestContext& ctx);
 
@@ -193,7 +193,7 @@ private:
      *      0 : Command header.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void DisconnectNetwork(Kernel::HLERequestContext& ctx);
 
@@ -206,7 +206,7 @@ private:
      *      0 : Command header.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-13 : Channel of the current WiFi network connection.
      */
     void GetConnectionStatus(Kernel::HLERequestContext& ctx);
@@ -219,7 +219,7 @@ private:
      *      1 : Node ID.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2-11 : NodeInfo structure.
      */
     void GetNodeInformation(Kernel::HLERequestContext& ctx);
@@ -240,7 +240,7 @@ private:
      *     20 : Output buffer ptr
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2, 3: output buffer return descriptor & ptr
      */
     void RecvBeaconBroadcastData(Kernel::HLERequestContext& ctx);
@@ -254,7 +254,7 @@ private:
      *      3 : VAddr of the data.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Channel of the current WiFi network connection.
      */
     void SetApplicationData(Kernel::HLERequestContext& ctx);
@@ -266,7 +266,7 @@ private:
      *      1 : Data size.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, always 0
+     *      1 : HLE::Result of function, always 0
      *      2 : Actual data size
      */
     void GetApplicationData(Kernel::HLERequestContext& ctx);
@@ -281,7 +281,7 @@ private:
      *      4 : Network node id.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Copy handle descriptor.
      *      3 : Data available event handle.
      */
@@ -294,7 +294,7 @@ private:
      *      1 : BindNodeId
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Unbind(Kernel::HLERequestContext& ctx);
 
@@ -310,7 +310,7 @@ private:
      *     65 : Output buffer address
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Received data size
      *      3 : u16 Source network node id
      *      4 : Buffer descriptor
@@ -333,7 +333,7 @@ private:
      *      8 : Input buffer address
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SendTo(Kernel::HLERequestContext& ctx);
 
@@ -344,7 +344,7 @@ private:
      *      0 : Command header.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Channel of the current WiFi network connection.
      */
     void GetChannel(Kernel::HLERequestContext& ctx);
@@ -359,7 +359,7 @@ private:
      *     14 : Shared memory handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Value 0
      *      3 : Output event handle
      */
@@ -374,7 +374,7 @@ private:
      *     14 : Shared memory handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : Value 0
      *      3 : Output event handle
      */
@@ -389,7 +389,7 @@ private:
      *      5 : VAddr of the passphrase.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void BeginHostingNetwork(Kernel::HLERequestContext& ctx);
 
@@ -402,7 +402,7 @@ private:
      *      18 : VAddr of the passphrase.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void BeginHostingNetworkDeprecated(Kernel::HLERequestContext& ctx);
 
@@ -419,7 +419,7 @@ private:
      *      6 : Input passphrase buffer ptr
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ConnectToNetwork(Kernel::HLERequestContext& ctx);
 
@@ -435,7 +435,7 @@ private:
      *      19 : Input passphrase buffer ptr
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void ConnectToNetworkDeprecated(Kernel::HLERequestContext& ctx);
 
@@ -446,7 +446,7 @@ private:
      *      1 : Network node id
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void EjectClient(Kernel::HLERequestContext& ctx);
 
@@ -456,7 +456,7 @@ private:
      *      0 : Command header
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void EjectSpectators(Kernel::HLERequestContext& ctx);
 
@@ -474,7 +474,7 @@ private:
      *     65 : Output buffer ptr.
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2, 3: output buffer return descriptor & ptr
      */
     void DecryptBeaconData(Kernel::HLERequestContext& ctx);
@@ -500,11 +500,11 @@ private:
     std::unique_ptr<NodeInfo> GetNodeInformationHLE(u16 network_node_id);
     ResultStatus SendToHLE(u32 dest_node_id, u8 data_channel, u32 data_size, u8 flags,
                            std::vector<u8> input_buffer);
-    Result UpdateNetworkAttributeHLE(u16 bitmask, u8 flag);
-    Result DestroyNetworkHLE();
-    Result EjectClientHLE(u16 node_id);
+    HLE::Result UpdateNetworkAttributeHLE(u16 bitmask, u8 flag);
+    HLE::Result DestroyNetworkHLE();
+    HLE::Result EjectClientHLE(u16 node_id);
 
-    Result BeginHostingNetwork(std::span<const u8> network_info_buffer, std::vector<u8> passphrase);
+    HLE::Result BeginHostingNetwork(std::span<const u8> network_info_buffer, std::vector<u8> passphrase);
 
     void ConnectToNetwork(Kernel::HLERequestContext& ctx, u16 command_id,
                           std::span<const u8> network_info_buffer, u8 connection_type,

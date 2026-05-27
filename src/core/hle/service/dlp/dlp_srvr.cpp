@@ -279,7 +279,7 @@ void DLP_SRVR::StartHosting(Kernel::HLERequestContext& ctx) {
 
     if (channel != 0 && channel != 1 && channel != 6 && channel != 11) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::OutOfRange, ErrorModule::DLP,
+        rb.Push(HLE::Result(ErrorDescription::OutOfRange, ErrorModule::DLP,
                        ErrorSummary::InvalidArgument, ErrorLevel::Permanent));
         return;
     }
@@ -356,7 +356,7 @@ void DLP_SRVR::GetClientInfo(Kernel::HLERequestContext& ctx) {
     if (!node_info) {
         LOG_ERROR(Service_DLP, "Could not get node info for network node id 0x{:x}", node_id);
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }
@@ -366,7 +366,7 @@ void DLP_SRVR::GetClientInfo(Kernel::HLERequestContext& ctx) {
         // even though it's not supposed to use
         // this info, we will still give it the
         // info
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
     } else {
         rb.Push(ResultSuccess);
@@ -390,7 +390,7 @@ void DLP_SRVR::GetClientState(Kernel::HLERequestContext& ctx) {
     if (!cl) {
         LOG_WARNING(Service_DLP, "Node id out of range: 0x{:x}", node_id);
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
+        rb.Push(HLE::Result(ErrorDescription::NoData, ErrorModule::DLP, ErrorSummary::NotFound,
                        ErrorLevel::Status));
         return;
     }

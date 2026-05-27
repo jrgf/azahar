@@ -808,7 +808,7 @@ void NWM_UDS::GetNodeInformation(Kernel::HLERequestContext& ctx) {
 
     if (!initialized) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotInitialized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotInitialized, ErrorModule::UDS,
                        ErrorSummary::StatusChanged, ErrorLevel::Status));
         return;
     }
@@ -817,7 +817,7 @@ void NWM_UDS::GetNodeInformation(Kernel::HLERequestContext& ctx) {
         auto node = GetNodeInformationHLE(network_node_id);
         if (!node) {
             IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-            rb.Push(Result(ErrorDescription::NotFound, ErrorModule::UDS,
+            rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::UDS,
                            ErrorSummary::WrongArgument, ErrorLevel::Status));
             return;
         }
@@ -875,19 +875,19 @@ void NWM_UDS::Bind(Kernel::HLERequestContext& ctx) {
     switch (ret) {
     case ResultStatus::BindError_ArgsZero: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                        ErrorSummary::WrongArgument, ErrorLevel::Usage));
         return;
     }
     case ResultStatus::BindError_MaxBinds: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::OutOfMemory, ErrorModule::UDS, ErrorSummary::OutOfResource,
+        rb.Push(HLE::Result(ErrorDescription::OutOfMemory, ErrorModule::UDS, ErrorSummary::OutOfResource,
                        ErrorLevel::Status));
         return;
     }
     case ResultStatus::BindError_RecvBufferTooLarge: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
                        ErrorLevel::Usage));
         return;
     }
@@ -920,7 +920,7 @@ void NWM_UDS::Unbind(Kernel::HLERequestContext& ctx) {
     u32 bind_node_id = rp.Pop<u32>();
     if (bind_node_id == 0) {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                        ErrorSummary::WrongArgument, ErrorLevel::Usage));
         return;
     }
@@ -936,7 +936,7 @@ void NWM_UDS::Unbind(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0);
 }
 
-Result NWM_UDS::BeginHostingNetwork(std::span<const u8> network_info_buffer,
+HLE::Result NWM_UDS::BeginHostingNetwork(std::span<const u8> network_info_buffer,
                                     std::vector<u8> passphrase) {
     // TODO(Subv): Store the passphrase and verify it when attempting a connection.
 
@@ -1034,10 +1034,10 @@ void NWM_UDS::BeginHostingNetworkDeprecated(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-Result NWM_UDS::EjectClientHLE(u16 network_node_id) {
+HLE::Result NWM_UDS::EjectClientHLE(u16 network_node_id) {
     // The host can not be kicked.
     if (network_node_id == 1) {
-        return Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        return HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                       ErrorSummary::WrongArgument, ErrorLevel::Usage);
     }
 
@@ -1045,7 +1045,7 @@ Result NWM_UDS::EjectClientHLE(u16 network_node_id) {
     if (connection_status.status != NetworkStatus::ConnectedAsHost) {
         // Only the host can kick people.
         LOG_WARNING(Service_NWM, "called with status {}", connection_status.status);
-        return Result(ErrorDescription::NotAuthorized, ErrorModule::UDS, ErrorSummary::InvalidState,
+        return HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS, ErrorSummary::InvalidState,
                       ErrorLevel::Usage);
     }
 
@@ -1088,7 +1088,7 @@ void NWM_UDS::EjectClient(Kernel::HLERequestContext& ctx) {
     rb.Push(res);
 }
 
-Result NWM_UDS::UpdateNetworkAttributeHLE(u16 node_bitmask, u8 flag) {
+HLE::Result NWM_UDS::UpdateNetworkAttributeHLE(u16 node_bitmask, u8 flag) {
     [[maybe_unused]] constexpr u8 flag_disconnect_and_block_non_bitmasked_nodes = 0x1;
 
     // stubbed
@@ -1108,7 +1108,7 @@ void NWM_UDS::UpdateNetworkAttribute(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-Result NWM_UDS::DestroyNetworkHLE() {
+HLE::Result NWM_UDS::DestroyNetworkHLE() {
     // Unschedule the beacon broadcast event.
     system.CoreTiming().UnscheduleEvent(beacon_broadcast_event, 0);
 
@@ -1117,7 +1117,7 @@ Result NWM_UDS::DestroyNetworkHLE() {
     if (connection_status.status != NetworkStatus::ConnectedAsHost) {
         LOG_WARNING(Service_NWM, "called with status {}",
                     static_cast<u32>(connection_status.status));
-        return Result(ErrCodes::WrongStatus, ErrorModule::UDS, ErrorSummary::InvalidState,
+        return HLE::Result(ErrCodes::WrongStatus, ErrorModule::UDS, ErrorSummary::InvalidState,
                       ErrorLevel::Status);
     }
 
@@ -1168,16 +1168,16 @@ void NWM_UDS::SendTo(Kernel::HLERequestContext& ctx) {
 
     switch (res) {
     case ResultStatus::SendError_PacketSizeTooLarge:
-        rb.Push(Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
                        ErrorLevel::Usage));
         return;
     case ResultStatus::SendError_NotConnected:
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                        ErrorSummary::InvalidState, ErrorLevel::Status));
         return;
     case ResultStatus::SendError_BadNode:
     case ResultStatus::SendError_BadMacAddress:
-        rb.Push(Result(ErrorDescription::NotFound, ErrorModule::UDS, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::NotFound, ErrorModule::UDS, ErrorSummary::WrongArgument,
                        ErrorLevel::Status));
         return;
     default:;
@@ -1264,19 +1264,19 @@ void NWM_UDS::PullPacket(Kernel::HLERequestContext& ctx) {
     switch (ret.error()) {
     case ResultStatus::RecvError_NotConnected: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                        ErrorSummary::InvalidState, ErrorLevel::Status));
         return;
     }
     case ResultStatus::RecvError_BadNode: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
+        rb.Push(HLE::Result(ErrorDescription::NotAuthorized, ErrorModule::UDS,
                        ErrorSummary::InvalidState, ErrorLevel::Status));
         return;
     }
     case ResultStatus::RecvError_PacketSizeTooLarge: {
         IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-        rb.Push(Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
                        ErrorLevel::Usage));
         return;
     }
@@ -1368,7 +1368,7 @@ public:
         IPC::RequestBuilder rb(ctx, command_id, 1, 0);
         if (reason == Kernel::ThreadWakeupReason::Timeout) {
             LOG_ERROR(Service_NWM, "timed out when trying to connect to UDS server");
-            rb.Push(Result(ErrorDescription::Timeout, ErrorModule::UDS, ErrorSummary::Canceled,
+            rb.Push(HLE::Result(ErrorDescription::Timeout, ErrorModule::UDS, ErrorSummary::Canceled,
                            ErrorLevel::Status));
             return;
         }
@@ -1491,7 +1491,7 @@ void NWM_UDS::DisconnectNetwork(Kernel::HLERequestContext& ctx) {
     auto res = DisconnectNetworkHLE();
     if (res == ResultStatus::DisconError_CalledAsHost) {
         LOG_DEBUG(Service_NWM, "called as a host");
-        rb.Push(Result(ErrCodes::WrongStatus, ErrorModule::UDS, ErrorSummary::InvalidState,
+        rb.Push(HLE::Result(ErrCodes::WrongStatus, ErrorModule::UDS, ErrorSummary::InvalidState,
                        ErrorLevel::Status));
         return;
     }
@@ -1512,7 +1512,7 @@ void NWM_UDS::SetApplicationData(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
 
     if (size > ApplicationDataSize) {
-        rb.Push(Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
+        rb.Push(HLE::Result(ErrorDescription::TooLarge, ErrorModule::UDS, ErrorSummary::WrongArgument,
                        ErrorLevel::Usage));
         return;
     }

@@ -280,7 +280,7 @@ public:
          *      4 : Descriptor for process ID
          *      5 : Placeholder for process ID
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : File size?
          */
         void Open(Kernel::HLERequestContext& ctx);
@@ -293,7 +293,7 @@ public:
          *      2 : Descriptor for mapping a write-only buffer in the target process
          *      3 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Read size
          *      3 : Descriptor for mapping a write-only buffer in the target process
          *      4 : Buffer address
@@ -313,7 +313,7 @@ public:
          *      7 : Descriptor for mapping a write-only buffer in the target process
          *      8 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Read size
          *      3 : Descriptor for mapping a read-only buffer in the target process
          *      4 : Message ID address
@@ -337,7 +337,7 @@ public:
          *      9 : Descriptor for mapping a write-only buffer in the target process
          *     10 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Read size
          *      3 : Descriptor for mapping a read-only buffer in the target process
          *      4 : Message ID address
@@ -356,7 +356,7 @@ public:
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Buffer address
          */
@@ -375,7 +375,7 @@ public:
          *      7 : Descriptor for mapping a read/write buffer in the target process
          *      8 : Message ID address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Buffer address
          *      4 : Descriptor for mapping a read/write buffer in the target process
@@ -398,7 +398,7 @@ public:
          *      9 : Descriptor for mapping a read/write buffer in the target process
          *     10 : Message ID address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Buffer address
          *      4 : Descriptor for mapping a read-only buffer in the target process
@@ -419,7 +419,7 @@ public:
          *      5 : Descriptor for mapping a read-only buffer in the target process
          *      6 : Message ID address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Message ID address
          */
@@ -435,7 +435,7 @@ public:
          *      4 : Descriptor for mapping a read-only buffer in the target process
          *      5 : Message ID address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Message ID address
          */
@@ -453,7 +453,7 @@ public:
          *      6 : Descriptor for mapping a write-only buffer in the target process
          *      7 : Destination buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Param buffer address
          *      4 : Descriptor for mapping a write-only buffer in the target process
@@ -467,7 +467,7 @@ public:
          *      0 : Header Code[0x000B0040]
          *      1 : Command
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Start(Kernel::HLERequestContext& ctx);
 
@@ -477,7 +477,7 @@ public:
          *      0 : Header Code[0x000C0040]
          *      1 : Command
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          */
         void Stop(Kernel::HLERequestContext& ctx);
 
@@ -490,7 +490,7 @@ public:
          *      3 : Descriptor for mapping a write-only buffer in the target process
          *      4 : Destination buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *    2-3 : MappedBuffer
          */
         void GetCecInfoBuffer(Kernel::HLERequestContext& ctx);
@@ -500,7 +500,7 @@ public:
          *  Inputs:
          *      0: Header Code[0x000E0000]
          *  Outputs:
-         *      1: Result
+         *      1: HLE::Result
          *      2: CecdState
          */
         void GetCecdState(Kernel::HLERequestContext& ctx);
@@ -510,7 +510,7 @@ public:
          *  Inputs:
          *      0: Header Code[0x000F0000]
          *  Outputs:
-         *      1: Result
+         *      1: HLE::Result
          *      3: Event Handle
          */
         void GetCecInfoEventHandle(Kernel::HLERequestContext& ctx);
@@ -520,7 +520,7 @@ public:
          *  Inputs:
          *      0: Header Code[0x00100000]
          *  Outputs:
-         *      1: Result
+         *      1: HLE::Result
          *      3: Event Handle
          */
         void GetChangeStateEventHandle(Kernel::HLERequestContext& ctx);
@@ -538,7 +538,7 @@ public:
          *      7 : Descriptor for mapping a read-only buffer in the target process
          *      8 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Descriptor for mapping a read-only buffer in the target process
          *      3 : Buffer address
          */
@@ -557,7 +557,7 @@ public:
          *      7 : Descriptor for mapping a write-only buffer in the target process
          *      8 : Buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : Toal bytes read
          *      3 : Descriptor for mapping a write-only buffer in the target process
          *      4 : Buffer address
@@ -573,7 +573,7 @@ public:
          *      3 : buffer descriptor
          *      4 : buffer address
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : unknown
          */
         void GetEventLog(Kernel::HLERequestContext& ctx);
@@ -583,7 +583,7 @@ public:
          *  Inputs:
          *      0 : Header Code[0x001F0000]
          *  Outputs:
-         *      1 : Result of function, 0 on success, otherwise error code
+         *      1 : HLE::Result of function, 0 on success, otherwise error code
          *      2 : unknown
          */
         void GetEventLogStart(Kernel::HLERequestContext& ctx);
@@ -593,7 +593,7 @@ public:
          *  Inputs:
          *      0: Header Code[0x40020002]
          *  Outputs:
-         *      1: Result
+         *      1: HLE::Result
          *      3: Event Handle
          */
         void GetCecInfoEventHandleSys(Kernel::HLERequestContext& ctx);

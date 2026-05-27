@@ -12,7 +12,7 @@
 
 namespace Service::SM {
 
-static Result ValidateServiceName(const std::string& name) {
+static HLE::Result ValidateServiceName(const std::string& name) {
     R_UNLESS(name.size() > 0 && name.size() <= 8, ResultInvalidNameSize);
     R_UNLESS(name.find('\0') == std::string::npos, ResultNameContainsNul);
     return ResultSuccess;
@@ -28,7 +28,7 @@ void ServiceManager::InstallInterfaces(Core::System& system) {
     system.ServiceManager().srv_interface = srv;
 }
 
-Result ServiceManager::RegisterService(std::shared_ptr<Kernel::ServerPort>* out_server_port,
+HLE::Result ServiceManager::RegisterService(std::shared_ptr<Kernel::ServerPort>* out_server_port,
                                        std::string name, u32 max_sessions) {
     R_TRY(ValidateServiceName(name));
     R_UNLESS(registered_services.find(name) == registered_services.end(), ResultAlreadyRegistered);
@@ -41,7 +41,7 @@ Result ServiceManager::RegisterService(std::shared_ptr<Kernel::ServerPort>* out_
     return ResultSuccess;
 }
 
-Result ServiceManager::GetServicePort(std::shared_ptr<Kernel::ClientPort>* out_client_port,
+HLE::Result ServiceManager::GetServicePort(std::shared_ptr<Kernel::ClientPort>* out_client_port,
                                       const std::string& name) {
     R_TRY(ValidateServiceName(name));
 
@@ -52,7 +52,7 @@ Result ServiceManager::GetServicePort(std::shared_ptr<Kernel::ClientPort>* out_c
     return ResultSuccess;
 }
 
-Result ServiceManager::ConnectToService(std::shared_ptr<Kernel::ClientSession>* out_client_session,
+HLE::Result ServiceManager::ConnectToService(std::shared_ptr<Kernel::ClientSession>* out_client_session,
                                         const std::string& name) {
     std::shared_ptr<Kernel::ClientPort> client_port;
     R_TRY(GetServicePort(std::addressof(client_port), name));

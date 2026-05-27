@@ -19,7 +19,7 @@
 
 namespace HLE::Applets {
 
-Result SoftwareKeyboard::ReceiveParameterImpl(Service::APT::MessageParameter const& parameter) {
+HLE::Result SoftwareKeyboard::ReceiveParameterImpl(Service::APT::MessageParameter const& parameter) {
     switch (parameter.signal) {
     case Service::APT::SignalType::Request: {
         // The LibAppJustStarted message contains a buffer with the size of the framebuffer shared
@@ -89,7 +89,7 @@ Result SoftwareKeyboard::ReceiveParameterImpl(Service::APT::MessageParameter con
     }
 }
 
-Result SoftwareKeyboard::Start(Service::APT::MessageParameter const& parameter) {
+HLE::Result SoftwareKeyboard::Start(Service::APT::MessageParameter const& parameter) {
     ASSERT_MSG(parameter.buffer.size() == sizeof(config),
                "The size of the parameter (SoftwareKeyboardConfig) is wrong");
 
@@ -166,7 +166,7 @@ void SoftwareKeyboard::DrawScreenKeyboard() {
     // TODO(Subv): Draw the HLE keyboard, for now just do nothing
 }
 
-Result SoftwareKeyboard::Finalize() {
+HLE::Result SoftwareKeyboard::Finalize() {
     std::vector<u8> buffer(sizeof(SoftwareKeyboardConfig));
     std::memcpy(buffer.data(), &config, buffer.size());
     CloseApplet(nullptr, buffer);

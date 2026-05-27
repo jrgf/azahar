@@ -188,7 +188,7 @@ private:
      *      1 : Screen ID (0 = top screen, 1 = bottom screen)
      *      2-7 : FrameBufferInfo structure
      *  Outputs:
-     *      1: Result code
+     *      1: HLE::Result code
      */
     void SetBufferSwap(Kernel::HLERequestContext& ctx);
 
@@ -203,7 +203,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void FlushDataCache(Kernel::HLERequestContext& ctx);
 
@@ -218,7 +218,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void InvalidateDataCache(Kernel::HLERequestContext& ctx);
 
@@ -230,7 +230,7 @@ private:
      *  Inputs:
      *      1: Black color fill flag (0 = don't fill, !0 = fill)
      *  Outputs:
-     *      1: Result code
+     *      1: HLE::Result code
      */
     void SetLcdForceBlack(Kernel::HLERequestContext& ctx);
 
@@ -242,7 +242,7 @@ private:
      *  Inputs:
      *      1 : Mode, unused in emulator
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetAxiConfigQoSMode(Kernel::HLERequestContext& ctx);
 
@@ -256,7 +256,7 @@ private:
      *      1 : "Flags" field, purpose is unknown
      *      3 : Handle to GSP synchronization event
      *  Outputs:
-     *      1 : Result of function, 0x2A07 on success, otherwise error code
+     *      1 : HLE::Result of function, 0x2A07 on success, otherwise error code
      *      2 : Thread index into GSP command buffer
      *      4 : Handle to GSP shared memory
      */
@@ -265,7 +265,7 @@ private:
     /**
      * GSP_GPU::UnregisterInterruptRelayQueue service function
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnregisterInterruptRelayQueue(Kernel::HLERequestContext& ctx);
 
@@ -276,7 +276,7 @@ private:
      *      1 : Handle translate header (0x0)
      *      2 : Process handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void TryAcquireRight(Kernel::HLERequestContext& ctx);
 
@@ -288,14 +288,14 @@ private:
      *      2 : Handle translate header (0x0)
      *      3 : Process handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void AcquireRight(Kernel::HLERequestContext& ctx);
 
     /**
      * GSP_GPU::ReleaseRight service function
      *  Outputs:
-     *      1: Result code
+     *      1: HLE::Result code
      */
     void ReleaseRight(Kernel::HLERequestContext& ctx);
 
@@ -314,7 +314,7 @@ private:
      *      0: Header 0x00180000
      *  Outputs:
      *      0: Header Code[0x00180240]
-     *      1: Result code
+     *      1: HLE::Result code
      *      2: Left framebuffer virtual address for the main screen
      *      3: Right framebuffer virtual address for the main screen
      *      4: Main screen framebuffer format
@@ -335,7 +335,7 @@ private:
      *      0: Header 0x00190000
      *  Outputs:
      *      0: Header Code[0x00190040]
-     *      1: Result code
+     *      1: HLE::Result code
      */
     void SaveVramSysArea(Kernel::HLERequestContext& ctx);
 
@@ -348,7 +348,7 @@ private:
      *      0: Header 0x001A0000
      *  Outputs:
      *      0: Header Code[0x001A0040]
-     *      1: Result code
+     *      1: HLE::Result code
      */
     void RestoreVramSysArea(Kernel::HLERequestContext& ctx);
 
@@ -364,7 +364,7 @@ private:
      *      3 : Value 0, some descriptor for the KProcess Handle
      *      4 : KProcess handle
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void StoreDataCache(Kernel::HLERequestContext& ctx);
 
@@ -378,7 +378,7 @@ private:
      *      1 : Session thread priority
      *      2 : Session thread priority with rights
      *  Outputs:
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void SetInternalPriorities(Kernel::HLERequestContext& ctx);
 
@@ -389,7 +389,7 @@ private:
 
     std::unique_ptr<Kernel::SessionRequestHandler::SessionDataBase> MakeSessionData() override;
 
-    Result AcquireGpuRight(const Kernel::HLERequestContext& ctx,
+    HLE::Result AcquireGpuRight(const Kernel::HLERequestContext& ctx,
                            const std::shared_ptr<Kernel::Process>& process, u32 flag,
                            bool blocking);
 

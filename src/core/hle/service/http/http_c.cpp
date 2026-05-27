@@ -62,53 +62,53 @@ enum {
 };
 }
 
-constexpr Result ErrorStateError = // 0xD8A0A066
-    Result(ErrCodes::SessionStateError, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorStateError = // 0xD8A0A066
+    HLE::Result(ErrCodes::SessionStateError, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorNotImplemented = // 0xD960A3F4
-    Result(ErrCodes::NotImplemented, ErrorModule::HTTP, ErrorSummary::Internal,
+constexpr HLE::Result ErrorNotImplemented = // 0xD960A3F4
+    HLE::Result(ErrCodes::NotImplemented, ErrorModule::HTTP, ErrorSummary::Internal,
            ErrorLevel::Permanent);
-constexpr Result ErrorTooManyClientCerts = // 0xD8A0A0CB
-    Result(ErrCodes::TooManyClientCerts, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorTooManyClientCerts = // 0xD8A0A0CB
+    HLE::Result(ErrCodes::TooManyClientCerts, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorHeaderNotFound = // 0xD8A0A028
-    Result(ErrCodes::HeaderNotFound, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorHeaderNotFound = // 0xD8A0A028
+    HLE::Result(ErrCodes::HeaderNotFound, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorBufferSmall = // 0xD840A02B
-    Result(ErrCodes::BufferTooSmall, ErrorModule::HTTP, ErrorSummary::WouldBlock,
+constexpr HLE::Result ErrorBufferSmall = // 0xD840A02B
+    HLE::Result(ErrCodes::BufferTooSmall, ErrorModule::HTTP, ErrorSummary::WouldBlock,
            ErrorLevel::Permanent);
-constexpr Result ErrorWrongCertID = // 0xD8E0B839
-    Result(ErrCodes::WrongCertID, ErrorModule::SSL, ErrorSummary::InvalidArgument,
+constexpr HLE::Result ErrorWrongCertID = // 0xD8E0B839
+    HLE::Result(ErrCodes::WrongCertID, ErrorModule::SSL, ErrorSummary::InvalidArgument,
            ErrorLevel::Permanent);
-constexpr Result ErrorWrongCertHandle = // 0xD8A0A0C9
-    Result(ErrCodes::WrongCertHandle, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorWrongCertHandle = // 0xD8A0A0C9
+    HLE::Result(ErrCodes::WrongCertHandle, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorCertAlreadySet = // 0xD8A0A03D
-    Result(ErrCodes::CertAlreadySet, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorCertAlreadySet = // 0xD8A0A03D
+    HLE::Result(ErrCodes::CertAlreadySet, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorIncompatibleAddPostData = // 0xD8A0A032
-    Result(ErrCodes::IncompatibleAddPostData, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorIncompatibleAddPostData = // 0xD8A0A032
+    HLE::Result(ErrCodes::IncompatibleAddPostData, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorContextNotFound = // 0xD8A0A064
-    Result(ErrCodes::ContextNotFound, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorContextNotFound = // 0xD8A0A064
+    HLE::Result(ErrCodes::ContextNotFound, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorTimeout = // 0xD820A069
-    Result(ErrCodes::Timeout, ErrorModule::HTTP, ErrorSummary::NothingHappened,
+constexpr HLE::Result ErrorTimeout = // 0xD820A069
+    HLE::Result(ErrCodes::Timeout, ErrorModule::HTTP, ErrorSummary::NothingHappened,
            ErrorLevel::Permanent);
-constexpr Result ErrorTooManyContexts = // 0xD8A0A01A
-    Result(ErrCodes::TooManyContexts, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorTooManyContexts = // 0xD8A0A01A
+    HLE::Result(ErrCodes::TooManyContexts, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorInvalidRequestMethod = // 0xD8A0A020
-    Result(ErrCodes::InvalidRequestMethod, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorInvalidRequestMethod = // 0xD8A0A020
+    HLE::Result(ErrCodes::InvalidRequestMethod, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorInvalidRequestState = // 0xD8A0A016
-    Result(ErrCodes::InvalidRequestState, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorInvalidRequestState = // 0xD8A0A016
+    HLE::Result(ErrCodes::InvalidRequestState, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorInvalidPostDataEncoding = // 0xD8A0A035
-    Result(ErrCodes::InvalidPostDataEncoding, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorInvalidPostDataEncoding = // 0xD8A0A035
+    HLE::Result(ErrCodes::InvalidPostDataEncoding, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
-constexpr Result ErrorIncompatibleSendPostData = // 0xD8A0A036
-    Result(ErrCodes::IncompatibleSendPostData, ErrorModule::HTTP, ErrorSummary::InvalidState,
+constexpr HLE::Result ErrorIncompatibleSendPostData = // 0xD8A0A036
+    HLE::Result(ErrCodes::IncompatibleSendPostData, ErrorModule::HTTP, ErrorSummary::InvalidState,
            ErrorLevel::Permanent);
 
 // Splits URL into its components. Example: https://citra-emu.org:443/index.html
@@ -656,7 +656,7 @@ void HTTP_C::ReceiveDataImpl(Kernel::HLERequestContext& ctx, bool timeout) {
         Kernel::MappedBuffer* buffer;
         bool is_complete;
         // Output
-        Result async_res = ResultSuccess;
+        HLE::Result async_res = ResultSuccess;
     };
     std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
     async_data->timeout = timeout;
@@ -1429,7 +1429,7 @@ void HTTP_C::GetResponseDataImpl(Kernel::HLERequestContext& ctx, bool timeout) {
         u32 data_max_len;
         Kernel::MappedBuffer* data_buffer;
         // Output
-        Result async_res = ResultSuccess;
+        HLE::Result async_res = ResultSuccess;
     };
     std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
 
@@ -1522,7 +1522,7 @@ void HTTP_C::GetResponseHeaderImpl(Kernel::HLERequestContext& ctx, bool timeout)
         std::span<const u8> header_name;
         Kernel::MappedBuffer* value_buffer;
         // Output
-        Result async_res = ResultSuccess;
+        HLE::Result async_res = ResultSuccess;
     };
     std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
 
@@ -1622,7 +1622,7 @@ void HTTP_C::GetResponseStatusCodeImpl(Kernel::HLERequestContext& ctx, bool time
         bool timeout;
         u64 timeout_nanos = 0;
         // Output
-        Result async_res = ResultSuccess;
+        HLE::Result async_res = ResultSuccess;
     };
     std::shared_ptr<AsyncData> async_data = std::make_shared<AsyncData>();
 
@@ -1808,7 +1808,7 @@ void HTTP_C::OpenClientCertContext(Kernel::HLERequestContext& ctx) {
     auto* session_data = GetSessionData(ctx.Session());
     ASSERT(session_data);
 
-    Result result(ResultSuccess);
+    HLE::Result result(ResultSuccess);
 
     if (!session_data->initialized) {
         LOG_ERROR(Service_HTTP, "Command called without Initialize");

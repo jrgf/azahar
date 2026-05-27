@@ -212,18 +212,18 @@ public:
     VAddr GetLinearHeapBase() const;
     VAddr GetLinearHeapLimit() const;
 
-    Result HeapAllocate(VAddr* out_addr, VAddr target, u32 size, VMAPermission perms,
+    HLE::Result HeapAllocate(VAddr* out_addr, VAddr target, u32 size, VMAPermission perms,
                         MemoryState memory_state = MemoryState::Private,
                         bool skip_range_check = false);
-    Result HeapFree(VAddr target, u32 size);
+    HLE::Result HeapFree(VAddr target, u32 size);
 
-    Result LinearAllocate(VAddr* out_addr, VAddr target, u32 size, VMAPermission perms);
-    Result LinearFree(VAddr target, u32 size);
+    HLE::Result LinearAllocate(VAddr* out_addr, VAddr target, u32 size, VMAPermission perms);
+    HLE::Result LinearFree(VAddr target, u32 size);
 
     ResultVal<VAddr> AllocateThreadLocalStorage();
 
-    Result Map(VAddr target, VAddr source, u32 size, VMAPermission perms, bool privileged = false);
-    Result Unmap(VAddr target, VAddr source, u32 size, VMAPermission perms,
+    HLE::Result Map(VAddr target, VAddr source, u32 size, VMAPermission perms, bool privileged = false);
+    HLE::Result Unmap(VAddr target, VAddr source, u32 size, VMAPermission perms,
                  bool privileged = false);
 
     std::vector<std::shared_ptr<Kernel::Thread>> GetThreadList();

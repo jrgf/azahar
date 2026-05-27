@@ -8,7 +8,7 @@
 #include "service_fixture.h"
 
 // SVC
-Result ServiceFixture::svcWaitSynchronization(Handle handle, s64 nanoseconds) {
+HLE::Result ServiceFixture::svcWaitSynchronization(Handle handle, s64 nanoseconds) {
     ASSERT(handle == PIPE2_IRQ_HANDLE);
 
     using AudioCore::DspPipe::Audio;
@@ -25,7 +25,7 @@ Result ServiceFixture::svcWaitSynchronization(Handle handle, s64 nanoseconds) {
     return ResultSuccess;
 }
 
-Result ServiceFixture::svcClearEvent(Handle handle) {
+HLE::Result ServiceFixture::svcClearEvent(Handle handle) {
     ASSERT(handle == PIPE2_IRQ_HANDLE);
     using AudioCore::DspPipe::Audio;
     using Service::DSP::InterruptType::Pipe;
@@ -34,7 +34,7 @@ Result ServiceFixture::svcClearEvent(Handle handle) {
     return ResultSuccess;
 }
 
-Result ServiceFixture::svcSignalEvent(Handle handle) {
+HLE::Result ServiceFixture::svcSignalEvent(Handle handle) {
     ASSERT(handle == DSP_SEMAPHORE_HANDLE);
     dsp->SetSemaphore(0x2000);
     // TODO: Add relevent amount of ticks
@@ -43,7 +43,7 @@ Result ServiceFixture::svcSignalEvent(Handle handle) {
 }
 
 // dsp::DSP
-Result ServiceFixture::DSP_LoadComponent(const u8* dspfirm_data, size_t size, u8 progmask,
+HLE::Result ServiceFixture::DSP_LoadComponent(const u8* dspfirm_data, size_t size, u8 progmask,
                                          u8 datamask, bool* dspfirm_loaded) {
     dsp->LoadComponent({dspfirm_data, size});
     *dspfirm_loaded = true;
@@ -51,25 +51,25 @@ Result ServiceFixture::DSP_LoadComponent(const u8* dspfirm_data, size_t size, u8
     return ResultSuccess;
 }
 
-Result ServiceFixture::DSP_UnloadComponent() {
+HLE::Result ServiceFixture::DSP_UnloadComponent() {
     dsp->UnloadComponent();
 
     return ResultSuccess;
 }
 
-Result ServiceFixture::DSP_GetSemaphoreHandle(Handle* handle) {
+HLE::Result ServiceFixture::DSP_GetSemaphoreHandle(Handle* handle) {
     *handle = DSP_SEMAPHORE_HANDLE;
 
     return ResultSuccess;
 };
 
-Result ServiceFixture::DSP_SetSemaphore(u32 semaphore) {
+HLE::Result ServiceFixture::DSP_SetSemaphore(u32 semaphore) {
     dsp->SetSemaphore(semaphore);
 
     return ResultSuccess;
 }
 
-Result ServiceFixture::DSP_ReadPipeIfPossible(u32 channel, u32 /*peer*/, void* out_buffer, u32 size,
+HLE::Result ServiceFixture::DSP_ReadPipeIfPossible(u32 channel, u32 /*peer*/, void* out_buffer, u32 size,
                                               u16* out_size) {
     const AudioCore::DspPipe pipe = static_cast<AudioCore::DspPipe>(channel);
     const u16 pipe_readable_size = static_cast<u16>(dsp->GetPipeReadableSize(pipe));
@@ -86,14 +86,14 @@ Result ServiceFixture::DSP_ReadPipeIfPossible(u32 channel, u32 /*peer*/, void* o
     return ResultSuccess;
 }
 
-Result ServiceFixture::ServiceFixture::DSP_ConvertProcessAddressFromDspDram(u32 dsp_address,
+HLE::Result ServiceFixture::ServiceFixture::DSP_ConvertProcessAddressFromDspDram(u32 dsp_address,
                                                                             u16** host_address) {
     *host_address = reinterpret_cast<u16*>(
         (dsp_address << 1) + (reinterpret_cast<uintptr_t>(memory.GetDspMemory(0)) + 0x40000u));
     return ResultSuccess;
 }
 
-Result ServiceFixture::DSP_WriteProcessPipe(u32 channel, const void* buffer, u32 length) {
+HLE::Result ServiceFixture::DSP_WriteProcessPipe(u32 channel, const void* buffer, u32 length) {
     const AudioCore::DspPipe pipe = static_cast<AudioCore::DspPipe>(channel);
     dsp->PipeWrite(pipe, {reinterpret_cast<const u8*>(buffer), length});
 
@@ -112,7 +112,7 @@ void* ServiceFixture::linearAlloc(size_t size) {
     return ret;
 }
 
-Result ServiceFixture::dspInit() {
+HLE::Result ServiceFixture::dspInit() {
     if (!dsp) {
         dsp = std::make_unique<AudioCore::DspHle>(system, memory, core_timing);
         dsp->SetInterruptHandler([this](Service::DSP::InterruptType type, AudioCore::DspPipe pipe) {

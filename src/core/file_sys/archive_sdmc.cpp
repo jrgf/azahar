@@ -112,7 +112,7 @@ ResultVal<std::unique_ptr<FileBackend>> SDMCArchive::OpenFileBase(const Path& pa
     return std::make_unique<DiskFile>(std::move(file), mode, std::move(delay_generator));
 }
 
-Result SDMCArchive::DeleteFile(const Path& path) const {
+HLE::Result SDMCArchive::DeleteFile(const Path& path) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -146,7 +146,7 @@ Result SDMCArchive::DeleteFile(const Path& path) const {
     return ResultNotFound;
 }
 
-Result SDMCArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
+HLE::Result SDMCArchive::RenameFile(const Path& src_path, const Path& dest_path) const {
     const PathParser path_parser_src(src_path);
 
     // TODO: Verify these return codes with HW
@@ -171,12 +171,12 @@ Result SDMCArchive::RenameFile(const Path& src_path, const Path& dest_path) cons
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 
 template <typename T>
-static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
+static HLE::Result DeleteDirectoryHelper(const Path& path, const std::string& mount_point, T deleter) {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -213,16 +213,16 @@ static Result DeleteDirectoryHelper(const Path& path, const std::string& mount_p
     return ResultUnexpectedFileOrDirectorySdmc;
 }
 
-Result SDMCArchive::DeleteDirectory(const Path& path) const {
+HLE::Result SDMCArchive::DeleteDirectory(const Path& path) const {
     return DeleteDirectoryHelper(path, mount_point, FileUtil::DeleteDir);
 }
 
-Result SDMCArchive::DeleteDirectoryRecursively(const Path& path) const {
+HLE::Result SDMCArchive::DeleteDirectoryRecursively(const Path& path) const {
     return DeleteDirectoryHelper(
         path, mount_point, [](const std::string& p) { return FileUtil::DeleteDirRecursively(p); });
 }
 
-Result SDMCArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
+HLE::Result SDMCArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attributes) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -263,11 +263,11 @@ Result SDMCArchive::CreateFile(const FileSys::Path& path, u64 size, u32 attribut
     }
 
     LOG_ERROR(Service_FS, "Too large file");
-    return Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
+    return HLE::Result(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
                   ErrorLevel::Info);
 }
 
-Result SDMCArchive::CreateDirectory(const Path& path, u32 attributes) const {
+HLE::Result SDMCArchive::CreateDirectory(const Path& path, u32 attributes) const {
     const PathParser path_parser(path);
 
     if (!path_parser.IsValid()) {
@@ -298,11 +298,11 @@ Result SDMCArchive::CreateDirectory(const Path& path, u32 attributes) const {
     }
 
     LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating {}", mount_point);
-    return Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
                   ErrorLevel::Status);
 }
 
-Result SDMCArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
+HLE::Result SDMCArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
     const PathParser path_parser_src(src_path);
 
     // TODO: Verify these return codes with HW
@@ -327,7 +327,7 @@ Result SDMCArchive::RenameDirectory(const Path& src_path, const Path& dest_path)
 
     // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
     // exist or similar. Verify.
-    return Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
+    return HLE::Result(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
                   ErrorSummary::NothingHappened, ErrorLevel::Status);
 }
 
@@ -391,7 +391,7 @@ ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SDMC::Open(const Path&
     return std::make_unique<SDMCArchive>(sdmc_directory, std::move(delay_generator));
 }
 
-Result ArchiveFactory_SDMC::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
+HLE::Result ArchiveFactory_SDMC::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
                                    u64 program_id, u32 directory_buckets, u32 file_buckets) {
     // This is kind of an undesirable operation, so let's just ignore it. :)
     return ResultSuccess;

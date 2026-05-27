@@ -42,7 +42,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
                                       Kernel::MemoryState::Private);
         REQUIRE(result.Code() == ResultSuccess);
 
-        Result code = manager->UnmapRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()));
+        HLE::Result code = manager->UnmapRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()));
         REQUIRE(code == ResultSuccess);
 
         auto vma = manager->FindVMA(Memory::HEAP_VADDR);
@@ -59,7 +59,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
                                       Kernel::MemoryState::Private);
         REQUIRE(result.Code() == ResultSuccess);
 
-        Result code = manager->ReprotectRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()),
+        HLE::Result code = manager->ReprotectRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()),
                                               Kernel::VMAPermission::Execute);
         CHECK(code == ResultSuccess);
 
@@ -80,14 +80,14 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
         REQUIRE(result.Code() == ResultSuccess);
 
         SECTION("reprotect memory range") {
-            Result code =
+            HLE::Result code =
                 manager->ReprotectRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()),
                                         Kernel::VMAPermission::ReadWrite);
             REQUIRE(code == ResultSuccess);
         }
 
         SECTION("with invalid address") {
-            Result code = manager->ChangeMemoryState(
+            HLE::Result code = manager->ChangeMemoryState(
                 0xFFFFFFFF, static_cast<u32>(block.GetSize()), Kernel::MemoryState::Locked,
                 Kernel::VMAPermission::ReadWrite, Kernel::MemoryState::Aliased,
                 Kernel::VMAPermission::Execute);
@@ -95,7 +95,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
         }
 
         SECTION("ignoring the original permissions") {
-            Result code = manager->ChangeMemoryState(
+            HLE::Result code = manager->ChangeMemoryState(
                 Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()), Kernel::MemoryState::Private,
                 Kernel::VMAPermission::None, Kernel::MemoryState::Locked,
                 Kernel::VMAPermission::Write);
@@ -108,7 +108,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
         }
 
         SECTION("enforcing the original permissions with correct expectations") {
-            Result code = manager->ChangeMemoryState(
+            HLE::Result code = manager->ChangeMemoryState(
                 Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()), Kernel::MemoryState::Private,
                 Kernel::VMAPermission::ReadWrite, Kernel::MemoryState::Aliased,
                 Kernel::VMAPermission::Execute);
@@ -121,7 +121,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
         }
 
         SECTION("with incorrect permission expectations") {
-            Result code = manager->ChangeMemoryState(
+            HLE::Result code = manager->ChangeMemoryState(
                 Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()), Kernel::MemoryState::Private,
                 Kernel::VMAPermission::Execute, Kernel::MemoryState::Aliased,
                 Kernel::VMAPermission::Execute);
@@ -134,7 +134,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
         }
 
         SECTION("with incorrect state expectations") {
-            Result code = manager->ChangeMemoryState(
+            HLE::Result code = manager->ChangeMemoryState(
                 Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()), Kernel::MemoryState::Locked,
                 Kernel::VMAPermission::ReadWrite, Kernel::MemoryState::Aliased,
                 Kernel::VMAPermission::Execute);
@@ -146,7 +146,7 @@ TEST_CASE("Memory Basics", "[kernel][memory]") {
             CHECK(vma->second.meminfo_state == Kernel::MemoryState::Private);
         }
 
-        Result code = manager->UnmapRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()));
+        HLE::Result code = manager->UnmapRange(Memory::HEAP_VADDR, static_cast<u32>(block.GetSize()));
         REQUIRE(code == ResultSuccess);
     }
 }

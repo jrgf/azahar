@@ -41,7 +41,7 @@ private:
      *      5 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Initialize(Kernel::HLERequestContext& ctx);
 
@@ -55,7 +55,7 @@ private:
      *      4 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void LoadCRR(Kernel::HLERequestContext& ctx);
 
@@ -68,7 +68,7 @@ private:
      *      3 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnloadCRR(Kernel::HLERequestContext& ctx);
 
@@ -91,7 +91,7 @@ private:
      *     13 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      *      2 : CRO fixed size
      *  Note:
      *      This service function has two versions. The function defined here is a
@@ -116,7 +116,7 @@ private:
      *      5 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnloadCRO(Kernel::HLERequestContext& self);
 
@@ -129,7 +129,7 @@ private:
      *      3 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void LinkCRO(Kernel::HLERequestContext& self);
 
@@ -142,7 +142,7 @@ private:
      *      3 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void UnlinkCRO(Kernel::HLERequestContext& self);
 
@@ -155,7 +155,7 @@ private:
      *      3 : KProcess handle
      *  Outputs:
      *      0 : Return header
-     *      1 : Result of function, 0 on success, otherwise error code
+     *      1 : HLE::Result of function, 0 on success, otherwise error code
      */
     void Shutdown(Kernel::HLERequestContext& self);
 

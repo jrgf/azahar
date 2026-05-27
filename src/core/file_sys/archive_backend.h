@@ -138,54 +138,54 @@ public:
     /**
      * Delete a file specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result DeleteFile(const Path& path) const = 0;
+    virtual HLE::Result DeleteFile(const Path& path) const = 0;
 
     /**
      * Rename a File specified by its path
      * @param src_path Source path relative to the archive
      * @param dest_path Destination path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result RenameFile(const Path& src_path, const Path& dest_path) const = 0;
+    virtual HLE::Result RenameFile(const Path& src_path, const Path& dest_path) const = 0;
 
     /**
      * Delete a directory specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result DeleteDirectory(const Path& path) const = 0;
+    virtual HLE::Result DeleteDirectory(const Path& path) const = 0;
 
     /**
      * Delete a directory specified by its path and anything under it
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result DeleteDirectoryRecursively(const Path& path) const = 0;
+    virtual HLE::Result DeleteDirectoryRecursively(const Path& path) const = 0;
 
     /**
      * Create a file specified by its path
      * @param path Path relative to the Archive
      * @param size The size of the new file, filled with zeroes
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result CreateFile(const Path& path, u64 size, u32 attributes = 0) const = 0;
+    virtual HLE::Result CreateFile(const Path& path, u64 size, u32 attributes = 0) const = 0;
 
     /**
      * Create a directory specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result CreateDirectory(const Path& path, u32 attributes = 0) const = 0;
+    virtual HLE::Result CreateDirectory(const Path& path, u32 attributes = 0) const = 0;
 
     /**
      * Rename a Directory specified by its path
      * @param src_path Source path relative to the archive
      * @param dest_path Destination path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    virtual Result RenameDirectory(const Path& src_path, const Path& dest_path) const = 0;
+    virtual HLE::Result RenameDirectory(const Path& src_path, const Path& dest_path) const = 0;
 
     /**
      * Open a directory specified by its path
@@ -205,7 +205,7 @@ public:
      */
     virtual void Close() {}
 
-    virtual Result Control(u32 action, u8* input, size_t input_size, u8* output,
+    virtual HLE::Result Control(u32 action, u8* input, size_t input_size, u8* output,
                            size_t output_size) {
         LOG_WARNING(Service_FS,
                     "(STUBBED) called, archive={}, action={:08X}, input_size={:08X}, "
@@ -223,7 +223,7 @@ public:
         return delay_generator->GetOpenDelayNs();
     }
 
-    virtual Result SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) {
+    virtual HLE::Result SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) {
 
         // TODO: Generate and Save the Secure Value
 
@@ -281,9 +281,9 @@ public:
      * @param path Path to the archive
      * @param format_info Format information for the new archive
      * @param program_id the program ID of the client that requests the operation
-     * @return Result of the operation, 0 on success
+     * @return HLE::Result of the operation, 0 on success
      */
-    virtual Result Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
+    virtual HLE::Result Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info,
                           u64 program_id, u32 directory_buckets, u32 file_buckets) = 0;
 
     /**

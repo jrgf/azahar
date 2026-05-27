@@ -19,7 +19,7 @@ namespace FileSys {
 class ArticArchive : public ArchiveBackend {
 public:
     static std::vector<u8> BuildFSPath(const Path& path);
-    static Result RespResult(const std::optional<Network::ArticBase::Client::Response>& resp);
+    static HLE::Result RespResult(const std::optional<Network::ArticBase::Client::Response>& resp);
 
     explicit ArticArchive(std::shared_ptr<Network::ArticBase::Client>& _client, s64 _archive_handle,
                           Core::PerfStats::PerfArticEventBits _report_artic_event,
@@ -56,54 +56,54 @@ public:
     /**
      * Delete a file specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result DeleteFile(const Path& path) const override;
+    HLE::Result DeleteFile(const Path& path) const override;
 
     /**
      * Rename a File specified by its path
      * @param src_path Source path relative to the archive
      * @param dest_path Destination path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result RenameFile(const Path& src_path, const Path& dest_path) const override;
+    HLE::Result RenameFile(const Path& src_path, const Path& dest_path) const override;
 
     /**
      * Delete a directory specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result DeleteDirectory(const Path& path) const override;
+    HLE::Result DeleteDirectory(const Path& path) const override;
 
     /**
      * Delete a directory specified by its path and anything under it
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result DeleteDirectoryRecursively(const Path& path) const override;
+    HLE::Result DeleteDirectoryRecursively(const Path& path) const override;
 
     /**
      * Create a file specified by its path
      * @param path Path relative to the Archive
      * @param size The size of the new file, filled with zeroes
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result CreateFile(const Path& path, u64 size, u32 attributes) const override;
+    HLE::Result CreateFile(const Path& path, u64 size, u32 attributes) const override;
 
     /**
      * Create a directory specified by its path
      * @param path Path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result CreateDirectory(const Path& path, u32 attributes) const override;
+    HLE::Result CreateDirectory(const Path& path, u32 attributes) const override;
 
     /**
      * Rename a Directory specified by its path
      * @param src_path Source path relative to the archive
      * @param dest_path Destination path relative to the archive
-     * @return Result of the operation
+     * @return HLE::Result of the operation
      */
-    Result RenameDirectory(const Path& src_path, const Path& dest_path) const override;
+    HLE::Result RenameDirectory(const Path& src_path, const Path& dest_path) const override;
 
     /**
      * Open a directory specified by its path
@@ -118,10 +118,10 @@ public:
      */
     u64 GetFreeBytes() const override;
 
-    Result Control(u32 action, u8* input, size_t input_size, u8* output,
+    HLE::Result Control(u32 action, u8* input, size_t input_size, u8* output,
                    size_t output_size) override;
 
-    Result SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) override;
+    HLE::Result SetSaveDataSecureValue(u32 secure_value_slot, u64 secure_value, bool flush) override;
 
     ResultVal<std::tuple<bool, bool, u64>> GetSaveDataSecureValue(u32 secure_value_slot) override;
 

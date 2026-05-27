@@ -26,7 +26,7 @@ public:
 
     ResultVal<std::unique_ptr<ArchiveBackend>> Open(Service::FS::ArchiveIdCode archive_id,
                                                     const Path& path, u64 program_id);
-    Result Format(u64 program_id, const FileSys::ArchiveFormatInfo& format_info,
+    HLE::Result Format(u64 program_id, const FileSys::ArchiveFormatInfo& format_info,
                   Service::FS::ArchiveIdCode archive_id, const Path& path, u32 directory_buckets,
                   u32 file_buckets);
     ResultVal<ArchiveFormatInfo> GetFormatInfo(u64 program_id,
